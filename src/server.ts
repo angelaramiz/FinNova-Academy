@@ -173,6 +173,12 @@ if (process.env.RUN_STANDALONE === 'true' || isProduction) {
         level: 'info',
         time: new Date().toISOString(),
         msg: `Platform core listening on port ${PORT}`,
+        env: {
+          NODE_ENV: process.env.NODE_ENV,
+          ENABLE_DOCKER_MOCKS: process.env.ENABLE_DOCKER_MOCKS,
+          VIDEO_PROVIDER: process.env.VIDEO_PROVIDER,
+          TTS_PROVIDER: process.env.TTS_PROVIDER,
+        }
       })
     );
   });

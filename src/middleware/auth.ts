@@ -58,6 +58,8 @@ export function requireSupabaseAuth(req: AuthenticatedRequest, res: Response, ne
   const rawMockFlag = process.env.ENABLE_DOCKER_MOCKS || '';
   const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') === 'true';
 
+  console.log(`[Auth Debug] Path: ${req.originalUrl} | rawMockFlag: "${rawMockFlag}" | isMockAllowed: ${isMockAllowed} | authHeader: ${!!authHeader}`);
+
   if (!authHeader) {
     if (isMockAllowed) {
       // Inject mock student actor for iframe preview flows
