@@ -14,6 +14,7 @@ import { progressRouter } from './routes/progress';
 import { exercisesRouter } from './routes/exercises';
 import { pipelineRouter } from './routes/pipeline';
 import { webhookRouter } from './webhooks/n8n';
+import { simulatorRouter } from './routes/simulator';
 
 // Constants for ES Module path resolution
 const __filename = fileURLToPath(import.meta.url);
@@ -129,6 +130,7 @@ app.use('/api/progress', progressRouter);
 app.use('/api/exercises', exercisesRouter);
 app.use('/api/pipeline', pipelineRouter);
 app.use('/api/webhooks', webhookRouter);
+app.use('/api/simulator', simulatorRouter);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {

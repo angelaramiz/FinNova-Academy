@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import CmeCalculator from './CmeCalculator';
 import { 
   BookOpen, 
   Play, 
@@ -15,7 +16,9 @@ import {
   ChevronRight, 
   RefreshCw,
   Users,
-  TrendingUp
+  TrendingUp,
+  Beaker,
+  Info
 } from 'lucide-react';
 import VideoFeed from './VideoFeed';
 
@@ -49,6 +52,7 @@ export default function StudentPanel({
   exportingCV
 }: StudentPanelProps) {
   const location = useLocation();
+  const [labTab, setLabTab] = useState<'garch' | 'cme'>('garch');
 
   const mockProjects = [
     {
@@ -101,6 +105,9 @@ export default function StudentPanel({
           </Link>
           <Link to="/student/profile" className={navItemClass('/profile')}>
             <User className="w-3.5 h-3.5" /> Certificaciones
+          </Link>
+          <Link to="/student/labs" className={navItemClass('/labs')}>
+            <Beaker className="w-3.5 h-3.5" /> AuraFi Labs
           </Link>
         </nav>
       </div>
@@ -539,6 +546,75 @@ export default function StudentPanel({
                 </div>
               </div>
             </div>
+          </div>
+        } />
+
+        {/* SUBTAB: EXPERIMENTAL LABS */}
+        <Route path="/labs" element={
+          <div className="space-y-6 text-left animate-fade-in">
+            <div className="space-y-1.5">
+              <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono">
+                AuraFi Labs (Sección Experimental)
+              </h2>
+              <p className="text-slate-500 text-xs font-normal">
+                Explora herramientas avanzadas de modelación cuantitativa y simuladores financieros interactivos.
+              </p>
+            </div>
+
+            {/* Inner Labs Navigation */}
+            <div className="flex border-b border-slate-800 gap-4 pb-2">
+              <button
+                onClick={() => setLabTab('garch')}
+                className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
+                  labTab === 'garch'
+                    ? 'border-teal-400 text-teal-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Simulador GJR-GARCH
+              </button>
+              <button
+                onClick={() => setLabTab('cme')}
+                className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
+                  labTab === 'cme'
+                    ? 'border-teal-400 text-teal-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Calculadora de Futuros CME
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            {labTab === 'garch' && (
+              <div className="space-y-4">
+                <div className="bg-slate-900/40 border border-slate-850 p-4 rounded-xl text-xs text-slate-400 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>Simulador Cuantitativo GJR-GARCH:</strong> Este modelo de volatilidad asimétrica calibra parámetros por MLE (Maximum Likelihood Estimation) sobre precios históricos reales del mercado obtenidos de forma segura en el backend mediante <strong>Gemini Search Grounding</strong>.
+                  </p>
+                </div>
+                <div className="w-full rounded-2xl overflow-hidden border border-slate-850 bg-slate-950 shadow-md">
+                  <iframe
+                    src="/motor_predictivo_v3.html"
+                    className="w-full h-[950px] border-none bg-slate-950"
+                    title="Simulador GJR-GARCH"
+                  />
+                </div>
+              </div>
+            )}
+
+            {labTab === 'cme' && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="bg-slate-900/40 border border-slate-850 p-4 rounded-xl text-xs text-slate-400 flex items-start gap-2.5">
+                  <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>Calculadora de Márgenes y P&L de CME:</strong> Digitalización interactiva del modelo financiero CME. Configura contratos de futuros estándar o micro, simula apalancamiento implícito, márgenes de garantía y determina el precio crítico de Margin Call.
+                  </p>
+                </div>
+                <CmeCalculator />
+              </div>
+            )}
           </div>
         } />
       </Routes>
