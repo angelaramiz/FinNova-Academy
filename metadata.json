@@ -1,0 +1,6 @@
+{
+  "name": "Micro-Learning Finance Platform",
+  "description": "Infraestructura base para una plataforma de micro-aprendizaje en finanzas con videos cortos, ejercicios híbridos evaluados por IA, y pipelines de contenido.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  # Relational Database: PostgreSQL mimicking standard local Supabase Studio engine
+  postgres:
+    image: postgres:15-alpine
+    container_name: edtech_postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local_strong_password_xyz
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./supabase/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # In-memory database: Redis for pipeline review rates, webhook idempotency, and session cache
+  redis:
+    image: redis:7-alpine
+    container_name: edtech_redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Node/Express Backend Server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edtech_backend_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SUPABASE_URL=http://postgres:5432
+      - SUPABASE_ANON_KEY=local_anon_key_mock_string
+      - N8N_WEBHOOK_SECRET=your_shared_hmac_secret_sha256
+      - ENABLE_AI_GRADING=true
+      - VIDEO_PROVIDER=local_mock
+      - AI_PROVIDER=gemini
+      - TTS_PROVIDER=mock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

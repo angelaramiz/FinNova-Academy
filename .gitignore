@@ -1,0 +1,32 @@
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Dependency directories
+node_modules/
+
+# Compiled output
+dist/
+dist-ssr/
+*.local
+
+# System/IDE configurations
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project custom mock folders
+workflown8n/
+agent_memory/
+contex_Font/
+finmicro_edtech_pro_specs/
+*.log
+npm-debug.log*
