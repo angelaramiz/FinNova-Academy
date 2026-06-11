@@ -25,7 +25,8 @@ coursesRouter.get('/', optionalSupabaseAuth, (req: AuthenticatedRequest, res: Re
   const { difficulty } = req.query;
   let list = MemoryDatabase.courses;
 
-  const isMockAllowed = process.env.ENABLE_DOCKER_MOCKS === 'true';
+  const rawMockFlag = process.env.ENABLE_DOCKER_MOCKS || '';
+  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') === 'true';
 
   // Filter unpublished unless logged-in instructor/admin asks otherwise
   let isInstructor = false;
