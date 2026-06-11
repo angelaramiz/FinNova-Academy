@@ -25,12 +25,11 @@ coursesRouter.get('/', optionalSupabaseAuth, (req: AuthenticatedRequest, res: Re
   const { difficulty } = req.query;
   let list = MemoryDatabase.courses;
 
-  const isMockAllowed = process.env.ENABLE_DOCKER_MOCKS !== 'false';
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isMockAllowed = process.env.ENABLE_DOCKER_MOCKS === 'true';
 
   // Filter unpublished unless logged-in instructor/admin asks otherwise
   let isInstructor = false;
-  if (!isProduction && isMockAllowed && req.headers['x-view-mode'] === 'instructor') {
+  if (isMockAllowed && req.headers['x-view-mode'] === 'instructor') {
     isInstructor = true;
   } else if (req.user && (req.user.role === 'instructor' || req.user.role === 'admin')) {
     isInstructor = true;

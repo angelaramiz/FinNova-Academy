@@ -41,8 +41,12 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event - Network first with Cache fallback strategy
 self.addEventListener('fetch', (event) => {
-  // Ignore external videos API or non-GET requests
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+  // Ignore external videos API, non-GET requests, or non-http protocols
+  if (
+    event.request.method !== 'GET' || 
+    event.request.url.includes('/api/') || 
+    !event.request.url.startsWith('http')
+  ) {
     return;
   }
 

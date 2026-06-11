@@ -36,8 +36,7 @@ function verifyHmacSignature(req: Request, res: Response, next: () => void): voi
   const secret = process.env.N8N_WEBHOOK_SECRET || 'your_shared_hmac_secret_sha256';
   const headerSignature = req.headers['x-n8n-signature'] as string;
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isMockAllowed = process.env.ENABLE_DOCKER_MOCKS !== 'false' && !isProduction;
+  const isMockAllowed = process.env.ENABLE_DOCKER_MOCKS === 'true';
 
   if (!headerSignature) {
     if (isMockAllowed) {
