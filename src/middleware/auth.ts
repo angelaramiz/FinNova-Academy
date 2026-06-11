@@ -56,7 +56,7 @@ export function requireSupabaseAuth(req: AuthenticatedRequest, res: Response, ne
   const mockUserId = req.headers['x-mock-user-id'] as string || '22222222-2222-2222-2222-222222222222';
   
   const rawMockFlag = process.env.ENABLE_DOCKER_MOCKS || '';
-  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') === 'true';
+  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') !== 'false' && process.env.REQUIRE_REAL_AUTH !== 'true';
 
   console.log(`[Auth Debug] Path: ${req.originalUrl} | rawMockFlag: "${rawMockFlag}" | isMockAllowed: ${isMockAllowed} | authHeader: ${!!authHeader}`);
 
@@ -121,7 +121,7 @@ export function optionalSupabaseAuth(req: AuthenticatedRequest, res: Response, n
   const authHeader = req.headers.authorization;
   
   const rawMockFlag = process.env.ENABLE_DOCKER_MOCKS || '';
-  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') === 'true';
+  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') !== 'false' && process.env.REQUIRE_REAL_AUTH !== 'true';
 
   if (!authHeader) {
     if (isMockAllowed) {

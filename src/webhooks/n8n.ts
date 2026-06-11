@@ -37,7 +37,7 @@ function verifyHmacSignature(req: Request, res: Response, next: () => void): voi
   const headerSignature = req.headers['x-n8n-signature'] as string;
 
   const rawMockFlag = process.env.ENABLE_DOCKER_MOCKS || '';
-  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') === 'true';
+  const isMockAllowed = rawMockFlag.trim().toLowerCase().replace(/['"]/g, '') !== 'false' && process.env.REQUIRE_REAL_AUTH !== 'true';
 
   if (!headerSignature) {
     if (isMockAllowed) {
