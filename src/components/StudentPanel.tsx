@@ -18,7 +18,10 @@ import {
   Users,
   TrendingUp,
   Beaker,
-  Info
+  Info,
+  Menu,
+  ChevronLeft,
+  X
 } from 'lucide-react';
 import VideoFeed from './VideoFeed';
 
@@ -53,6 +56,8 @@ export default function StudentPanel({
 }: StudentPanelProps) {
   const location = useLocation();
   const [labTab, setLabTab] = useState<'garch' | 'cme'>('garch');
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const mockProjects = [
     {
@@ -79,41 +84,155 @@ export default function StudentPanel({
     return location.pathname === `/student${path}`;
   };
 
-  const navItemClass = (path: string) => `
-    px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border
+  const sidebarItemClass = (path: string) => `
+    flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wide border transition cursor-pointer
     ${isActive(path) 
-      ? 'bg-slate-900 border-slate-800/80 text-teal-400 shadow-inner' 
-      : 'text-slate-400 hover:text-slate-200 border-transparent'}
+      ? 'bg-slate-900 border-slate-800 text-teal-400 shadow-inner' 
+      : 'text-slate-400 hover:text-slate-250 border-transparent hover:bg-slate-900/30'}
   `;
 
+  const navItems = [
+    { label: 'Explorar Cursos', path: '', icon: BookOpen },
+    { label: 'Clips e IA', path: '/clips', icon: Play },
+    { label: 'Casos Reales', path: '/projects', icon: Layers },
+    { label: 'Mi Dashboard', path: '/dashboard', icon: Clock },
+    { label: 'Certificaciones', path: '/profile', icon: User },
+    { label: 'AuraFi Labs', path: '/labs', icon: Beaker },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Student Sub-Navigation Bar */}
-      <div className="flex justify-center border-b border-slate-850 pb-4">
-        <nav className="flex items-center gap-1.5 bg-slate-900/60 border border-slate-800/80 p-1.5 rounded-xl">
-          <Link to="/student" className={navItemClass('')}>
-            <BookOpen className="w-3.5 h-3.5" /> Explorar Cursos
-          </Link>
-          <Link to="/student/clips" className={navItemClass('/clips')}>
-            <Play className="w-3.5 h-3.5" /> Clips e IA
-          </Link>
-          <Link to="/student/projects" className={navItemClass('/projects')}>
-            <Layers className="w-3.5 h-3.5" /> Casos Reales
-          </Link>
-          <Link to="/student/dashboard" className={navItemClass('/dashboard')}>
-            <Clock className="w-3.5 h-3.5" /> Mi Dashboard
-          </Link>
-          <Link to="/student/profile" className={navItemClass('/profile')}>
-            <User className="w-3.5 h-3.5" /> Certificaciones
-          </Link>
-          <Link to="/student/labs" className={navItemClass('/labs')}>
-            <Beaker className="w-3.5 h-3.5" /> AuraFi Labs
-          </Link>
-        </nav>
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-60px)] relative text-left">
+      {/* SIDEBAR PARA ESCRITORIO (md:flex, oculto en móvil) */}
+      <aside 
+        className={`hidden md:flex flex-col bg-[#0b1224]/80 backdrop-blur-md border-r border-slate-850/65 transition-all duration-300 shrink-0 ${
+          isSidebarExpanded ? 'w-64' : 'w-20'
+        } p-4 flex flex-col justify-between shadow-md sticky top-[60px] h-[calc(100vh-60px)] self-start`}
+      >
+        <div className="space-y-6">
+          {/* Header del Sidebar */}
+          <div className={`flex items-center ${!isSidebarExpanded ? 'justify-center' : 'justify-between'} border-b border-slate-850/60 pb-3`}>
+            {isSidebarExpanded && (
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+                Menú Alumno
+              </span>
+            )}
+            <button 
+              onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+              className="p-1.5 hover:bg-slate-800/80 rounded-lg text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              title={isSidebarExpanded ? "Colapsar menú" : "Expandir menú"}
+            >
+              {isSidebarExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          </div>
+
+          {/* Elementos de Navegación */}
+          <nav className="flex flex-col gap-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link 
+                  key={item.label}
+                  to={`/student${item.path}`} 
+                  className={`${sidebarItemClass(item.path)} ${!isSidebarExpanded ? 'justify-center' : ''}`}
+                  title={!isSidebarExpanded ? item.label : undefined}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {isSidebarExpanded && <span className="truncate">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Footer del Sidebar */}
+        {isSidebarExpanded && (
+          <div className="border-t border-slate-850/60 pt-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 font-mono text-xs font-bold shrink-0 uppercase">
+              {profile.fullName ? profile.fullName.slice(0, 2) : 'AL'}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-300 truncate">{profile.fullName || 'Alumno AuraFi'}</p>
+              <p className="text-[9px] text-slate-500 font-mono uppercase truncate">{profile.pointsEarned} XP</p>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* MOBILE HEADER (md:hidden, visible en móvil) */}
+      <div className="md:hidden flex items-center justify-between bg-slate-900/40 border border-slate-850/60 p-3.5 rounded-2xl mx-4 mt-4 mb-2">
+        <button 
+          onClick={() => setIsMobileOpen(true)}
+          className="p-2 bg-slate-900 border border-slate-850 rounded-xl text-slate-455 hover:text-slate-200 transition cursor-pointer"
+          title="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <span className="text-xs font-bold text-slate-250 font-mono tracking-wider uppercase">
+          AuraFi Academy
+        </span>
+        <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-450 font-mono text-[10px] font-bold">
+          {profile.pointsEarned} <span className="text-[7px] ml-0.5 font-normal font-sans">XP</span>
+        </div>
       </div>
 
-      {/* Render sub-routes inside the Student workspace */}
-      <Routes>
+      {/* SIDEBAR PARA MÓVIL (Overlay drawer) */}
+      {isMobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity animate-fade-in"
+            onClick={() => setIsMobileOpen(false)}
+          />
+          {/* Menu Drawer */}
+          <aside className="fixed inset-y-0 left-0 w-64 bg-slate-950 border-r border-slate-850 p-5 flex flex-col justify-between z-50 animate-slide-in">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-850 pb-3">
+                <span className="text-xs font-extrabold text-slate-300 uppercase tracking-widest font-mono">
+                  Navegación
+                </span>
+                <button 
+                  onClick={() => setIsMobileOpen(false)}
+                  className="p-1.5 hover:bg-slate-900 rounded-lg text-slate-400 hover:text-slate-200 transition cursor-pointer"
+                  title="Cerrar menú"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link 
+                      key={item.label}
+                      to={`/student${item.path}`} 
+                      className={sidebarItemClass(item.path)}
+                      onClick={() => setIsMobileOpen(false)}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="border-t border-slate-850 pt-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-450 font-mono text-xs font-bold">
+                {profile.fullName ? profile.fullName.slice(0, 2) : 'AL'}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-255">{profile.fullName || 'Alumno'}</p>
+                <p className="text-[10px] text-slate-500 font-mono uppercase">{profile.pointsEarned} XP Acumulados</p>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
+
+      {/* CUERPO PRINCIPAL (Main Body) */}
+      <div className="flex-1 min-w-0 transition-all duration-300 p-4 md:p-6 md:px-8 max-w-7xl mx-auto w-full">
+        <Routes>
         {/* SUBTAB: COURSES CATALOG */}
         <Route path="/" element={
           <div className="flex flex-col gap-5 text-left animate-fade-in">
@@ -618,6 +737,7 @@ export default function StudentPanel({
           </div>
         } />
       </Routes>
+      </div>
     </div>
   );
 }

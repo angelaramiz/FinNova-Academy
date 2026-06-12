@@ -240,8 +240,8 @@ function AppContent() {
       {/* -------------------------------------------------------------
           NAVBAR HEADER
           ------------------------------------------------------------- */}
-      <header id="platform-navbar-header" className="sticky top-0 z-50 bg-[#0a0f1d]/85 backdrop-blur-md border-b border-slate-800/50 px-4 py-3 shadow-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header id="platform-navbar-header" className={`sticky top-0 z-50 bg-[#0a0f1d]/85 backdrop-blur-md border-b border-slate-800/50 px-4 py-3 shadow-md ${location.pathname.startsWith('/student') ? 'hidden md:block' : ''}`}>
+        <div className={`mx-auto flex items-center justify-between w-full ${location.pathname.startsWith('/student') ? 'px-4 md:px-6' : 'max-w-7xl'}`}>
           
           {/* Logo Brand */}
           <div className="flex items-center gap-2.5">
@@ -328,7 +328,7 @@ function AppContent() {
       {/* -------------------------------------------------------------
           MAIN ROUTER WORKSPACE
           ------------------------------------------------------------- */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 pb-20">
+      <main className={`flex-1 w-full mx-auto pb-20 ${location.pathname.startsWith('/student') ? '' : 'max-w-7xl p-4 md:p-6'}`}>
         
         {loading && (
           <div id="loading-indicator-cover" className="fixed inset-0 bg-[#0a0f1d]/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
