@@ -4,11 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "dev": "npm --prefix alumnos run dev",
+    "build": "npm --prefix alumnos run build",
+    "start": "npx tsx backend/src/server.ts",
+    "clean": "rm -rf dist server.js alumnos/dist staff/dist backend/dist"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

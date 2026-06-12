@@ -13,7 +13,7 @@ export default defineConfig(() => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/webhooks'))) {
-              const { app } = await import('./src/server.ts');
+              const { app } = await import('../backend/src/server.ts');
               app(req as any, res as any, next);
             } else {
               next();

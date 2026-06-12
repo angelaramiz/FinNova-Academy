@@ -141,7 +141,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Production: Host SPA static resources
 const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
-  const distPath = path.join(__dirname, '../dist');
+  const distPath = path.join(__dirname, '../../alumnos/dist');
   app.use(express.static(distPath));
   
   app.get('*', (req: Request, res: Response) => {
