@@ -88,7 +88,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "img-src 'self' data: https:; " +
     "media-src 'self' https: data: blob:; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
     "connect-src 'self' https: http://localhost:* ws://localhost:* ws://127.0.0.1:* http://127.0.0.1:*;"
   );
 
