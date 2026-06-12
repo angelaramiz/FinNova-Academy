@@ -40,7 +40,7 @@ services:
   # Node/Express Backend Server
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: edtech_backend_app
     restart: always
