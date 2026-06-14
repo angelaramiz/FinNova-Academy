@@ -97,7 +97,7 @@ export default function StudentPanel({
     { label: 'Casos Reales', path: '/projects', icon: Layers },
     { label: 'Mi Dashboard', path: '/dashboard', icon: Clock },
     { label: 'Certificaciones', path: '/profile', icon: User },
-    { label: 'AuraFi Labs', path: '/labs', icon: Beaker },
+    { label: 'FinNova Labs', path: '/labs', icon: Beaker },
   ];
 
   return (
@@ -151,7 +151,7 @@ export default function StudentPanel({
               {profile.fullName ? profile.fullName.slice(0, 2) : 'AL'}
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-slate-300 truncate">{profile.fullName || 'Alumno AuraFi'}</p>
+              <p className="text-[10px] font-bold text-slate-300 truncate">{profile.fullName || 'Alumno FinNova'}</p>
               <p className="text-[9px] text-slate-500 font-mono uppercase truncate">{profile.pointsEarned} XP</p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function StudentPanel({
           <Menu className="w-5 h-5" />
         </button>
         <span className="text-xs font-bold text-slate-250 font-mono tracking-wider uppercase">
-          AuraFi Academy
+          FinNova Academy
         </span>
         <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-450 font-mono text-[10px] font-bold">
           {profile.pointsEarned} <span className="text-[7px] ml-0.5 font-normal font-sans">XP</span>
@@ -673,7 +673,7 @@ export default function StudentPanel({
           <div className="space-y-6 text-left animate-fade-in">
             <div className="space-y-1.5">
               <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono">
-                AuraFi Labs (Sección Experimental)
+                FinNova Labs (Sección Experimental)
               </h2>
               <p className="text-slate-500 text-xs font-normal">
                 Explora herramientas avanzadas de modelación cuantitativa y simuladores financieros interactivos.
