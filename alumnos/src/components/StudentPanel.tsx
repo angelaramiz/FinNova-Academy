@@ -21,9 +21,14 @@ import {
   Info,
   Menu,
   ChevronLeft,
-  X
+  X,
+  MessageSquare,
+  HelpCircle,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 import VideoFeed from './VideoFeed';
+import { api } from '../lib/api';
 
 interface StudentPanelProps {
   profile: any;
@@ -96,6 +101,7 @@ export default function StudentPanel({
     { label: 'Clips e IA', path: '/clips', icon: Play },
     { label: 'Casos Reales', path: '/projects', icon: Layers },
     { label: 'Mi Dashboard', path: '/dashboard', icon: Clock },
+    { label: 'Historial de Dudas', path: '/doubts', icon: MessageSquare },
     { label: 'Certificaciones', path: '/profile', icon: User },
     { label: 'FinNova Labs', path: '/labs', icon: Beaker },
   ];
@@ -358,6 +364,7 @@ export default function StudentPanel({
                 <VideoFeed 
                   clips={selectedCourse.clips || []} 
                   courseId={selectedCourse.id}
+                  courseTitle={selectedCourse.title || ''}
                   onProgressUpdated={handleRefreshProgress}
                   completedClipIds={
                     selectedCourseProgress?.progressMatrix?.filter((p: any) => p.isCompleted).map((p: any) => p.clipId) || []
@@ -736,8 +743,377 @@ export default function StudentPanel({
             )}
           </div>
         } />
+        <Route path="/doubts" element={<StudentDoubtsView courses={courses} />} />
       </Routes>
       </div>
     </div>
   );
 }
+
+function StudentDoubtsView({ courses }: { courses: any[] }) {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showNewDudaForm, setShowNewDudaForm] = useState(false);
+  const [mobileActiveView, setMobileActiveView] = useState<'list' | 'chat'>('list');
+
+  // New question form state
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [selectedClipId, setSelectedClipId] = useState('');
+  const [questionText, setQuestionText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getQuestions();
+      setQuestions(data);
+      if (data.length > 0 && !selectedQuestionId) {
+        setSelectedQuestionId(data[0].id);
+      }
+    } catch (err) {
+      console.error('Error fetching student questions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchQuestions();
+  }, []);
+
+  const selectedCourseObj = courses.find(c => c.id === selectedCourseId);
+  const courseClips = selectedCourseObj?.clips || [];
+
+  // When course changes, pre-select first clip
+  React.useEffect(() => {
+    if (courseClips.length > 0) {
+      setSelectedClipId(courseClips[0].id);
+    } else {
+      setSelectedClipId('');
+    }
+  }, [selectedCourseId, courseClips]);
+
+  const handleCreateDuda = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCourseId || !selectedClipId || !questionText.trim() || submitting) return;
+
+    setSubmitting(true);
+    try {
+      const course = courses.find(c => c.id === selectedCourseId);
+      const clip = course?.clips?.find((cl: any) => cl.id === selectedClipId);
+      
+      const newQ = await api.askQuestion({
+        courseId: selectedCourseId,
+        courseTitle: course?.title || 'Curso',
+        clipId: selectedClipId,
+        clipTitle: clip?.title || 'Lección',
+        questionText: questionText.trim()
+      });
+
+      setQuestions(prev => [newQ, ...prev]);
+      setSelectedQuestionId(newQ.id);
+      setQuestionText('');
+      setShowNewDudaForm(false);
+      setMobileActiveView('chat');
+    } catch (err) {
+      console.error('Failed submitting question:', err);
+      alert('Error al enviar la pregunta. Por favor, intente de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const selectedQuestion = questions.find(q => q.id === selectedQuestionId);
+
+  return (
+    <div className="flex flex-col gap-5 text-left animate-fade-in h-[calc(100vh-160px)] min-h-[500px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-850 pb-4 shrink-0">
+        <div>
+          <h2 className="text-sm font-extrabold text-slate-350 uppercase tracking-wider font-mono">
+            Historial de Dudas (Atención Directa)
+          </h2>
+          <p className="text-slate-500 text-xs font-normal">
+            Consulta las respuestas de tus instructores en formato chat o abre una nueva consulta sobre cualquier materia.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setShowNewDudaForm(true);
+            if (courses.length > 0) {
+              setSelectedCourseId(courses[0].id);
+            }
+          }}
+          className="px-4 py-2 bg-teal-500/10 border border-teal-500/30 text-teal-400 hover:bg-teal-500/20 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 self-start shadow-sm"
+        >
+          <HelpCircle className="w-4 h-4 shrink-0" /> Nueva duda
+        </button>
+      </div>
+
+      <div className="flex-1 flex bg-[#0c1325]/40 border border-slate-850/60 rounded-2xl overflow-hidden backdrop-blur-sm min-h-0 shadow-lg relative">
+        {/* WhatsApp Left Sidebar: Questions list */}
+        <div className={`w-full md:w-80 border-r border-slate-850/60 flex flex-col shrink-0 ${
+          mobileActiveView === 'chat' && !showNewDudaForm ? 'hidden md:flex' : 'flex'
+        }`}>
+          <div className="bg-slate-900/30 p-3.5 border-b border-slate-850/60 flex items-center justify-between shrink-0">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest font-mono">
+              Conversaciones ({questions.length})
+            </span>
+            <button
+              onClick={fetchQuestions}
+              className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
+              title="Actualizar"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-850/40 scrollbar-thin">
+            {loading && questions.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-xs font-mono">
+                Cargando historial...
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-xs font-normal">
+                No tienes dudas registradas. ¡Haz clic en "Nueva duda" para comenzar!
+              </div>
+            ) : (
+              questions.map(q => {
+                const isSelected = q.id === selectedQuestionId && !showNewDudaForm;
+                const isResolved = !!q.replyText;
+                return (
+                  <div
+                    key={q.id}
+                    onClick={() => {
+                      setSelectedQuestionId(q.id);
+                      setShowNewDudaForm(false);
+                      setMobileActiveView('chat');
+                    }}
+                    className={`p-3.5 text-left cursor-pointer transition-all duration-150 ${
+                      isSelected 
+                        ? 'bg-slate-900/60 text-teal-405 border-l-2 border-teal-500' 
+                        : 'hover:bg-slate-900/20 text-slate-350 border-l-2 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className={`text-[8px] font-mono font-semibold px-2 py-0.5 rounded-full border uppercase ${
+                        isResolved 
+                          ? 'bg-teal-500/10 border-teal-500/25 text-teal-450' 
+                          : 'bg-amber-500/10 border-amber-500/25 text-amber-300'
+                      }`}>
+                        {isResolved ? 'Resuelto' : 'Pendiente'}
+                      </span>
+                      <span className="text-[9px] text-slate-500 font-mono">
+                        {new Date(q.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                      </span>
+                    </div>
+                    <h4 className="text-[11px] font-bold text-slate-200 truncate" title={q.courseTitle}>
+                      {q.courseTitle}
+                    </h4>
+                    <p className="text-[9px] text-slate-400 truncate mt-0.5">
+                      {q.clipTitle}
+                    </p>
+                    <p className="text-[10px] text-slate-500 line-clamp-1 mt-1 leading-normal font-sans">
+                      {q.questionText}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* WhatsApp Right Chat Pane */}
+        <div className={`flex flex-col flex-1 bg-slate-950/20 relative min-w-0 ${
+          mobileActiveView === 'list' && !showNewDudaForm ? 'hidden md:flex' : 'flex'
+        }`}>
+          {showNewDudaForm ? (
+            /* New Duda Form */
+            <form onSubmit={handleCreateDuda} className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto">
+              <div className="max-w-xl mx-auto w-full space-y-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-teal-500/10 p-2 rounded-xl text-teal-400 border border-teal-500/10">
+                      <HelpCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-250">Resolver una Nueva Duda</h3>
+                      <p className="text-[10px] text-slate-500">Selecciona el curso y la lección para enviar tu pregunta.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewDudaForm(false);
+                      setMobileActiveView('list');
+                    }}
+                    className="p-1.5 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:text-slate-200 md:hidden"
+                  >
+                    ← Volver
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 font-medium font-mono uppercase tracking-wider">Materia / Curso</label>
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500/50 cursor-pointer"
+                  >
+                    <option value="" disabled>Selecciona un curso...</option>
+                    {courses.map(c => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 font-medium font-mono uppercase tracking-wider">Lección / Clip</label>
+                  {courseClips.length === 0 ? (
+                    <div className="text-xs text-slate-505 p-2 bg-slate-900/30 border border-slate-850 rounded-xl">
+                      No hay lecciones en este curso.
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedClipId}
+                      onChange={(e) => setSelectedClipId(e.target.value)}
+                      className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500/50 cursor-pointer"
+                    >
+                      {courseClips.map((cl: any) => (
+                        <option key={cl.id} value={cl.id}>{cl.title}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 font-medium font-mono uppercase tracking-wider">Tu Pregunta o Inquietud</label>
+                  <textarea
+                    required
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    placeholder="Escribe tu duda de forma detallada..."
+                    rows={5}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-350 focus:outline-none focus:border-teal-500/50 leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting || courseClips.length === 0 || !questionText.trim()}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                      submitting || courseClips.length === 0 || !questionText.trim()
+                        ? 'bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-850/55'
+                        : 'bg-teal-500/10 border border-teal-500/35 text-teal-400 hover:bg-teal-500/25 shadow-sm'
+                    }`}
+                  >
+                    {submitting ? 'Enviando...' : 'Enviar Duda al Instructor'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewDudaForm(false);
+                      setMobileActiveView('list');
+                    }}
+                    className="px-4 py-2.5 border border-slate-800 hover:bg-slate-900/55 text-slate-400 hover:text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : selectedQuestion ? (
+            /* WhatsApp Chat Screen */
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Chat Header */}
+              <div className="bg-[#0b1224]/50 backdrop-blur-md p-4 border-b border-slate-850/60 flex items-center justify-between shrink-0">
+                <div className="min-w-0 flex items-center gap-2">
+                  <button
+                    onClick={() => setMobileActiveView('list')}
+                    className="p-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl hover:text-slate-200 md:hidden mr-1"
+                    title="Atrás"
+                  >
+                    ←
+                  </button>
+                  <div className="min-w-0 text-left">
+                    <span className="text-[9px] text-teal-450 font-mono font-bold uppercase tracking-wider block truncate max-w-[150px] sm:max-w-[300px]">
+                      {selectedQuestion.courseTitle}
+                    </span>
+                    <h3 className="text-xs font-bold text-slate-200 truncate mt-0.5 max-w-[150px] sm:max-w-[300px]">
+                      Lección: {selectedQuestion.clipTitle}
+                    </h3>
+                  </div>
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className={`text-[9px] font-mono font-semibold px-2 py-0.5 rounded-full border uppercase ${
+                    selectedQuestion.replyText 
+                      ? 'bg-teal-500/10 border-teal-500/25 text-teal-400' 
+                      : 'bg-amber-500/10 border-amber-500/25 text-amber-300'
+                  }`}>
+                    {selectedQuestion.replyText ? 'Resuelto' : 'Esperando respuesta'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Chat Message Scroll */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+                {/* Question bubble (Student - Sender on the right) */}
+                <div className="flex justify-end items-end gap-2 max-w-[85%] ml-auto">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[8px] text-slate-500 font-mono mb-1">Tú (Estudiante)</span>
+                    <div className="bg-teal-600/10 border border-teal-500/20 text-teal-100 p-3 rounded-2xl rounded-tr-none text-xs leading-relaxed max-w-lg shadow-sm text-left whitespace-pre-wrap">
+                      {selectedQuestion.questionText}
+                    </div>
+                    <span className="text-[8px] text-slate-500 font-mono mt-1">
+                      {new Date(selectedQuestion.createdAt).toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-450 font-mono text-[10px] font-bold shrink-0">
+                    YO
+                  </div>
+                </div>
+
+                {/* Reply bubble (Instructor - Receiver on the left) */}
+                {selectedQuestion.replyText ? (
+                  <div className="flex justify-start items-end gap-2 max-w-[85%]">
+                    <div className="w-7 h-7 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono text-[10px] font-bold shrink-0">
+                      PR
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-[8px] text-slate-500 font-mono mb-1">Profe Senior (Instructor)</span>
+                      <div className="bg-slate-900 border border-slate-850/80 text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs leading-relaxed max-w-lg shadow-sm text-left whitespace-pre-wrap">
+                        {selectedQuestion.replyText}
+                      </div>
+                      <span className="text-[8px] text-slate-500 font-mono mt-1">
+                        {selectedQuestion.repliedAt && new Date(selectedQuestion.repliedAt).toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-900/30 border border-slate-850 p-4 rounded-xl text-xs text-slate-400 flex items-center gap-2 max-w-md mx-auto justify-center mt-6">
+                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Duda enviada al instructor. Recibirás una respuesta en este espacio pronto.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input Placeholder */}
+              <div className="p-3 bg-slate-900/30 border-t border-slate-850/60 flex items-center justify-center shrink-0">
+                <span className="text-[9px] text-slate-500 uppercase font-mono tracking-wider">
+                  {selectedQuestion.replyText ? 'Hilo de discusión cerrado' : 'Esperando respuesta de tu instructor'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-500 text-xs">
+              <MessageSquare className="w-12 h-12 text-slate-700 mb-2" />
+              <span>Selecciona una duda o haz clic en "Nueva duda" para iniciar el chat.</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+

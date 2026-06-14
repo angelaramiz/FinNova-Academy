@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Clock, Sparkles, Award, RefreshCw, ChevronDown, CheckCircle } from 'lucide-react';
+import { Play, Pause, Clock, Sparkles, Award, RefreshCw, ChevronDown, CheckCircle, HelpCircle, X } from 'lucide-react';
 import { api } from '../lib/api';
 import ExerciseBlock from './ExerciseBlock';
 
@@ -21,13 +21,20 @@ interface Clip {
 interface VideoFeedProps {
   clips: Clip[];
   courseId: string;
+  courseTitle: string;
   onProgressUpdated: () => void;
   completedClipIds: string[];
 }
 
-export default function VideoFeed({ clips, courseId, onProgressUpdated, completedClipIds }: VideoFeedProps) {
+export default function VideoFeed({ clips, courseId, courseTitle, onProgressUpdated, completedClipIds }: VideoFeedProps) {
   const [activeClipId, setActiveClipId] = useState<string | null>(clips[0]?.id || null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Ask instructor modal states
+  const [showAskModal, setShowAskModal] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(false);
 
   // IntersectionObserver to discover which video card fills the scroll window
   useEffect(() => {
@@ -59,6 +66,34 @@ export default function VideoFeed({ clips, courseId, onProgressUpdated, complete
       observer.disconnect();
     };
   }, [clips]);
+
+  const handleAskQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const activeClip = clips.find(c => c.id === activeClipId);
+    if (!activeClip || !questionText.trim() || submitting) return;
+
+    setSubmitting(true);
+    try {
+      await api.askQuestion({
+        courseId,
+        courseTitle: courseTitle || 'Materia Académica',
+        clipId: activeClip.id,
+        clipTitle: activeClip.title,
+        questionText: questionText.trim(),
+      });
+      setSuccessMessage(true);
+      setQuestionText('');
+      setTimeout(() => {
+        setShowAskModal(false);
+        setSuccessMessage(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to submit question from player:', err);
+      alert('Hubo un error al enviar la duda.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (clips.length === 0) {
     return (
@@ -113,6 +148,16 @@ export default function VideoFeed({ clips, courseId, onProgressUpdated, complete
               <p className="text-slate-400 text-sm mt-2 leading-relaxed">
                 {clips.find(c => c.id === activeClipId)?.description}
               </p>
+              <button
+                onClick={() => {
+                  setShowAskModal(true);
+                  setSuccessMessage(false);
+                  setQuestionText('');
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-slate-200 text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-teal-400" /> Preguntar al Instructor
+              </button>
             </div>
 
             {/* Practical Interactive Exercise corresponding to Clip in View */}
@@ -126,6 +171,67 @@ export default function VideoFeed({ clips, courseId, onProgressUpdated, complete
           </div>
         )}
       </div>
+
+      {/* Ask Instructor Modal Overlay */}
+      {showAskModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-950 border border-slate-850 w-full max-w-md p-6 rounded-2xl shadow-2xl relative animate-fade-in text-left">
+            <button
+              onClick={() => setShowAskModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 p-1 rounded-lg"
+              title="Cerrar"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+              <HelpCircle className="w-4 h-4 text-teal-400 animate-pulse" /> Preguntar al Instructor
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-1.5 leading-normal">
+              Envía tu consulta técnica sobre la lección <strong>"{clips.find(c => c.id === activeClipId)?.title}"</strong> de <strong>"{courseTitle}"</strong>.
+            </p>
+
+            {successMessage ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 p-4 rounded-xl mt-4 text-xs font-semibold flex items-center gap-2">
+                ✓ ¡Pregunta enviada! Podrás consultar la respuesta en tu Historial de Dudas.
+              </div>
+            ) : (
+              <form onSubmit={handleAskQuestion} className="mt-4 space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Tu duda académica</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    placeholder="Escribe tu duda aquí..."
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-500/50 leading-relaxed font-normal"
+                  />
+                </div>
+                <div className="flex gap-2.5">
+                  <button
+                    type="submit"
+                    disabled={submitting || !questionText.trim()}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                      submitting || !questionText.trim()
+                        ? 'bg-slate-900 text-slate-650 cursor-not-allowed border border-slate-850/50'
+                        : 'bg-teal-500/10 border border-teal-500/30 text-teal-400 hover:bg-teal-500/20 shadow-sm'
+                    }`}
+                  >
+                    {submitting ? 'Enviando...' : 'Enviar Pregunta'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAskModal(false)}
+                    className="px-3 py-2 border border-slate-800 hover:bg-slate-900 text-slate-400 rounded-xl text-xs font-semibold transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
