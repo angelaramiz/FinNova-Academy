@@ -12,12 +12,23 @@
 -- el seeder se prepara con inserciones manuales si es necesario o bypass. Aquí creamos perfiles directamente.
 
 -- -------------------------------------------------------------
+-- DIRECTORIO DE CORREOS PERMITIDOS (ALLOWED EMAILS)
+-- -------------------------------------------------------------
+insert into public.allowed_emails (email, role, fullName)
+values
+    ('profesor.senior@finanzas.edu', 'instructor', 'Profe Finanzas Senior'),
+    ('student_tester@gmail.com', 'student', 'Inversor Novato'),
+    ('admin@finnova.academy', 'admin', 'Administrador Master')
+on conflict (email) do nothing;
+
+-- -------------------------------------------------------------
 -- USUARIOS DE AUTENTICACIÓN (Bypass auth.users en local y nube)
 -- -------------------------------------------------------------
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data, aud, role)
 values
-    ('11111111-1111-1111-1111-111111111111', 'profesor.senior@finanzas.edu', '{"provider": "email", "providers": ["email"]}', '{"full_name": "Profe Finanzas Senior"}', 'authenticated', 'authenticated'),
-    ('22222222-2222-2222-2222-222222222222', 'student_tester@gmail.com', '{"provider": "email", "providers": ["email"]}', '{"full_name": "Inversor Novato"}', 'authenticated', 'authenticated')
+    ('11111111-1111-1111-1111-111111111111', 'profesor.senior@finanzas.edu', '{"provider": "email", "providers": ["email"]}', '{"full_name": "Profe Finanzas Senior", "role": "instructor"}', 'authenticated', 'authenticated'),
+    ('22222222-2222-2222-2222-222222222222', 'student_tester@gmail.com', '{"provider": "email", "providers": ["email"]}', '{"full_name": "Inversor Novato", "role": "student"}', 'authenticated', 'authenticated'),
+    ('33333333-3333-3333-3333-333333333333', 'admin@finnova.academy', '{"provider": "email", "providers": ["email"]}', '{"full_name": "Administrador Master", "role": "admin"}', 'authenticated', 'authenticated')
 on conflict (id) do nothing;
 
 -- -------------------------------------------------------------
@@ -33,6 +44,11 @@ on conflict (id) do nothing;
 insert into public.profiles (id, fullName, avatarUrl, role, pointsEarned)
 values
     ('22222222-2222-2222-2222-222222222222', 'Inversor Novato', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200', 'student', 80)
+on conflict (id) do nothing;
+
+insert into public.profiles (id, fullName, avatarUrl, role, pointsEarned)
+values
+    ('33333333-3333-3333-3333-333333333333', 'Administrador Master', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200', 'admin', 0)
 on conflict (id) do nothing;
 
 -- -------------------------------------------------------------

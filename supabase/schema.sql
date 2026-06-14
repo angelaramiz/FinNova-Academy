@@ -287,3 +287,65 @@ $$ language plpgsql security definer;
 -- create trigger on_auth_user_created
 --     after insert on auth.users
 --     for each row execute procedure public.handle_new_user();
+
+-- -------------------------------------------------------------
+-- 8. ALLOWED EMAILS Table (School Pre-authorization List)
+-- -------------------------------------------------------------
+create table if not exists public.allowed_emails (
+    email text primary key,
+    role text not null default 'student' check (role in ('student', 'instructor', 'admin')),
+    fullName text,
+    createdAt timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for allowed_emails
+alter table public.allowed_emails enable row level security;
+
+-- Policies for allowed_emails: restricted to Admin role
+create policy "Admins can manage allowed emails"
+    on public.allowed_emails for all
+    using (
+        exists (
+            select 1 from public.profiles
+            where profiles.id = auth.uid() and role = 'admin'
+        )
+    );
+
+-- Pre-authorization trigger function to block unauthorized signups and assign correct roles
+create or replace function public.check_allowed_email()
+returns trigger as $$
+declare
+    allowed_record record;
+begin
+    -- Look up the email in the authorized directory
+    select * into allowed_record from public.allowed_emails where email = new.email;
+    
+    if not found then
+        raise exception 'El correo % no está autorizado en esta escuela. Contacta al administrador.', new.email;
+    end if;
+    
+    -- Pre-inject role and name into raw_user_meta_data
+    new.raw_user_meta_data = jsonb_set(
+        coalesce(new.raw_user_meta_data, '{}'::jsonb),
+        '{role}',
+        to_jsonb(allowed_record.role)
+    );
+    
+    if allowed_record.fullName is not null then
+        new.raw_user_meta_data = jsonb_set(
+            new.raw_user_meta_data,
+            '{full_name}',
+            to_jsonb(allowed_record.fullName)
+        );
+    end if;
+
+    return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to check email pre-authorization before signing up in auth.users
+-- Tip: In realistic cloud, this is created in the auth schema:
+-- create trigger trigger_check_allowed_email
+--     before insert on auth.users
+--     for each row execute procedure public.check_allowed_email();
+

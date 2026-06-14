@@ -34,6 +34,7 @@ export interface Clip {
   duration: number; // in seconds
   sequenceOrder: number;
   status: 'draft' | 'reviewing' | 'approved';
+  section?: string;
 }
 
 export interface UserProgress {
@@ -85,8 +86,77 @@ export interface PipelineReview {
   updatedAt: string;
 }
 
+export interface AllowedEmail {
+  email: string;
+  role: 'student' | 'instructor' | 'admin';
+  fullName: string;
+  createdAt: string;
+}
+
+export interface StudentQuestion {
+  id: string;
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseTitle: string;
+  clipId: string;
+  clipTitle: string;
+  questionText: string;
+  replyText?: string;
+  createdAt: string;
+  repliedAt?: string;
+}
+
 // Memory Database populated with SEED values:
 export class MemoryDatabase {
+  static allowedEmails: AllowedEmail[] = [
+    {
+      email: 'admin@finnova.academy',
+      role: 'admin',
+      fullName: 'Administrador Master',
+      createdAt: new Date().toISOString()
+    },
+    {
+      email: 'profesor.senior@finanzas.edu',
+      role: 'instructor',
+      fullName: 'Profe Finanzas Senior',
+      createdAt: new Date().toISOString()
+    },
+    {
+      email: 'student_tester@gmail.com',
+      role: 'student',
+      fullName: 'Inversor Novato',
+      createdAt: new Date().toISOString()
+    }
+  ];
+
+  static questions: StudentQuestion[] = [
+    {
+      id: 'q1',
+      studentId: '22222222-2222-2222-2222-222222222222',
+      studentName: 'Inversor Novato',
+      courseId: 'c0000000-0000-0000-0000-000000000001',
+      courseTitle: 'Mentalidad y Fundamentos de Inversión',
+      clipId: 'f0000001-0000-0000-0000-000000000001',
+      clipTitle: 'El Superpoder del Interés Compuesto',
+      questionText: '¿Por qué el interés compuesto se acelera tanto después del año 10 en la proyección?',
+      replyText: 'Es por la naturaleza de la función exponencial. Al principio, los intereses se calculan sobre una base pequeña. Con el tiempo, los intereses acumulados se suman al capital principal, haciendo que la base crezca exponencialmente y la curva se dispare verticalmente.',
+      createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), // 1 day ago
+      repliedAt: new Date(Date.now() - 3600000 * 23.5).toISOString() // 23.5 hours ago
+    },
+    {
+      id: 'q2',
+      studentId: '22222222-2222-2222-2222-222222222222',
+      studentName: 'Inversor Novato',
+      courseId: 'c0000000-0000-0000-0000-000000000002',
+      courseTitle: 'Análisis de Empresas y Ratios Financieros',
+      clipId: 'f0000002-0000-0000-0000-000000000001',
+      clipTitle: '¿Qué es el P/E Ratio (Price to Earnings)?',
+      questionText: 'Si una empresa de tecnología tiene un ratio P/E muy alto, ¿debo asumir que siempre está sobrevalorada?',
+      createdAt: new Date(Date.now() - 3600000 * 2).toISOString() // 2 hours ago
+    }
+  ];
+
   static profiles: Profile[] = [
     {
       id: '11111111-1111-1111-1111-111111111111',
@@ -140,6 +210,7 @@ export class MemoryDatabase {
       duration: 52,
       sequenceOrder: 1,
       status: 'approved',
+      section: 'Fundamentos de Crecimiento',
     },
     {
       id: 'f0000001-0000-0000-0000-000000000002',
@@ -151,6 +222,7 @@ export class MemoryDatabase {
       duration: 45,
       sequenceOrder: 2,
       status: 'approved',
+      section: 'Fundamentos de Crecimiento',
     },
     {
       id: 'f0000002-0000-0000-0000-000000000001',
@@ -162,6 +234,7 @@ export class MemoryDatabase {
       duration: 58,
       sequenceOrder: 1,
       status: 'approved',
+      section: 'Múltiplos de Valuación',
     },
     {
       id: 'f0000002-0000-0000-0000-000000000002',
@@ -173,6 +246,7 @@ export class MemoryDatabase {
       duration: 59,
       sequenceOrder: 2,
       status: 'approved',
+      section: 'Múltiplos de Valuación',
     },
   ];
 

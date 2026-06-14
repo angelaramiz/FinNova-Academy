@@ -65,8 +65,8 @@ export function requireSupabaseAuth(req: AuthenticatedRequest, res: Response, ne
       // Inject mock student actor for iframe preview flows
       req.user = {
         id: mockUserId,
-        email: 'student_tester@gmail.com',
-        role: mockUserId.endsWith('1111') ? 'instructor' : 'student',
+        email: mockUserId.endsWith('3333') ? 'admin@finnova.academy' : mockUserId.endsWith('1111') ? 'profesor.senior@finanzas.edu' : 'student_tester@gmail.com',
+        role: mockUserId.endsWith('3333') ? 'admin' : mockUserId.endsWith('1111') ? 'instructor' : 'student',
       };
       return next();
     }
@@ -99,8 +99,8 @@ export function requireSupabaseAuth(req: AuthenticatedRequest, res: Response, ne
       // Fallback securely in local dev sandbox
       req.user = {
         id: mockUserId,
-        email: 'student_tester@gmail.com',
-        role: mockUserId.endsWith('1111') ? 'instructor' : 'student',
+        email: mockUserId.endsWith('3333') ? 'admin@finnova.academy' : mockUserId.endsWith('1111') ? 'profesor.senior@finanzas.edu' : 'student_tester@gmail.com',
+        role: mockUserId.endsWith('3333') ? 'admin' : mockUserId.endsWith('1111') ? 'instructor' : 'student',
       };
       return next();
     }
@@ -128,8 +128,8 @@ export function optionalSupabaseAuth(req: AuthenticatedRequest, res: Response, n
       const mockUserId = req.headers['x-mock-user-id'] as string || '22222222-2222-2222-2222-222222222222';
       req.user = {
         id: mockUserId,
-        email: 'student_tester@gmail.com',
-        role: mockUserId.endsWith('1111') ? 'instructor' : 'student',
+        email: mockUserId.endsWith('3333') ? 'admin@finnova.academy' : mockUserId.endsWith('1111') ? 'profesor.senior@finanzas.edu' : 'student_tester@gmail.com',
+        role: mockUserId.endsWith('3333') ? 'admin' : mockUserId.endsWith('1111') ? 'instructor' : 'student',
       };
     }
     return next();
@@ -153,8 +153,8 @@ export function optionalSupabaseAuth(req: AuthenticatedRequest, res: Response, n
       const mockUserId = req.headers['x-mock-user-id'] as string || '22222222-2222-2222-2222-222222222222';
       req.user = {
         id: mockUserId,
-        email: 'student_tester@gmail.com',
-        role: mockUserId.endsWith('1111') ? 'instructor' : 'student',
+        email: mockUserId.endsWith('3333') ? 'admin@finnova.academy' : mockUserId.endsWith('1111') ? 'profesor.senior@finanzas.edu' : 'student_tester@gmail.com',
+        role: mockUserId.endsWith('3333') ? 'admin' : mockUserId.endsWith('1111') ? 'instructor' : 'student',
       };
     }
   }
