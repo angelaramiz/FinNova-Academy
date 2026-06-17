@@ -6,6 +6,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 // Import domain sub-routers
 import { authRouter } from './routes/auth';
@@ -19,6 +20,10 @@ import { simulatorRouter } from './routes/simulator';
 // Constants for ES Module path resolution
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from the root folder (.env.local and .env)
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const app = express();
 

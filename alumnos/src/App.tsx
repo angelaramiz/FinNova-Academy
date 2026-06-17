@@ -28,6 +28,7 @@ import {
 import { api } from './lib/api';
 import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
+import RegisterRequest from './components/RegisterRequest';
 import { supabase } from './lib/supabaseClient';
 
 
@@ -173,13 +174,14 @@ function AppContent() {
     setLoading(true);
     try {
       const userProfile = await api.getProfile();
+      if (userProfile.role !== 'student') {
+        handleLogout();
+        return;
+      }
+
       setProfile({
         ...userProfile,
-        certLevel: userProfile.role === 'student' 
-          ? 'Analista Certificado Nivel I' 
-          : userProfile.role === 'instructor' 
-          ? 'Instructor Senior' 
-          : 'Administrador Master',
+        certLevel: 'Analista Certificado Nivel I',
         institution: 'ITAM - Especialización en Finanzas Corporativas',
         verifiedIdentity: true
       });
@@ -304,10 +306,22 @@ function AppContent() {
     navigate(`/${role}`);
   };
 
-  if (!isAuthenticated || !profile) {
+  if ((!isAuthenticated || !profile) && location.pathname !== '/register') {
     return (
       <Login
-        onLoginSuccess={(token, userProfile) => {
+        onLoginSuccess={async (token, userProfile) => {
+          if (userProfile.role !== 'student') {
+            alert('Acceso restringido a alumnos de la academia.');
+            try {
+              await supabase.auth.signOut();
+            } catch (_) {}
+            localStorage.removeItem('supabase_auth_token');
+            localStorage.removeItem('sandbox_mock_user_id');
+            localStorage.removeItem('sandbox_view_mode');
+            setProfile(null);
+            setIsAuthenticated(false);
+            return;
+          }
           localStorage.setItem('supabase_auth_token', token);
           localStorage.setItem('sandbox_mock_user_id', userProfile.id);
           localStorage.setItem('sandbox_view_mode', userProfile.role);
@@ -348,51 +362,54 @@ function AppContent() {
           </div>
 
           {/* Nav links based on permission and routes */}
-          <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/40 border border-slate-800/60 p-1 rounded-xl">
-            <Link
-              to="/student"
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border ${
-                currentViewMode === 'student'
-                  ? 'bg-slate-900 border-slate-800/80 text-teal-400 shadow-inner'
-                  : 'text-slate-400 hover:text-slate-200 border-transparent'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" /> Portal Alumno
-            </Link>
+          {profile && (
+            <>
+              <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/40 border border-slate-800/60 p-1 rounded-xl">
+                <Link
+                  to="/student"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border ${
+                    currentViewMode === 'student'
+                      ? 'bg-slate-900 border-slate-800/80 text-teal-400 shadow-inner'
+                      : 'text-slate-400 hover:text-slate-200 border-transparent'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" /> Portal Alumno
+                </Link>
+              </nav>
 
-          </nav>
-
-          {/* XP Badge and User Profile tag */}
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-950/60 px-3 py-1 rounded-full border border-slate-850/80 flex items-center gap-1.5 shadow-inner">
-              <Award className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-              <span className="text-xs font-semibold text-indigo-300 font-mono tracking-tight">
-                {profile.pointsEarned} XP
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <img 
-                src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'} 
-                alt="Profile Avatar" 
-                className="w-7.5 h-7.5 rounded-full border border-slate-800 object-cover"
-              />
-              <div className="hidden lg:block text-left">
-                <p className="text-xs font-semibold text-slate-300 truncate max-w-[100px] leading-tight">
-                  {profile.fullName}
-                </p>
-                <p className="text-[8px] text-teal-400 font-medium tracking-wider font-mono uppercase leading-none mt-0.5">
-                  {profile.certLevel}
-                </p>
+              {/* XP Badge and User Profile tag */}
+              <div className="flex items-center gap-3">
+                <div className="bg-slate-950/60 px-3 py-1 rounded-full border border-slate-850/80 flex items-center gap-1.5 shadow-inner">
+                  <Award className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-indigo-300 font-mono tracking-tight">
+                    {profile.pointsEarned} XP
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'} 
+                    alt="Profile Avatar" 
+                    className="w-7.5 h-7.5 rounded-full border border-slate-800 object-cover"
+                  />
+                  <div className="hidden lg:block text-left">
+                    <p className="text-xs font-semibold text-slate-300 truncate max-w-[100px] leading-tight">
+                      {profile.fullName}
+                    </p>
+                    <p className="text-[8px] text-teal-400 font-medium tracking-wider font-mono uppercase leading-none mt-0.5">
+                      {profile.certLevel}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="bg-slate-900/60 hover:bg-slate-850 border border-slate-850/80 text-slate-400 hover:text-slate-200 p-2 rounded-xl transition cursor-pointer"
+                  title="Cerrar Sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-slate-900/60 hover:bg-slate-850 border border-slate-850/80 text-slate-400 hover:text-slate-200 p-2 rounded-xl transition cursor-pointer"
-              title="Cerrar Sesión"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -413,6 +430,9 @@ function AppContent() {
         )}
 
         <Routes>
+          {/* PUBLIC REGISTRATION ROUTE */}
+          <Route path="/register" element={<RegisterRequest />} />
+
           {/* STUDENT PANEL ROOT & NESTED ROUTING */}
           <Route path="/student/*" element={
             <StudentPanel 
@@ -430,7 +450,6 @@ function AppContent() {
               exportingCV={exportingCV}
             />
           } />
-
 
           {/* ROOT REDIRECT FALLBACK */}
           <Route path="*" element={<Navigate to="/student" replace />} />

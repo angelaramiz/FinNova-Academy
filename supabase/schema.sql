@@ -16,6 +16,10 @@ create table if not exists public.profiles (
     avatarUrl text,
     role text not null default 'student' check (role in ('student', 'instructor', 'admin')),
     pointsEarned integer not null default 0,
+    passwordHash text,
+    mustChangePassword boolean not null default false,
+    otpCode text,
+    otpExpires timestamp with time zone,
     createdAt timestamp with time zone default timezone('utc'::text, now()) not null,
     updatedAt timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -348,4 +352,35 @@ $$ language plpgsql security definer;
 -- create trigger trigger_check_allowed_email
 --     before insert on auth.users
 --     for each row execute procedure public.check_allowed_email();
+
+-- -------------------------------------------------------------
+-- 9. ACCOUNT REQUESTS Table (Public requests to register)
+-- -------------------------------------------------------------
+create table if not exists public.account_requests (
+    id text primary key,
+    fullName text not null,
+    email text not null unique,
+    role text not null check (role in ('student', 'instructor')),
+    specialty text,
+    status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+    createdAt timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for account_requests
+alter table public.account_requests enable row level security;
+
+-- Policies for account_requests: restricted to Admin role for select, but public for insert
+create policy "Anyone can submit a registration request"
+    on public.account_requests for insert
+    with check (true);
+
+create policy "Admins can view and manage registration requests"
+    on public.account_requests for all
+    using (
+        exists (
+            select 1 from public.profiles
+            where profiles.id = auth.uid() and role = 'admin'
+        )
+    );
+
 
