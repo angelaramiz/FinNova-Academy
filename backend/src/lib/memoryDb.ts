@@ -133,6 +133,12 @@ export class MemoryDatabase {
       createdAt: new Date().toISOString()
     },
     {
+      email: 'aramizeth@gmail.com',
+      role: 'admin',
+      fullName: 'Admin Aramiz',
+      createdAt: new Date().toISOString()
+    },
+    {
       email: 'profesor.senior@finanzas.edu',
       role: 'instructor',
       fullName: 'Profe Finanzas Senior',
