@@ -10,7 +10,22 @@ export interface Profile {
   avatarUrl: string;
   role: 'student' | 'instructor' | 'admin';
   pointsEarned: number;
+  passwordHash?: string;
+  mustChangePassword?: boolean;
+  otpCode?: string;
+  otpExpires?: string;
 }
+
+export interface AccountRequest {
+  id: string;
+  fullName: string;
+  email: string;
+  role: 'student' | 'instructor';
+  specialty?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
 
 export interface Course {
   id: string;
@@ -109,6 +124,7 @@ export interface StudentQuestion {
 
 // Memory Database populated with SEED values:
 export class MemoryDatabase {
+  static accountRequests: AccountRequest[] = [];
   static allowedEmails: AllowedEmail[] = [
     {
       email: 'admin@finnova.academy',
