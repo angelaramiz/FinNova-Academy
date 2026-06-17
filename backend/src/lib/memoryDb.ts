@@ -127,12 +127,6 @@ export class MemoryDatabase {
   static accountRequests: AccountRequest[] = [];
   static allowedEmails: AllowedEmail[] = [
     {
-      email: 'admin@finnova.academy',
-      role: 'admin',
-      fullName: 'Administrador Master',
-      createdAt: new Date().toISOString()
-    },
-    {
       email: 'aramizeth@gmail.com',
       role: 'admin',
       fullName: 'Admin Aramiz',

@@ -7,6 +7,7 @@ import { Router, Response } from 'express';
 import crypto from 'crypto';
 import { MemoryDatabase, AllowedEmail, StudentQuestion } from '../lib/memoryDb';
 import { requireSupabaseAuth, AuthenticatedRequest } from '../middleware/auth';
+import { EmailProvider } from '../providers/email';
 
 export const authRouter = Router();
 
@@ -396,27 +397,41 @@ authRouter.post('/register-requests/:id/approve', requireSupabaseAuth, (req: Aut
 
   request.status = 'approved';
 
-  // Format a very shiny mail log to server console
-  console.log(`
-======================================================================
-📧 [CORREO SIMULADO] ENVIADO A: ${request.email}
-======================================================================
-¡Hola ${request.fullName}!
+  const portalName = request.role === 'instructor' ? 'Personal/Docente' : 'Alumnos';
+  const textContent = `¡Hola ${request.fullName}!
 
 Tu cuenta para ingresar a AuraFi Academy ha sido creada.
 Usa las siguientes credenciales para acceder a la plataforma:
 
-  - Portal: ${request.role === 'instructor' ? 'Personal/Docente' : 'Alumnos'}
+  - Portal: ${portalName}
   - Correo: ${request.email}
   - Contraseña Temporal: ${tempPassword}
 
-⚠️ IMPORTANTE: Tan pronto como inicies sesión, el sistema te obligará
-a cambiar esta contraseña temporal por una personal y segura.
+⚠️ IMPORTANTE: Tan pronto como inicies sesión, el sistema te obligará a cambiar esta contraseña temporal por una personal y segura.
 Además, cada inicio de sesión requerirá verificación OTP vía correo.
 
-¡Te damos la bienvenida al equipo!
-======================================================================
-`);
+¡Te damos la bienvenida al equipo!`;
+
+  const htmlContent = `
+    <h2>¡Hola ${request.fullName}!</h2>
+    <p>Tu cuenta para ingresar a <strong>AuraFi Academy</strong> ha sido creada.</p>
+    <p>Usa las siguientes credenciales para acceder a la plataforma:</p>
+    <ul>
+      <li><strong>Portal:</strong> ${portalName}</li>
+      <li><strong>Correo:</strong> ${request.email}</li>
+      <li><strong>Contraseña Temporal:</strong> <code>${tempPassword}</code></li>
+    </ul>
+    <p>⚠️ <strong>IMPORTANTE:</strong> Tan pronto como inicies sesión, el sistema te obligará a cambiar esta contraseña temporal por una personal y segura. Además, cada inicio de sesión requerirá verificación OTP vía correo.</p>
+    <p>¡Te damos la bienvenida al equipo!</p>
+  `;
+
+  EmailProvider.sendEmail({
+    to: request.email,
+    subject: 'Tu cuenta en AuraFi Academy ha sido creada',
+    html: htmlContent,
+    text: textContent,
+    type: 'credentials'
+  }).catch(err => console.error('Error enviando correo de credenciales:', err));
 
   res.status(200).json({ 
     message: 'Solicitud aprobada y cuenta creada exitosamente.',
@@ -488,18 +503,26 @@ authRouter.post('/login-credentials', (req: any, res: Response): void => {
   profile.otpCode = otpCode;
   profile.otpExpires = otpExpires;
 
-  // Print OTP to Server Console
-  console.log(`
-======================================================================
-🔑 [OTP SIMULADO] CÓDIGO DE VERIFICACIÓN PARA: ${normalizedEmail}
-======================================================================
-Tu código OTP de un solo uso para iniciar sesión es:
+  const textContent = `Tu código OTP de un solo uso para iniciar sesión es: ${otpCode}
 
-                    👉   ${otpCode}   👈
+Este código expira en 5 minutos. No lo compartas con nadie.`;
 
-Este código expira en 5 minutos. No lo compartas con nadie.
-======================================================================
-`);
+  const htmlContent = `
+    <h3>Código de verificación OTP</h3>
+    <p>Tu código OTP de un solo uso para iniciar sesión es:</p>
+    <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px; padding: 10px; background-color: #f3f4f6; text-align: center; border-radius: 8px; margin: 15px 0; font-family: monospace;">
+      ${otpCode}
+    </div>
+    <p>Este código expira en 5 minutos. No lo compartas con nadie.</p>
+  `;
+
+  EmailProvider.sendEmail({
+    to: normalizedEmail,
+    subject: `Código de verificación OTP: ${otpCode}`,
+    html: htmlContent,
+    text: textContent,
+    type: 'otp'
+  }).catch(err => console.error('Error enviando correo de OTP:', err));
 
   res.status(200).json({ status: 'OTP_REQUIRED', email: normalizedEmail });
 });
