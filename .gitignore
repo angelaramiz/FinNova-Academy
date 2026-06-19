@@ -31,3 +31,4 @@ finmicro_edtech_pro_specs/
 *.log
 npm-debug.log*
 staff/
+supabase/

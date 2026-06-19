@@ -8,13 +8,11 @@ import crypto from 'crypto';
 import { MemoryDatabase, AllowedEmail, StudentQuestion } from '../lib/memoryDb';
 import { requireSupabaseAuth, AuthenticatedRequest } from '../middleware/auth';
 import { EmailProvider } from '../providers/email';
-import { supabaseAdmin } from '../lib/supabaseClient';
+import { supabaseAdmin, isSupabaseReady } from '../lib/supabaseClient';
 
-const isSupabaseConfigured = 
-  process.env.SUPABASE_URL && 
-  !process.env.SUPABASE_URL.includes('placeholder') &&
-  process.env.SUPABASE_SERVICE_ROLE_KEY &&
-  !process.env.SUPABASE_SERVICE_ROLE_KEY.includes('placeholder');
+// true cuando SUPABASE_URL + SERVICE_ROLE_KEY están configurados con claves reales
+// Acepta tanto el formato nuevo (sb_secret_...) como el legacy (eyJ...)
+const isSupabaseConfigured = isSupabaseReady();
 
 function signMockJWT(userId: string, email: string, role: string, fullName: string): string {
   const currentUnix = Math.floor(Date.now() / 1000);
