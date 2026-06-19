@@ -14,8 +14,14 @@ export default defineConfig(() => {
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/webhooks'))) {
-              const { app } = await import('../backend/src/server.ts');
-              app(req as any, res as any, next);
+              try {
+                // Solo cargar dinámicamente en desarrollo local
+                const { app } = await import('../backend/src/server.ts');
+                app(req as any, res as any, next);
+              } catch (e) {
+                // Fallback si no está presente (por ejemplo, en compilación en Render)
+                next();
+              }
             } else {
               next();
             }
