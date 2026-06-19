@@ -1,0 +1,90 @@
+# render.yaml — AuraFi Academy
+# Despliega los 3 servicios desde el mismo monorepo
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+
+  # ─────────────────────────────────────────────────────
+  # 1. BACKEND — Web Service (Node.js / Express + TSX)
+  # ─────────────────────────────────────────────────────
+  - type: web
+    name: aurafi-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npx tsx src/server.ts
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RENDER
+        value: "true"
+      - key: ENABLE_DOCKER_MOCKS
+        value: "false"
+      - key: REQUIRE_REAL_AUTH
+        value: "true"
+      # Supabase — configurar en el dashboard de Render como secrets
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # URLs de los frontends para CORS (actualizar después de crear los Static Sites)
+      - key: ALUMNOS_URL
+        sync: false
+      - key: STAFF_URL
+        sync: false
+      # API Keys opcionales
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # ─────────────────────────────────────────────────────
+  # 2. PORTAL ALUMNOS — Static Site (React + Vite)
+  # ─────────────────────────────────────────────────────
+  - type: web
+    name: aurafi-alumnos
+    runtime: static
+    rootDir: alumnos
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # URL del backend: https://aurafi-backend.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+
+  # ─────────────────────────────────────────────────────
+  # 3. PORTAL STAFF — Static Site (React + Vite)
+  # ─────────────────────────────────────────────────────
+  - type: web
+    name: aurafi-staff
+    runtime: static
+    rootDir: staff
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # URL del backend: https://aurafi-backend.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
