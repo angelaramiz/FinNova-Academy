@@ -14,7 +14,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [loginMode, setLoginMode] = useState<'bypass' | 'credentials'>('credentials');
-  const [step, setStep] = useState<'login' | 'force-change' | 'otp'>('login');
+  const [step, setStep] = useState<'login' | 'force-change' | 'otp' | 'reset'>('login');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,9 +139,34 @@ export default function Login({ onLoginSuccess }: LoginProps) {
         email: email.trim(),
         otpCode: otpCode.trim()
       });
-      onLoginSuccess(response.token, response.profile);
+      // Si la verificación es exitosa y requiere cambiar contraseña (por reset)
+      if (response.profile?.mustChangePassword) {
+        setStep('force-change');
+      } else {
+        onLoginSuccess(response.token, response.profile);
+      }
     } catch (err: any) {
       setError(err.message || 'Código OTP inválido o expirado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError('Por favor, ingresa tu correo institucional.');
+      return;
+    }
+    setError(null);
+    setInfoMessage(null);
+    setLoading(true);
+    try {
+      await api.requestPasswordReset(email.trim());
+      setInfoMessage('Código de recuperación enviado. Revisa tu correo e ingresa el código OTP aquí.');
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Error al solicitar el código de recuperación.');
     } finally {
       setLoading(false);
     }
@@ -284,13 +309,27 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                         className="block w-full bg-slate-950/50 border border-slate-850 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition"
                       />
                     </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="text-xs"></div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStep('reset');
+                          setError(null);
+                          setInfoMessage(null);
+                        }}
+                        className="text-[11px] font-medium text-teal-400 hover:text-teal-350 transition cursor-pointer"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
                   </div>
 
                   <div className="pt-2">
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition duration-150 cursor-pointer disabled:opacity-50"
+                      className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-teal-500 hover:bg-teal-400 text-slate-955 text-xs font-extrabold rounded-xl shadow-md transition duration-150 cursor-pointer disabled:opacity-50"
                     >
                       {loading ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -380,7 +419,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                     className="w-full text-left transition cursor-pointer flex justify-between items-center group"
                   >
                     <div>
-                      <span className="text-[11px] font-semibold text-slate-350 block group-hover:text-teal-450 transition">
+                      <span className="text-[11px] font-semibold text-slate-350 block group-hover:text-teal-455 transition">
                         Inversor Novato (Alumno Piloto)
                       </span>
                       <span className="text-[9px] text-slate-500 font-mono block mt-0.5">
@@ -396,6 +435,62 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             </>
           )}
 
+          {step === 'reset' && (
+            /* Request Password Reset Form */
+            <form className="space-y-4 animate-fade-in" onSubmit={handleResetRequestSubmit}>
+              <div className="text-center space-y-1.5">
+                <div className="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <h3 className="text-xs font-bold text-slate-200">Recuperar Contraseña</h3>
+                <p className="text-[10px] text-slate-500 leading-normal">
+                  Ingresa tu correo institucional y te enviaremos un código OTP para restablecer tu contraseña.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="reset-email" className="block text-[10px] font-mono uppercase text-slate-450 mb-1.5">
+                  Correo Institucional
+                </label>
+                <div className="relative rounded-xl shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-4 w-4 text-slate-650" />
+                  </div>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu.correo@finanzas.edu"
+                    className="block w-full bg-slate-950/50 border border-slate-850 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('login');
+                    setError(null);
+                    setInfoMessage(null);
+                  }}
+                  className="flex-1 py-2 px-4 border border-slate-850 text-slate-400 text-xs font-bold rounded-xl hover:bg-slate-900 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-2 px-4 bg-teal-500 hover:bg-teal-400 text-slate-955 text-xs font-extrabold rounded-xl shadow-md transition cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : 'Enviar Código'}
+                </button>
+              </div>
+            </form>
+          )}
+
           {step === 'force-change' && (
             /* Obligatory password change screen */
             <form className="space-y-4 animate-fade-in" onSubmit={handleForceChangePasswordSubmit}>
@@ -403,9 +498,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 <div className="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
                   <Lock className="h-5 w-5 animate-bounce" />
                 </div>
-                <h3 className="text-xs font-bold text-slate-200">Cambio Obligatorio de Contraseña</h3>
+                <h3 className="text-xs font-bold text-slate-200">Configurar Nueva Contraseña</h3>
                 <p className="text-[10px] text-slate-500 leading-normal">
-                  Has ingresado con una contraseña temporal. Por favor configura tu contraseña definitiva de acceso.
+                  Ingresa tu nueva contraseña definitiva de acceso.
                 </p>
               </div>
 
@@ -451,7 +546,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-2 px-4 bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-md transition cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2 px-4 bg-teal-500 hover:bg-teal-400 text-slate-955 text-xs font-extrabold rounded-xl shadow-md transition cursor-pointer disabled:opacity-50"
                 >
                   Actualizar Contraseña
                 </button>
@@ -468,7 +563,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </div>
                 <h3 className="text-xs font-bold text-slate-200">Verificación OTP Requerida</h3>
                 <p className="text-[10px] text-slate-500 leading-normal">
-                  Hemos enviado un código OTP de 6 dígitos a tu correo simulado (consola del servidor backend).
+                  Hemos enviado un código OTP de 6 dígitos a tu correo.
                 </p>
               </div>
 
@@ -515,4 +610,3 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     </div>
   );
 }
-
