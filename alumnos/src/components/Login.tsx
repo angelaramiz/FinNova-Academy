@@ -604,6 +604,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 </p>
               </div>
 
+              <div className="bg-teal-500/5 border border-teal-500/20 text-teal-450 p-2.5 rounded-xl text-[10px] leading-normal flex items-start gap-2">
+                <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0 text-teal-400" />
+                <span>
+                  <strong>Seguridad de la Cuenta:</strong> Por motivos de seguridad institucional, cada vez que inicies sesión en la plataforma se te enviará un nuevo código de verificación OTP a tu correo registrado.
+                </span>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-mono uppercase text-slate-450 mb-1.5">
                   Código de Verificación OTP

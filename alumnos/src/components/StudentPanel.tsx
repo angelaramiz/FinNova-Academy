@@ -144,6 +144,11 @@ export default function StudentPanel({
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   {isSidebarExpanded && <span className="truncate">{item.label}</span>}
+                  {isSidebarExpanded && (item.label === 'Casos Reales' || item.label === 'FinNova Labs') && (
+                    <span className="text-[8px] text-rose-500 font-mono border border-rose-500/20 bg-rose-500/5 px-1 py-0.2 rounded ml-auto scale-90 origin-right shrink-0 uppercase tracking-wider font-bold">
+                      × próximamente
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -217,6 +222,11 @@ export default function StudentPanel({
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span>{item.label}</span>
+                      {(item.label === 'Casos Reales' || item.label === 'FinNova Labs') && (
+                        <span className="text-[8px] text-rose-500 font-mono border border-rose-500/20 bg-rose-500/5 px-1 py-0.2 rounded ml-auto scale-90 origin-right shrink-0 uppercase tracking-wider font-bold">
+                          × próximamente
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -391,8 +401,11 @@ export default function StudentPanel({
         <Route path="/projects" element={
           <div className="space-y-6 text-left animate-fade-in">
             <div className="space-y-1.5">
-              <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono">
+              <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono flex items-center">
                 Laboratorio de Casos Reales (Proyectos Corporativos)
+                <span className="inline-flex items-center gap-1 text-[8px] text-rose-500 font-mono border border-rose-500/20 bg-rose-500/5 px-1.5 py-0.5 rounded ml-2 uppercase tracking-wider font-bold">
+                  <span className="text-[10px] font-light leading-none">×</span> próximamente
+                </span>
               </h2>
               <p className="text-slate-500 text-xs font-normal">
                 Descarga datasets del mundo real, construye tus hojas de cálculo de valuación y súbelas para validación estructurada por la IA de Gemini.
@@ -606,21 +619,26 @@ export default function StudentPanel({
                   </div>
                 </div>
 
-                <button
-                  onClick={handleDownloadCV}
-                  disabled={exportingCV}
-                  className="bg-slate-950/40 hover:bg-slate-900 border border-slate-850/80 text-teal-450 px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shrink-0 shadow-sm"
-                >
-                  {exportingCV ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Generando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5" /> Exportar CV con Habilidades
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col items-center sm:items-end gap-1.5 shrink-0">
+                  <button
+                    onClick={handleDownloadCV}
+                    disabled={exportingCV}
+                    className="bg-slate-950/40 hover:bg-slate-900 border border-slate-850/80 text-teal-455 px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    {exportingCV ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" /> Exportar CV con Habilidades
+                      </>
+                    )}
+                  </button>
+                  <span className="inline-flex items-center gap-1 text-[8px] text-rose-500 font-mono border border-rose-500/20 bg-rose-500/5 px-1.5 py-0.5 rounded select-none uppercase tracking-wider font-bold">
+                    <span className="text-[10px] font-light leading-none">×</span> próximamente
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -679,8 +697,11 @@ export default function StudentPanel({
         <Route path="/labs" element={
           <div className="space-y-6 text-left animate-fade-in">
             <div className="space-y-1.5">
-              <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono">
+              <h2 className="text-sm font-extrabold text-slate-300 uppercase tracking-wider font-mono flex items-center">
                 FinNova Labs (Sección Experimental)
+                <span className="inline-flex items-center gap-1 text-[8px] text-rose-500 font-mono border border-rose-500/20 bg-rose-500/5 px-1.5 py-0.5 rounded ml-2 uppercase tracking-wider font-bold">
+                  <span className="text-[10px] font-light leading-none">×</span> próximamente
+                </span>
               </h2>
               <p className="text-slate-500 text-xs font-normal">
                 Explora herramientas avanzadas de modelación cuantitativa y simuladores financieros interactivos.
