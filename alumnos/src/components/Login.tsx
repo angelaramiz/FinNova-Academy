@@ -19,6 +19,43 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  useEffect(() => {
+    if (step === 'otp') {
+      setResendTimer(60); // Inicia cuenta regresiva de 60 segundos
+    }
+  }, [step]);
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    setError(null);
+    setInfoMessage(null);
+    setLoading(true);
+    try {
+      if (password) {
+        await api.loginWithCredentials(email.trim(), password);
+      } else {
+        await api.requestPasswordReset(email.trim());
+      }
+      setInfoMessage('Código OTP reenviado con éxito.');
+      setResendTimer(60);
+    } catch (err: any) {
+      setError(err.message || 'Error al reenviar el código OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Check if real Supabase environment variables are configured
   const isRealSupabaseConfigured = 
@@ -601,6 +638,22 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 >
                   Verificar Código
                 </button>
+              </div>
+
+              <div className="text-center pt-2">
+                {resendTimer > 0 ? (
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    Reenviar código en {resendTimer}s
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    className="text-[11px] font-bold text-teal-400 hover:text-teal-350 transition cursor-pointer"
+                  >
+                    ¿No recibiste el código? Reenviar código
+                  </button>
+                )}
               </div>
             </form>
           )}
