@@ -34,3 +34,13 @@ staff/
 supabase/
 backend/
 app/
+
+# Temp files in supabase
+supabase/.temp/
+supabase/tmp_query_approved.sql
+
+# Test/migration scripts in root
+/fix-and-queue-admin-prueba.js
+/queue-pending-credentials.js
+/run-email-queue-migration.mjs
+/test-db.js
