@@ -152,6 +152,7 @@ export default function Login({ onLoginSuccess, backendWarming = false }: LoginP
         currentTempPassword: otpCode || password,
         newPassword
       });
+      localStorage.removeItem('supabase_auth_token');
       setPassword(newPassword);
       setOtpCode('');
       setNewPassword('');
@@ -180,6 +181,9 @@ export default function Login({ onLoginSuccess, backendWarming = false }: LoginP
       });
       // Si la verificación es exitosa y requiere cambiar contraseña (por reset)
       if (response.profile?.mustChangePassword) {
+        if (response.token) {
+          localStorage.setItem('supabase_auth_token', response.token);
+        }
         setStep('force-change');
       } else {
         onLoginSuccess(response.token, response.profile);
@@ -593,6 +597,7 @@ export default function Login({ onLoginSuccess, backendWarming = false }: LoginP
                   onClick={() => {
                     setStep('login');
                     setError(null);
+                    localStorage.removeItem('supabase_auth_token');
                   }}
                   className="flex-1 py-2 px-4 border border-slate-850 text-slate-400 text-xs font-bold rounded-xl hover:bg-slate-900 transition cursor-pointer"
                 >
