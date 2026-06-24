@@ -5,9 +5,10 @@ import { supabase } from '../lib/supabaseClient';
 
 interface LoginProps {
   onLoginSuccess: (token: string, profile: any) => void;
+  backendWarming?: boolean;
 }
 
-export default function Login({ onLoginSuccess }: LoginProps) {
+export default function Login({ onLoginSuccess, backendWarming = false }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -246,6 +247,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
         <div className="bg-[#0a0f1d]/80 border border-slate-800/60 backdrop-blur-xl py-8 px-6 shadow-2xl rounded-3xl sm:px-10 space-y-6">
           
+          {backendWarming && (
+            <div className="bg-amber-500/5 border border-amber-500/20 text-amber-405 p-3 rounded-2xl text-[11px] flex items-start gap-2.5 animate-pulse">
+              <RefreshCw className="w-4 h-4 mt-0.5 shrink-0 animate-spin" />
+              <span>
+                Conectando al servidor en la nube (despertando servicio de pruebas)... Esto puede demorar hasta 1 minuto. Por favor, espera.
+              </span>
+            </div>
+          )}
+
           {error && (
             <div className="bg-rose-500/5 border border-rose-500/20 text-rose-450 p-3 rounded-2xl text-[11px] flex items-start gap-2.5 animate-shake">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -365,10 +375,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || backendWarming}
                       className="w-full flex justify-center items-center gap-2 py-2.5 px-4 bg-teal-500 hover:bg-teal-400 text-slate-955 text-xs font-extrabold rounded-xl shadow-md transition duration-150 cursor-pointer disabled:opacity-50"
                     >
-                      {loading ? (
+                      {backendWarming ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          Despertando Servidor...
+                        </>
+                      ) : loading ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         'Iniciar Sesión'
@@ -402,15 +417,17 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <div>
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || backendWarming}
                       className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-slate-800 hover:border-slate-700 text-xs font-semibold rounded-xl text-slate-305 bg-slate-900/40 hover:bg-slate-900/90 transition duration-150 cursor-pointer"
                     >
-                      {loading ? (
+                      {backendWarming ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : loading ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <ShieldCheck className="w-3.5 h-3.5" />
                       )}
-                      Validar Acceso (Simulación Local)
+                      {backendWarming ? 'Despertando...' : 'Validar Acceso (Simulación Local)'}
                     </button>
                   </div>
                 </form>
@@ -452,7 +469,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   <button
                     type="button"
                     onClick={() => handleSelectMock('student_tester@gmail.com')}
-                    disabled={loading}
+                    disabled={loading || backendWarming}
                     className="w-full text-left transition cursor-pointer flex justify-between items-center group"
                   >
                     <div>
