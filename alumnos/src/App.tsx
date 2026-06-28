@@ -325,8 +325,82 @@ function AppContent() {
     setExportingCV(true);
     setTimeout(() => {
       setExportingCV(false);
-      alert("CV de Finanzas en PDF generado. Competencias validadas añadidas satisfactoriamente.");
-    }, 1500);
+      
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert("Por favor, permite las ventanas emergentes para descargar tu CV.");
+        return;
+      }
+
+      printWindow.document.write(`
+        <html>
+        <head>
+          <title>CV Financiero - ${profile?.fullName || 'Alumno'}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; line-height: 1.5; }
+            .header { border-bottom: 2px solid #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
+            .name { font-size: 28px; font-weight: bold; color: #0f766e; }
+            .title { font-size: 16px; color: #64748b; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+            .section-title { font-size: 18px; font-weight: bold; color: #0f766e; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+            .badge-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+            .badge { background: #f0fdfa; border: 1px solid #ccfbf1; color: #0f766e; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+            .skill-bar { background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+            .skill-fill { background: #0f766e; height: 100%; }
+            .footer { margin-top: 50px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="name">${profile?.fullName || 'Alumno'}</div>
+            <div class="title">Certificación Práctica en Finanzas Corporativas</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #475569;">Nivel: ${profile?.certLevel || 'Inversor Novato'} | Puntos de Experiencia: ${profile?.pointsEarned || 0} XP</div>
+          </div>
+
+          <div class="section-title">Habilidades y Competencias Validadas por IA (Gemini)</div>
+          <div style="margin-bottom: 20px;">
+            <strong>Valuación de Activos DCF:</strong> 85%
+            <div class="skill-bar"><div class="skill-fill" style="width: 85%;"></div></div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <strong>Cálculo de WACC y Costo de Deuda:</strong> 75%
+            <div class="skill-bar"><div class="skill-fill" style="width: 75%;"></div></div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <strong>Análisis Comparativo de Razones P/E:</strong> 95%
+            <div class="skill-bar"><div class="skill-fill" style="width: 95%;"></div></div>
+          </div>
+          <div style="margin-bottom: 20px;">
+            <strong>Estructura y Cobertura de Apalancamientos:</strong> 60%
+            <div class="skill-bar"><div class="skill-fill" style="width: 60%;"></div></div>
+          </div>
+
+          <div class="section-title">Cursos y Módulos Aprobados</div>
+          <ul>
+            <li><strong>Mentalidad y Fundamentos de Inversión</strong> - Certificado de Aprobación Práctica</li>
+            <li><strong>Análisis de Empresas y Ratios Financieros</strong> - Certificado de Aprobación Práctica</li>
+          </ul>
+
+          <div class="section-title">Insignias Desbloqueadas</div>
+          <div class="badge-container">
+            <span class="badge">Maestro del P/E Ratio</span>
+            <span class="badge">Interés Compuesto Exponencial</span>
+          </div>
+
+          <div class="footer">
+            Documento digital certificado por la plataforma AuraFi / FinNova Academy mediante auditoría de rúbricas LLM en tiempo real.
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }, 1200);
   };
 
   const handleProjectSubmit = (projectId: string, e: React.FormEvent) => {
