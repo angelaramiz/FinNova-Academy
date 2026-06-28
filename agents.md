@@ -9,6 +9,7 @@
 ## Comandos Disponibles
 *   `/sugerencias`: Analiza código reciente, tareas y genera reportes en `agent_memory/suggestions/`.
 *   `/reunion`: Inicia/finaliza una reunión estructurada usando las plantillas de `agent_memory/meetings/`.
+*   `/protocol`: Audita el código frente a los lineamientos de desarrollo y seguridad en `agent_memory/protocol/`.
 
 ## Reglas Básicas de Operación
 1.  **No asumir**: Siempre verificar el estado local antes de proceder.
