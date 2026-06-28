@@ -285,52 +285,76 @@ export default function StudentPanel({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
-              {courses.map(course => (
-                <div 
-                  key={course.id}
-                  className="bg-slate-900/20 hover:bg-slate-900/50 border border-slate-850 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:border-slate-800 cursor-pointer group shadow-sm"
-                  onClick={() => handleSelectCourse(course)}
-                >
-                  <div className="flex gap-4 items-start">
-                    <img 
-                      src={course.imageUrl} 
-                      alt={course.title} 
-                      className="w-14 h-14 rounded-xl object-cover border border-slate-850 shrink-0 shadow-sm"
-                    />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[8px] font-semibold font-mono px-2 py-0.5 rounded-full border uppercase ${
-                          course.difficulty === 'beginner' 
-                            ? 'bg-teal-500/10 border-teal-500/25 text-teal-400' 
-                            : 'bg-indigo-500/10 border-indigo-500/25 text-indigo-300'
-                        }`}>
-                          {course.difficulty}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          2 Conceptos Clave
+            {(() => {
+              const categories = courses.reduce((acc: { [key: string]: any[] }, course) => {
+                const cat = course.category || 'Otros Módulos';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(course);
+                return acc;
+              }, {});
+
+              return (
+                <div className="space-y-8 mt-4">
+                  {Object.keys(categories).map(categoryName => (
+                    <div key={categoryName} className="space-y-3">
+                      <div className="flex items-center gap-2 border-b border-slate-850/60 pb-1.5">
+                        <span className="text-[9px] bg-teal-500/10 border border-teal-500/20 text-teal-400 px-2 py-0.5 rounded-md font-mono font-bold uppercase tracking-wider">
+                          {categoryName}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-200 tracking-snug mt-2 group-hover:text-teal-400 transition-colors">
-                        {course.title}
-                      </h3>
-                      <p className="text-slate-400 text-xs mt-1 leading-relaxed line-clamp-2 font-normal">
-                        {course.description}
-                      </p>
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {categories[categoryName].map(course => (
+                          <div 
+                            key={course.id}
+                            className="bg-slate-900/20 hover:bg-slate-900/50 border border-slate-850 rounded-2xl p-5 flex flex-col justify-between transition-all duration-200 hover:border-slate-800 cursor-pointer group shadow-sm text-left"
+                            onClick={() => handleSelectCourse(course)}
+                          >
+                            <div className="flex gap-4 items-start">
+                              <img 
+                                src={course.imageUrl} 
+                                alt={course.title} 
+                                className="w-14 h-14 rounded-xl object-cover border border-slate-850 shrink-0 shadow-sm"
+                              />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[8px] font-semibold font-mono px-2 py-0.5 rounded-full border uppercase ${
+                                    course.difficulty === 'beginner' 
+                                      ? 'bg-teal-500/10 border-teal-500/25 text-teal-400' 
+                                      : 'bg-indigo-500/10 border-indigo-500/25 text-indigo-300'
+                                  }`}>
+                                    {course.difficulty}
+                                  </span>
+                                  {course.learningPath && (
+                                    <span className="text-[9px] text-slate-500 font-mono">
+                                      Ruta: {course.learningPath}
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className="text-sm font-semibold text-slate-200 tracking-snug mt-2 group-hover:text-teal-400 transition-colors">
+                                  {course.title}
+                                </h3>
+                                <p className="text-slate-400 text-xs mt-1 leading-relaxed line-clamp-2 font-normal">
+                                  {course.description}
+                                </p>
+                              </div>
+                            </div>
 
-                  <div className="border-t border-slate-850 mt-4 pt-3 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-mono text-[10px]">
-                      Impartido por: Profe de Finanzas Senior
-                    </span>
-                    <span className="text-teal-400 group-hover:translate-x-0.5 transition flex items-center gap-0.5 font-medium">
-                      Comenzar Módulo <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
+                            <div className="border-t border-slate-850 mt-4 pt-3 flex items-center justify-between text-xs">
+                              <span className="text-slate-500 font-mono text-[10px]">
+                                Impartido por: Profe de Finanzas Senior
+                              </span>
+                              <span className="text-teal-400 group-hover:translate-x-0.5 transition flex items-center gap-0.5 font-medium">
+                                Comenzar Módulo <ChevronRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
         } />
 

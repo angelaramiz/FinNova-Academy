@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS courses (
     image_url TEXT,
     instructor_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     is_published BOOLEAN DEFAULT false,
+    category TEXT,
+    learning_path TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -25,6 +27,7 @@ CREATE TABLE IF NOT EXISTS clips (
     sequence_order INTEGER NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('draft', 'reviewing', 'approved')),
     section TEXT,
+    video_format TEXT DEFAULT '9:16' CHECK (video_format IN ('9:16', '16:9')),
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

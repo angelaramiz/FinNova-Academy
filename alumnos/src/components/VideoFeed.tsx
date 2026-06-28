@@ -16,6 +16,7 @@ interface Clip {
   videoUrl: string;
   duration: number;
   sequenceOrder: number;
+  videoFormat?: '9:16' | '16:9';
 }
 
 interface VideoFeedProps {
@@ -324,7 +325,7 @@ function VideoCard({ clip, courseId, isActive, isCompleted, onCompletelyWatched 
         <video 
           id={`video-node-${clip.id}`}
           src={clip.videoUrl} 
-          className="w-full h-full object-cover opacity-60 brightness-75"
+          className={`w-full h-full ${clip.videoFormat === '16:9' ? 'object-contain' : 'object-cover'} opacity-60 brightness-75`}
           loop
           muted
           playsInline
@@ -335,7 +336,7 @@ function VideoCard({ clip, courseId, isActive, isCompleted, onCompletelyWatched 
       {/* Floating Sparkles indicator */}
       <div className="absolute top-4 left-4 z-20 flex gap-2">
         <div className="bg-black/60 backdrop-blur-md border border-slate-800/80 rounded-full px-3 py-1 flex items-center gap-1.5 text-[11px] text-amber-400 font-semibold font-mono shadow-lg">
-          <Sparkles className="w-3.5 h-3.5 animate-spin duration-1000" /> Micro-Concepto
+          <Sparkles className="w-3.5 h-3.5 animate-spin duration-1000" /> {clip.videoFormat === '16:9' ? 'Clase Completa' : 'Micro-Concepto'}
         </div>
         {isCompleted && (
           <div className="bg-emerald-500/80 text-white backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1 text-[11px] font-semibold font-mono shadow-lg">
