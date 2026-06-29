@@ -44,3 +44,7 @@ supabase/tmp_query_approved.sql
 /queue-pending-credentials.js
 /run-email-queue-migration.mjs
 /test-db.js
+
+# CodeGraph database directory
+.codegraph/
+.codegraph
