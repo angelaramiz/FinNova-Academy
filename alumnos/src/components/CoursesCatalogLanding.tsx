@@ -113,7 +113,9 @@ export default function CoursesCatalogLanding() {
   // Sync theme
   useEffect(() => {
     localStorage.setItem('theme', theme);
-  }, [theme]);
+    document.body.style.backgroundColor = colors.bg;
+    document.documentElement.style.backgroundColor = colors.bg;
+  }, [theme, colors.bg]);
 
   return (
     <div

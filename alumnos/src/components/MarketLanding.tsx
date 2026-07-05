@@ -1321,11 +1321,13 @@ export default function MarketLanding() {
   // Sync theme to document body class and local storage
   useEffect(() => {
     localStorage.setItem('theme', theme);
+    document.body.style.backgroundColor = colors.bg;
+    document.documentElement.style.backgroundColor = colors.bg;
     // Disseminate to static documents loaded in iframes
     try {
       window.dispatchEvent(new Event('themechange'));
     } catch (_) {}
-  }, [theme]);
+  }, [theme, colors.bg]);
 
   // Simulated live price animation
   useEffect(() => {
