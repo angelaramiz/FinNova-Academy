@@ -1060,6 +1060,21 @@ function walkForward(prices, horizon, dist){
 // ═══════════════════════════════════════════════════════════════════════════════
 // DRAWING
 // ═══════════════════════════════════════════════════════════════════════════════
+function getThemeColors() {
+  const theme = localStorage.getItem('theme') || 'dark';
+  return {
+    grid: theme === 'light' ? 'rgba(27, 38, 50, 0.08)' : 'rgba(238, 233, 223, 0.08)',
+    text: theme === 'light' ? '#2C3B4D' : '#9ba3c0',
+    textMuted: theme === 'light' ? '#5c6480' : '#5c6480',
+    textDark: theme === 'light' ? '#1B2632' : '#e8eaf0',
+    primary: theme === 'light' ? '#A35139' : '#8b7ff5',
+    accent: theme === 'light' ? '#A35139' : '#2dd4a0',
+    border: theme === 'light' ? 'rgba(27, 38, 50, 0.15)' : 'rgba(238, 233, 223, 0.15)',
+    histLine: theme === 'light' ? '#1B2632' : 'rgba(232,234,240,.8)',
+    sepLine: theme === 'light' ? 'rgba(27, 38, 50, 0.25)' : 'rgba(92,100,128,.5)'
+  };
+}
+
 function drawCone(gRes){
   const s=setupCanvas('cone-chart',230);if(!s)return;
   const{ctx,W,H}=s;ctx.clearRect(0,0,W,H);
@@ -1074,14 +1089,15 @@ function drawCone(gRes){
   const px=i=>padL+(i/(tot-1))*aw;
   const py=v=>padT+(1-(v-vMin)/(vMax-vMin))*ah;
   const icL=parseInt(document.getElementById('ic').value);
+  const tc = getThemeColors();
 
   // Grid
   for(let i=0;i<=4;i++){
     const y=padT+(i/4)*ah;
-    ctx.strokeStyle='#1a1e28';ctx.lineWidth=1;
+    ctx.strokeStyle=tc.grid;ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+aw,y);ctx.stroke();
     const v=vMax-(i/4)*(vMax-vMin);
-    ctx.fillStyle='#5c6480';ctx.font='10px DM Mono,monospace';ctx.textAlign='right';
+    ctx.fillStyle=tc.text;ctx.font='10px DM Mono,monospace';ctx.textAlign='right';
     ctx.fillText(v.toFixed(v<50?4:1),padL-5,y+4);
   }
 
@@ -1093,7 +1109,7 @@ function drawCone(gRes){
   ctx.closePath();ctx.fill();ctx.restore();
 
   // ±1σ band (P25-P75)
-  ctx.save();ctx.globalAlpha=0.08;ctx.fillStyle='#2dd4a0';
+  ctx.save();ctx.globalAlpha=0.08;ctx.fillStyle=tc.accent;
   ctx.beginPath();
   for(let i=0;i<=horizon;i++){const x=px(nH-1+i);i===0?ctx.moveTo(x,py(p75[i])):ctx.lineTo(x,py(p75[i]))}
   for(let i=horizon;i>=0;i--)ctx.lineTo(px(nH-1+i),py(p25[i]));
@@ -1116,32 +1132,32 @@ function drawCone(gRes){
   }ctx.restore();
 
   // Median
-  ctx.strokeStyle='#2dd4a0';ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.strokeStyle=tc.accent;ctx.lineWidth=2;ctx.setLineDash([]);
   ctx.beginPath();
   for(let i=0;i<=horizon;i++){const x=px(nH-1+i);i===0?ctx.moveTo(x,py(p50[i])):ctx.lineTo(x,py(p50[i]))}
   ctx.stroke();
 
   // Historical
-  ctx.strokeStyle='rgba(232,234,240,.8)';ctx.lineWidth=1.5;
+  ctx.strokeStyle=tc.histLine;ctx.lineWidth=1.5;
   ctx.beginPath();
   for(let i=0;i<nH;i++){const x=px(i);i===0?ctx.moveTo(x,py(hsl[i])):ctx.lineTo(x,py(hsl[i]))}
   ctx.stroke();
 
   // Separator
   const sepX=px(nH-1);
-  ctx.strokeStyle='rgba(92,100,128,.5)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.strokeStyle=tc.sepLine;ctx.lineWidth=1;ctx.setLineDash([4,3]);
   ctx.beginPath();ctx.moveTo(sepX,padT);ctx.lineTo(sepX,padT+ah);ctx.stroke();ctx.setLineDash([]);
 
   // Labels
-  ctx.fillStyle='#5c6480';ctx.font='10px DM Mono,monospace';ctx.textAlign='center';
+  ctx.fillStyle=tc.text;ctx.font='10px DM Mono,monospace';ctx.textAlign='center';
   ctx.fillText('← Datos reales',padL+(sepX-padL)/2,H-6);
   ctx.fillStyle='#f5a623';
   ctx.fillText(`Proyección (${horizon}d) · IC${icL}% →`,sepX+(padL+aw-sepX)/2,H-6);
 
   // Price dot
-  ctx.fillStyle='#e8eaf0';ctx.beginPath();
+  ctx.fillStyle=tc.textDark;ctx.beginPath();
   ctx.arc(px(nH-1),py(S_last),5,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#e8eaf0';ctx.font='bold 11px DM Mono,monospace';ctx.textAlign='left';
+  ctx.fillStyle=tc.textDark;ctx.font='bold 11px DM Mono,monospace';ctx.textAlign='left';
   const isSmall=S_last<50;
   ctx.fillText(S_last.toFixed(isSmall?4:2),px(nH-1)+8,py(S_last)+4);
 }
@@ -1158,9 +1174,10 @@ function drawDist(gRes){
   const mean=rets.reduce((s,r)=>s+r,0)/rets.length;
   const std=Math.sqrt(rets.reduce((s,r)=>s+(r-mean)**2,0)/rets.length);
   const bx=i=>padL+(i/nBins)*aw,by=v=>padT+(1-v/maxB)*ah;
+  const tc = getThemeColors();
 
   // Normal curve
-  ctx.strokeStyle='rgba(92,100,128,.6)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.strokeStyle=tc.text;ctx.lineWidth=1;ctx.setLineDash([3,3]);
   ctx.beginPath();
   for(let i=0;i<=nBins;i++){
     const x=bx(i),v=mn+i*bw;
@@ -1178,10 +1195,10 @@ function drawDist(gRes){
 
   // Zero line
   const z0=padL+((0-mn)/(mx-mn))*aw;
-  ctx.strokeStyle='rgba(92,100,128,.5)';ctx.lineWidth=1;
+  ctx.strokeStyle=tc.text;ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(z0,padT);ctx.lineTo(z0,padT+ah);ctx.stroke();
 
-  ctx.fillStyle='#5c6480';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
+  ctx.fillStyle=tc.text;ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
   ctx.fillText(mn.toFixed(1)+'%',padL+14,H-6);
   ctx.fillText('0%',z0,H-6);
   ctx.fillText(mx.toFixed(1)+'%',padL+aw-14,H-6);
@@ -1196,11 +1213,12 @@ function drawCovChart(wfRes){
   const padL=8,padR=8,padT=10,padB=22,aw=W-padL-padR,ah=H-padT-padB;
   const bw=aw/rolls.length;
   const tY=padT+(1-icL/100)*ah;
+  const tc = getThemeColors();
 
   // Target
-  ctx.strokeStyle='rgba(139,127,245,.4)';ctx.setLineDash([3,3]);ctx.lineWidth=1;
+  ctx.strokeStyle=tc.primary;ctx.setLineDash([3,3]);ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(padL,tY);ctx.lineTo(padL+aw,tY);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='rgba(139,127,245,.6)';ctx.font='9px DM Mono';ctx.textAlign='left';
+  ctx.fillStyle=tc.primary;ctx.font='9px DM Mono';ctx.textAlign='left';
   ctx.fillText(`Objetivo ${icL}%`,padL+2,tY-3);
 
   // Hit bars
@@ -1219,7 +1237,7 @@ function drawCovChart(wfRes){
     i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });ctx.stroke();
 
-  ctx.fillStyle='#5c6480';ctx.font='9px DM Mono';
+  ctx.fillStyle=tc.text;ctx.font='9px DM Mono';
   ctx.textAlign='left';ctx.fillText('OOS sobre datos reales · verde=dentro IC · rojo=violación',padL,H-4);
   ctx.textAlign='right';ctx.fillText(`CR final: ${(wfRes.coverage*100).toFixed(1)}%`,padL+aw,H-4);
 }
@@ -1233,6 +1251,8 @@ function drawOosChart(wfRes){
   const allLo=rolls.map(r=>r.lo),allHi=rolls.map(r=>r.hi);
   const vMin=Math.min(...allLo)*.995,vMax=Math.max(...allHi)*1.005;
   const py=v=>padT+(1-(v-vMin)/(vMax-vMin))*ah;
+  const tc = getThemeColors();
+
   rolls.forEach((r,i)=>{
     const x=padL+i*(aw/rolls.length);
     ctx.fillStyle=r.hit?'rgba(45,212,160,.18)':'rgba(245,95,95,.15)';
@@ -1242,7 +1262,7 @@ function drawOosChart(wfRes){
     ctx.fillStyle=r.hit?'#2dd4a0':'#f55f5f';
     ctx.beginPath();ctx.arc(x+bw/2,py(r.actual),2.5,0,Math.PI*2);ctx.fill();
   });
-  ctx.fillStyle='#5c6480';ctx.font='9px DM Mono';ctx.textAlign='left';
+  ctx.fillStyle=tc.text;ctx.font='9px DM Mono';ctx.textAlign='left';
   ctx.fillText('← barra = IC predicho · punto = precio real observado',padL,H-3);
 }
 
@@ -1258,24 +1278,26 @@ function drawVolChart(logRets){
   const padL=34,padR=10,padT=8,padB=18,aw=W-padL-padR,ah=H-padT-padB;
   const vMin=Math.min(...vols)*.95,vMax=Math.max(...vols)*1.05,n=vols.length;
   const px=i=>padL+(i/(n-1))*aw,py=v=>padT+(1-(v-vMin)/(vMax-vMin))*ah;
+  const tc = getThemeColors();
+
   for(let g=0;g<=3;g++){
     const y=padT+(g/3)*ah;
-    ctx.strokeStyle='#1a1e28';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+aw,y);ctx.stroke();
-    ctx.fillStyle='#5c6480';ctx.font='8px DM Mono';ctx.textAlign='right';
+    ctx.strokeStyle=tc.grid;ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+aw,y);ctx.stroke();
+    ctx.fillStyle=tc.text;ctx.font='8px DM Mono';ctx.textAlign='right';
     ctx.fillText((vMax-(g/3)*(vMax-vMin)).toFixed(1)+'%',padL-3,y+3);
   }
-  ctx.save();ctx.globalAlpha=.12;ctx.fillStyle='#8b7ff5';
+  ctx.save();ctx.globalAlpha=.12;ctx.fillStyle=tc.primary;
   ctx.beginPath();ctx.moveTo(px(0),py(vols[0]));
   vols.forEach((v,i)=>ctx.lineTo(px(i),py(v)));
   ctx.lineTo(px(n-1),padT+ah);ctx.lineTo(px(0),padT+ah);ctx.closePath();ctx.fill();ctx.restore();
-  ctx.strokeStyle='#8b7ff5';ctx.lineWidth=1.5;ctx.setLineDash([]);
+  ctx.strokeStyle=tc.primary;ctx.lineWidth=1.5;ctx.setLineDash([]);
   ctx.beginPath();vols.forEach((v,i)=>i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v)));ctx.stroke();
   const avg=vols.reduce((s,v)=>s+v,0)/vols.length;
   ctx.strokeStyle='rgba(245,166,35,.55)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
   ctx.beginPath();ctx.moveTo(padL,py(avg));ctx.lineTo(padL+aw,py(avg));ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle='rgba(245,166,35,.7)';ctx.font='9px DM Mono';ctx.textAlign='left';
   ctx.fillText('Prom: '+avg.toFixed(1)+'%',padL+3,py(avg)-3);
-  ctx.fillStyle='#5c6480';ctx.textAlign='center';ctx.fillText('Vol realizada 21D anualizada',padL+aw/2,H-3);
+  ctx.fillStyle=tc.text;ctx.textAlign='center';ctx.fillText('Vol realizada 21D anualizada',padL+aw/2,H-3);
 }
 
 function drawMiniCone(id,gRes,color){
@@ -1287,10 +1309,12 @@ function drawMiniCone(id,gRes,color){
   const all=[...hsl,...pLo,...pHi];
   const vMin=Math.min(...all)*.997,vMax=Math.max(...all)*1.003;
   const tot=nH+horizon,px=i=>padL+(i/(tot-1))*aw,py=v=>padT+(1-(v-vMin)/(vMax-vMin))*ah;
+  const tc = getThemeColors();
+
   for(let i=0;i<=3;i++){
-    const y=padT+(i/3)*ah;ctx.strokeStyle='#1a1e28';ctx.lineWidth=.5;
+    const y=padT+(i/3)*ah;ctx.strokeStyle=tc.grid;ctx.lineWidth=.5;
     ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+aw,y);ctx.stroke();
-    const v=vMax-(i/3)*(vMax-vMin);ctx.fillStyle='#5c6480';ctx.font='8px DM Mono';ctx.textAlign='right';
+    const v=vMax-(i/3)*(vMax-vMin);ctx.fillStyle=tc.text;ctx.font='8px DM Mono';ctx.textAlign='right';
     ctx.fillText(v.toFixed(v<50?4:1),padL-3,y+3);
   }
   ctx.save();ctx.globalAlpha=.18;ctx.fillStyle=color;
@@ -1302,9 +1326,9 @@ function drawMiniCone(id,gRes,color){
   for(const band of[pHi,pLo]){ctx.beginPath();for(let i=0;i<=horizon;i++){const x=px(nH-1+i);i===0?ctx.moveTo(x,py(band[i])):ctx.lineTo(x,py(band[i]))}ctx.stroke();}ctx.restore();
   ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([]);
   ctx.beginPath();for(let i=0;i<=horizon;i++){const x=px(nH-1+i);i===0?ctx.moveTo(x,py(p50[i])):ctx.lineTo(x,py(p50[i]))}ctx.stroke();
-  ctx.strokeStyle='rgba(232,234,240,.5)';ctx.lineWidth=1.2;
+  ctx.strokeStyle=tc.histLine;ctx.lineWidth=1.2;
   ctx.beginPath();for(let i=0;i<nH;i++){const x=px(i);i===0?ctx.moveTo(x,py(hsl[i])):ctx.lineTo(x,py(hsl[i]))}ctx.stroke();
-  const sX=px(nH-1);ctx.strokeStyle='rgba(92,100,128,.4)';ctx.lineWidth=.8;ctx.setLineDash([3,3]);
+  const sX=px(nH-1);ctx.strokeStyle=tc.sepLine;ctx.lineWidth=.8;ctx.setLineDash([3,3]);
   ctx.beginPath();ctx.moveTo(sX,padT);ctx.lineTo(sX,padT+ah);ctx.stroke();ctx.setLineDash([]);
 }
 
@@ -1318,20 +1342,22 @@ function drawWidthChart(gjrRes,stdRes,normRes){
   const nW=normRes.pHi.map((h,i)=>(h-normRes.pLo[i])/normRes.pLo[i]*100);
   const maxW=Math.max(...gW,...sW,...nW);
   const px=i=>padL+(i/horizon)*aw,py=v=>padT+(1-v/maxW)*ah;
+  const tc = getThemeColors();
+
   for(let g=0;g<=2;g++){
-    const y=padT+(g/2)*ah;ctx.strokeStyle='#1a1e28';ctx.lineWidth=.5;
+    const y=padT+(g/2)*ah;ctx.strokeStyle=tc.grid;ctx.lineWidth=.5;
     ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+aw,y);ctx.stroke();
-    ctx.fillStyle='#5c6480';ctx.font='8px DM Mono';ctx.textAlign='right';
+    ctx.fillStyle=tc.text;ctx.font='8px DM Mono';ctx.textAlign='right';
     ctx.fillText(((1-g/2)*maxW).toFixed(1)+'%',padL-3,y+3);
   }
-  const lines=[{d:gW,c:'#8b7ff5',dash:[],lbl:'GJR-GARCH'},{d:sW,c:'#2dd4a0',dash:[4,3],lbl:'GARCH std'},{d:nW,c:'#f55f5f',dash:[2,3],lbl:'Normal'}];
+  const lines=[{d:gW,c:tc.primary,dash:[],lbl:'GJR-GARCH'},{d:sW,c:tc.accent,dash:[4,3],lbl:'GARCH std'},{d:nW,c:'#f55f5f',dash:[2,3],lbl:'Normal'}];
   lines.forEach(({d,c,dash,lbl},li)=>{
     ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.setLineDash(dash);
     ctx.beginPath();d.forEach((w,i)=>i===0?ctx.moveTo(px(i),py(w)):ctx.lineTo(px(i),py(w)));ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=c;ctx.font='8px DM Mono';ctx.textAlign='right';
     ctx.fillText(lbl,padL+aw,padT+10+li*11);
   });
-  ctx.fillStyle='#5c6480';ctx.textAlign='center';ctx.font='8px DM Mono';ctx.fillText('Horizonte',padL+aw/2,H-2);
+  ctx.fillStyle=tc.text;ctx.textAlign='center';ctx.font='8px DM Mono';ctx.fillText('Horizonte',padL+aw/2,H-2);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

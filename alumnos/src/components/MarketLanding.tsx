@@ -1463,10 +1463,10 @@ export default function MarketLanding() {
                 {lvl.icon}
               </div>
               <div>
-                <div className="font-bold text-sm" style={{ color: colors.text }}>
+                <div className="font-bold text-sm" style={{ color: activeLevel === lvl.key ? '#1B2632' : colors.text }}>
                   {lvl.label}
                 </div>
-                <div className="text-[10px] font-medium" style={{ color: colors.textMuted }}>
+                <div className="text-[10px] font-medium" style={{ color: activeLevel === lvl.key ? '#2C3B4D' : colors.textMuted }}>
                   {lvl.description}
                 </div>
               </div>
