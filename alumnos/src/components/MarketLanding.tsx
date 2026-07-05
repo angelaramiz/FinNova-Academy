@@ -1293,7 +1293,7 @@ export default function MarketLanding() {
             ORO ~${Math.round(livePrice).toLocaleString()}
           </div>
           <Link
-            to="/student"
+            to="/cursos"
             className="px-5 py-2 text-[11px] font-semibold tracking-wider uppercase transition-all duration-200"
             style={{
               border: '1px solid #C9A84C',
@@ -1302,7 +1302,7 @@ export default function MarketLanding() {
               fontFamily: '"Space Grotesk", sans-serif',
             }}
           >
-            Ir al Portal
+            Ver Cursos
           </Link>
         </div>
       </header>
