@@ -215,8 +215,45 @@ function MarketMoodGauge({ theme }: { theme: Theme }) {
   );
 }
 
+const ASSET_HISTORICAL_DATA: Record<string, { yr: number; pnl: number }[]> = {
+  XAU: PNL_DATA.filter(d => d.yr >= 2016).map(d => ({ yr: d.yr, pnl: d.pnl })),
+  XAG: [
+    { yr: 2016, pnl: 4800 },
+    { yr: 2017, pnl: -1200 },
+    { yr: 2018, pnl: -3500 },
+    { yr: 2019, pnl: 2900 },
+    { yr: 2020, pnl: 14500 },
+    { yr: 2021, pnl: -2200 },
+    { yr: 2022, pnl: 800 },
+    { yr: 2023, pnl: 1500 },
+    { yr: 2024, pnl: 9200 },
+  ],
+  CL: [
+    { yr: 2016, pnl: 3200 },
+    { yr: 2017, pnl: 2800 },
+    { yr: 2018, pnl: -8200 },
+    { yr: 2019, pnl: 5500 },
+    { yr: 2020, pnl: -18000 },
+    { yr: 2021, pnl: 16500 },
+    { yr: 2022, pnl: 12000 },
+    { yr: 2023, pnl: -4500 },
+    { yr: 2024, pnl: 3100 },
+  ],
+  SPX: [
+    { yr: 2016, pnl: 9500 },
+    { yr: 2017, pnl: 19400 },
+    { yr: 2018, pnl: -6200 },
+    { yr: 2019, pnl: 28900 },
+    { yr: 2020, pnl: 16300 },
+    { yr: 2021, pnl: 26900 },
+    { yr: 2022, pnl: -18100 },
+    { yr: 2023, pnl: 24200 },
+    { yr: 2024, pnl: 21500 },
+  ],
+};
+
 // ─── ANIMATED HERO CHART (Canvas) ──────────────────────────────────────────────
-function HeroChart({ theme }: { theme: Theme }) {
+function HeroChart({ theme, asset = 'XAU' }: { theme: Theme; asset?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colors = themeColors[theme];
 
@@ -229,7 +266,7 @@ function HeroChart({ theme }: { theme: Theme }) {
     const dpr = window.devicePixelRatio || 1;
     let animFrame = 0;
     const animTotal = 80;
-    const data = PNL_DATA.filter(d => d.yr >= 2016);
+    const data = ASSET_HISTORICAL_DATA[asset] || ASSET_HISTORICAL_DATA['XAU'];
     const max = Math.max(...data.map(d => Math.abs(d.pnl)));
 
     function resize() {
@@ -245,11 +282,17 @@ function HeroChart({ theme }: { theme: Theme }) {
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
       ctx.clearRect(0, 0, W, H);
-      const pad = { l: 45, r: 16, t: 20, b: 30 };
+      const pad = { l: 45, r: 16, t: 25, b: 30 };
       const chartW = W - pad.l - pad.r;
       const chartH = H - pad.t - pad.b;
       const barW = chartW / data.length;
       const mid = pad.t + chartH / 2;
+
+      // Draw asset label at top-left
+      ctx.fillStyle = colors.text;
+      ctx.font = 'bold 9px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(asset === 'XAU' ? 'ORO (XAU)' : asset === 'XAG' ? 'PLATA (XAG)' : asset === 'CL' ? 'PETRÓLEO (CL)' : 'S&P 500 (SPX)', pad.l, pad.t - 8);
 
       // Base flat line
       ctx.strokeStyle = colors.border;
@@ -309,7 +352,7 @@ function HeroChart({ theme }: { theme: Theme }) {
     const handleResize = () => { resize(); drawFrame(animTotal); };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [theme, colors]);
+  }, [theme, colors, asset]);
 
   return (
     <div
@@ -765,9 +808,11 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
 // ─── BASIC LEVEL COMPONENT ─────────────────────────────────────────────────────
 interface LevelProps {
   theme: Theme;
+  selectedAsset: string;
+  setSelectedAsset: (ticker: string) => void;
 }
 
-function BasicLevel({ theme }: LevelProps) {
+function BasicLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -775,13 +820,13 @@ function BasicLevel({ theme }: LevelProps) {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
-              Precio del Oro · Histórico Jun→Jul
+              Precio de {selectedAsset === 'XAU' ? 'Oro' : selectedAsset === 'XAG' ? 'Plata' : selectedAsset === 'CL' ? 'Petróleo' : 'S&P 500'} · Histórico Jun→Jul
             </span>
             <div className="flex-1 h-0.5" style={{ background: colors.border }} />
           </div>
-          <HeroChart theme={theme} />
+          <HeroChart theme={theme} asset={selectedAsset} />
           <p className="text-[11px] mt-2 font-medium" style={{ color: colors.textMuted }}>
-            Muestra el rendimiento por contrato del oro en el período Jun→Jul de cada año. Las barras representan las ganancias o pérdidas netas de la estacionalidad.
+            Muestra el rendimiento por contrato de {selectedAsset === 'XAU' ? 'oro' : selectedAsset === 'XAG' ? 'plata' : selectedAsset === 'CL' ? 'petróleo' : 'S&P 500'} en el período Jun→Jul de cada año. Las barras representan las ganancias o pérdidas netas de la estacionalidad.
           </p>
         </div>
 
@@ -817,41 +862,46 @@ function BasicLevel({ theme }: LevelProps) {
       >
         <div className="flex items-center gap-2 mb-4">
           <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
-            Panel de Activos Principales
+            Panel de Activos Principales (Haz clic para ver gráfico)
           </span>
           <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ASSETS.map((asset) => (
-            <div
-              key={asset.ticker}
-              className="border p-4 rounded transition-all duration-200"
-              style={{
-                borderColor: colors.border,
-                background: colors.bg,
-              }}
-            >
-              <div className="text-[9px] uppercase tracking-wider mb-1 font-bold" style={{ color: colors.textMuted }}>
-                {asset.name}
+          {ASSETS.map((asset) => {
+            const isActive = selectedAsset === asset.ticker;
+            return (
+              <div
+                key={asset.ticker}
+                onClick={() => setSelectedAsset(asset.ticker)}
+                className="border p-4 rounded transition-all duration-150 cursor-pointer active:scale-[0.98]"
+                style={{
+                  borderColor: isActive ? colors.secondary : colors.border,
+                  borderWidth: isActive ? '2.5px' : '2px',
+                  background: isActive ? colors.cardSecondary : colors.bg,
+                }}
+              >
+                <div className="text-[9px] uppercase tracking-wider mb-1 font-bold" style={{ color: isActive ? (theme === 'light' ? '#1B2632' : '#EEE9DF') : colors.textMuted }}>
+                  {asset.name}
+                </div>
+                <div className="font-mono text-lg font-bold" style={{ color: isActive ? (theme === 'light' ? '#1B2632' : '#EEE9DF') : colors.text }}>
+                  ${asset.price.toLocaleString()}
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  {asset.change >= 0 ? (
+                    <ArrowUpRight className="w-3 h-3" style={{ color: isActive ? (theme === 'light' ? '#A35139' : '#FFB162') : colors.secondary }} />
+                  ) : (
+                    <ArrowDownRight className="w-3 h-3" style={{ color: isActive ? (theme === 'light' ? '#A35139' : '#FFB162') : colors.secondary }} />
+                  )}
+                  <span
+                    className="font-mono text-xs font-bold"
+                    style={{ color: isActive ? (theme === 'light' ? '#A35139' : '#FFB162') : colors.secondary }}
+                  >
+                    {asset.change >= 0 ? '+' : ''}{asset.change}%
+                  </span>
+                </div>
               </div>
-              <div className="font-mono text-lg font-bold" style={{ color: colors.text }}>
-                ${asset.price.toLocaleString()}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                {asset.change >= 0 ? (
-                  <ArrowUpRight className="w-3 h-3" style={{ color: colors.secondary }} />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3" style={{ color: colors.secondary }} />
-                )}
-                <span
-                  className="font-mono text-xs font-bold"
-                  style={{ color: colors.secondary }}
-                >
-                  {asset.change >= 0 ? '+' : ''}{asset.change}%
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -888,7 +938,7 @@ function BasicLevel({ theme }: LevelProps) {
 }
 
 // ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
-function IntermediateLevel({ theme }: LevelProps) {
+function IntermediateLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -908,10 +958,10 @@ function IntermediateLevel({ theme }: LevelProps) {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
-              Rendimiento Estacional Jun→Jul · 15 Años
+              Rendimiento Estacional Jun→Jul · 15 Años ({selectedAsset})
             </span>
           </div>
-          <HeroChart theme={theme} />
+          <HeroChart theme={theme} asset={selectedAsset} />
         </div>
 
         {/* Monthly Bar Chart */}
@@ -1117,7 +1167,7 @@ function IntermediateLevel({ theme }: LevelProps) {
 }
 
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
-function AdvancedLevel({ theme }: LevelProps) {
+function AdvancedLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
   const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
   const colors = themeColors[theme];
 
@@ -1218,7 +1268,7 @@ function AdvancedLevel({ theme }: LevelProps) {
 }
 
 // ─── CTA BANNER ────────────────────────────────────────────────────────────────
-function CtaBanner({ theme }: LevelProps) {
+function CtaBanner({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div
@@ -1310,6 +1360,7 @@ const LEVELS: { key: Level; label: string; icon: React.ReactNode; description: s
 
 export default function MarketLanding() {
   const [activeLevel, setActiveLevel] = useState<Level>('basico');
+  const [selectedAsset, setSelectedAsset] = useState<string>('XAU');
   const [livePrice, setLivePrice] = useState(4078);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('theme');
@@ -1452,7 +1503,7 @@ export default function MarketLanding() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <HeroChart theme={theme} />
+            <HeroChart theme={theme} asset={selectedAsset} />
           </div>
         </div>
       </section>
@@ -1495,12 +1546,12 @@ export default function MarketLanding() {
         </div>
 
         {/* Active Level Content */}
-        {activeLevel === 'basico' && <BasicLevel theme={theme} />}
-        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} />}
-        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} />}
+        {activeLevel === 'basico' && <BasicLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
+        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
+        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
 
         {/* CTA — Only for basic and intermediate */}
-        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} />}
+        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
       </main>
 
       {/* FOOTER */}
