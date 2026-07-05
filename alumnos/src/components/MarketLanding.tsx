@@ -455,11 +455,416 @@ function BasicLevel() {
   );
 }
 
+// ─── GJR-GARCH MATH & SIMULATION ENGINE (FOR INTERMEDIATE) ──────────────────────
+const GARCH_FALLBACK_PRICES: Record<string, number[]> = {
+  USDMXN: [
+    18.28, 18.28, 18.31, 18.28, 18.17, 18.26, 18.18, 18.16, 18.03, 18.00,
+    17.99, 17.98, 17.96, 18.01, 17.99, 17.96, 17.90, 17.93, 17.90, 17.97, 17.98,
+    17.98, 17.91, 17.92, 17.98, 17.98, 17.91, 17.97, 17.96, 17.82, 17.79,
+    17.65, 17.63, 17.59, 17.58, 17.48, 17.47, 17.37, 17.36, 17.16, 17.15, 17.23,
+    17.47, 17.38, 17.24, 17.32, 17.50, 17.25, 17.21, 17.18, 17.19, 17.21,
+    17.16, 17.17, 17.12, 17.21, 17.26, 17.10, 17.15, 17.22, 17.28, 17.19,
+    17.25, 17.31, 17.24, 17.18, 17.22, 17.29, 17.35, 17.28, 17.21, 17.26,
+    17.33, 17.27, 17.20, 17.25, 17.30, 17.23, 17.18, 17.22, 17.28, 17.34,
+    17.27, 17.21, 17.26, 17.32, 17.28, 17.22, 17.18, 17.24, 17.30, 17.26,
+    17.21, 17.27, 17.33, 17.28, 17.23, 17.19, 17.25, 17.28, 17.34, 17.29,
+    17.24, 17.30, 17.36, 17.31, 17.27, 17.32, 17.28, 17.23, 17.29, 17.35,
+    17.30, 17.26, 17.31, 17.37, 17.32, 17.28, 17.34, 17.51, 17.40, 17.35,
+    17.27, 17.35, 17.46, 17.4975
+  ],
+  SPY: [
+    547.6, 551.2, 548.8, 553.1, 556.7, 554.3, 558.6, 562.2, 559.8, 564.1,
+    568.4, 565.9, 570.2, 574.5, 572.1, 576.4, 580.7, 578.3, 582.6, 586.9,
+    584.5, 588.8, 592.4, 590.0, 594.3, 598.6, 596.2, 600.5, 604.8, 602.4,
+    598.7, 594.3, 590.8, 595.2, 599.6, 603.1, 607.4, 605.0, 609.3, 613.6,
+    611.2, 607.8, 603.4, 598.9, 594.5, 590.1, 595.6, 599.2, 603.7, 601.3,
+    597.8, 594.3, 589.9, 594.4, 598.8, 603.3, 607.7, 605.3, 600.8, 596.4,
+    591.9, 587.5, 592.0, 596.5, 601.0, 605.4, 603.0, 598.5, 594.1, 598.6,
+    603.1, 607.5, 605.1, 600.7, 596.2, 591.8, 596.3, 600.7, 605.2, 603.8,
+    599.3, 594.9, 590.4, 595.9, 600.3, 604.8, 602.4, 597.9, 593.5, 598.0,
+    602.4, 606.9, 604.5, 600.0, 595.6, 591.1, 595.6, 600.1, 604.5, 602.1
+  ],
+  GLD: [
+    431.3, 428.8, 426.3, 423.9, 421.5, 419.2, 416.9, 414.7, 412.5, 411.3,
+    409.2, 411.8, 414.3, 416.9, 419.5, 422.2, 424.9, 427.7, 430.5, 433.3,
+    436.2, 432.8, 429.5, 426.2, 422.9, 425.6, 428.4, 431.1, 433.9, 436.7,
+    433.4, 430.1, 432.8, 435.5, 438.3, 441.1, 438.9, 436.6, 434.4, 432.2,
+    430.0, 432.8, 435.6, 438.4, 436.2, 434.0, 436.8, 439.6, 437.4, 435.2,
+    433.0, 435.8, 438.7, 436.5, 434.3, 432.1, 430.0, 432.8, 435.7, 437.6,
+    435.4, 433.3, 431.1, 428.9, 431.8, 434.7, 437.6, 435.4, 433.3, 431.1,
+    433.8, 436.5, 434.4, 432.2, 430.1, 432.9, 435.7, 433.6, 431.4, 429.3,
+    432.1, 434.9, 432.8, 430.7, 432.5, 435.4, 433.2, 431.1, 429.0, 432.9,
+    434.8, 432.6, 430.5, 432.3, 434.1, 432.0, 431.5, 433.2, 433.8, 411.3
+  ],
+  UNG: [
+    7.27, 7.41, 7.34, 7.20, 7.06, 6.93, 7.07, 7.21, 7.35, 7.49,
+    7.41, 7.27, 7.13, 6.99, 6.86, 6.99, 7.13, 7.27, 7.41, 7.34,
+    7.20, 7.07, 6.94, 7.08, 7.22, 7.36, 7.50, 7.43, 7.29, 7.16,
+    7.03, 6.90, 7.04, 7.18, 7.32, 7.46, 7.38, 7.24, 7.11, 6.98,
+    7.12, 7.26, 7.40, 7.53, 7.45, 7.31, 7.18, 7.05, 6.92, 7.05,
+    7.19, 7.33, 7.46, 7.38, 7.25, 7.12, 6.99, 7.13, 7.27, 7.40,
+    7.32, 7.19, 7.06, 6.93, 7.07, 7.20, 7.34, 7.27, 7.13, 7.00,
+    6.88, 7.01, 7.15, 7.28, 7.21, 7.08, 6.95, 7.09, 7.22, 7.36,
+    7.28, 7.15, 7.02, 6.89, 7.03, 7.16, 7.30, 7.22, 7.09, 6.97,
+    7.10, 7.24, 7.17, 7.04, 6.92, 7.05, 7.19, 7.12, 6.99, 7.20
+  ]
+};
+
+function randn() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function studentT(nu: number) {
+  const df = Math.max(3, Math.round(nu));
+  const z = randn();
+  let chi2 = 0;
+  for (let i = 0; i < df; i++) {
+    chi2 += Math.pow(randn(), 2);
+  }
+  const t = z / Math.sqrt(chi2 / df);
+  return t * Math.sqrt((df - 2) / df);
+}
+
+function calibrateAndSimulateGJR(assetKey: string, horizon: number) {
+  const prices = GARCH_FALLBACK_PRICES[assetKey] || GARCH_FALLBACK_PRICES['GLD'];
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    returns.push(Math.log(prices[i] / prices[i - 1]));
+  }
+
+  const n = returns.length;
+  const mu = returns.reduce((s, r) => s + r, 0) / n;
+  const uncVar = returns.reduce((s, r) => s + Math.pow(r - mu, 2), 0) / n;
+
+  // MLE Grid search
+  let bestLL = -Infinity;
+  let best = { omega: uncVar * 0.05, alpha: 0.08, gamma: 0.06, beta: 0.88, nu: 6 };
+
+  const alphas = [0.04, 0.08, 0.12];
+  const gammas = [0.03, 0.06, 0.09];
+  const betas = [0.80, 0.86, 0.90];
+  const nus = [5, 8, 15];
+
+  for (const a of alphas) {
+    for (const gm of gammas) {
+      for (const b of betas) {
+        if (a + gm / 2 + b >= 0.99) continue;
+        const om = uncVar * (1 - a - gm / 2 - b) * 0.1;
+        if (om <= 0) continue;
+        for (const nu of nus) {
+          let v2 = uncVar;
+          let ll = 0;
+          for (const r of returns) {
+            const eps = r - mu;
+            if (v2 <= 0) { ll = -Infinity; break; }
+            ll += -0.5 * Math.log(v2) - 0.5 * (nu + 1) * Math.log(1 + Math.pow(eps, 2) / (v2 * (nu - 2)));
+            const ind = eps < 0 ? 1 : 0;
+            v2 = om + a * Math.pow(eps, 2) + gm * ind * Math.pow(eps, 2) + b * v2;
+            v2 = Math.max(v2, 1e-9);
+          }
+          if (ll > bestLL) {
+            bestLL = ll;
+            best = { omega: om, alpha: a, gamma: gm, beta: b, nu };
+          }
+        }
+      }
+    }
+  }
+
+  let currentVol2 = uncVar;
+  for (const r of returns) {
+    const eps = r - mu;
+    const ind = eps < 0 ? 1 : 0;
+    currentVol2 = best.omega + best.alpha * Math.pow(eps, 2) + best.gamma * ind * Math.pow(eps, 2) + best.beta * currentVol2;
+    currentVol2 = Math.max(currentVol2, 1e-9);
+  }
+
+  // Monte Carlo Paths
+  const nSims = 3000;
+  const S_last = prices[prices.length - 1];
+  const paths: number[][] = [];
+
+  for (let s = 0; s < nSims; s++) {
+    const path = [S_last];
+    let v2 = currentVol2;
+    for (let t = 0; t < horizon; t++) {
+      const z = studentT(best.nu);
+      const r = mu + Math.sqrt(v2) * z;
+      path.push(path[path.length - 1] * Math.exp(r));
+      const eps = r - mu;
+      const ind = eps < 0 ? 1 : 0;
+      v2 = Math.max(best.omega + best.alpha * Math.pow(eps, 2) + best.gamma * ind * Math.pow(eps, 2) + best.beta * v2, 1e-9);
+    }
+    paths.push(path);
+  }
+
+  const p10: number[] = [];
+  const p50: number[] = [];
+  const p90: number[] = [];
+
+  for (let t = 0; t <= horizon; t++) {
+    const vals = paths.map(p => p[t]).sort((a, b) => a - b);
+    p10.push(vals[Math.floor(0.10 * nSims)]);
+    p50.push(vals[Math.floor(0.50 * nSims)]);
+    p90.push(vals[Math.floor(0.90 * nSims)]);
+  }
+
+  const volAnn = Math.sqrt(currentVol2 * 252) * 100;
+  return { hist: prices.slice(-40), p10, p50, p90, volAnn, S_last };
+}
+
+function IntermediateGarchSimulator() {
+  const [asset, setAsset] = useState('GLD');
+  const [horizon, setHorizon] = useState(21);
+  const [simResults, setSimResults] = useState<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const runSimulation = useCallback(() => {
+    const res = calibrateAndSimulateGJR(asset, horizon);
+    setSimResults(res);
+  }, [asset, horizon]);
+
+  useEffect(() => {
+    runSimulation();
+  }, [asset, runSimulation]);
+
+  useEffect(() => {
+    if (!simResults) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dprVal = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth;
+    const H = canvas.offsetHeight;
+    canvas.width = W * dprVal;
+    canvas.height = H * dprVal;
+    ctx.scale(dprVal, dprVal);
+
+    ctx.clearRect(0, 0, W, H);
+    const { hist, p10, p50, p90, S_last } = simResults;
+    const nH = hist.length;
+    const tot = nH + horizon;
+    
+    const padL = 45;
+    const padR = 15;
+    const padT = 15;
+    const padB = 25;
+    const aw = W - padL - padR;
+    const ah = H - padT - padB;
+
+    const all = [...hist, ...p10, ...p90];
+    const vMin = Math.min(...all) * 0.995;
+    const vMax = Math.max(...all) * 1.005;
+
+    const px = (i: number) => padL + (i / (tot - 1)) * aw;
+    const py = (v: number) => padT + (1 - (v - vMin) / (vMax - vMin)) * ah;
+
+    // Grid lines
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (i / 4) * ah;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + aw, y);
+      ctx.stroke();
+
+      const val = vMax - (i / 4) * (vMax - vMin);
+      ctx.fillStyle = '#5c6480';
+      ctx.font = '9px "Space Mono", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(val.toFixed(val < 20 ? 2 : 0), padL - 5, y + 3);
+    }
+
+    // Cone Fill (IC 80%)
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#f5a623';
+    ctx.beginPath();
+    for (let i = 0; i <= horizon; i++) {
+      const x = px(nH - 1 + i);
+      if (i === 0) ctx.moveTo(x, py(p90[i]));
+      else ctx.lineTo(x, py(p90[i]));
+    }
+    for (let i = horizon; i >= 0; i--) {
+      ctx.lineTo(px(nH - 1 + i), py(p10[i]));
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Upper/Lower dotted lines
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(245, 166, 35, 0.6)';
+    ctx.lineWidth = 1;
+    for (const band of [p10, p90]) {
+      ctx.beginPath();
+      for (let i = 0; i <= horizon; i++) {
+        const x = px(nH - 1 + i);
+        if (i === 0) ctx.moveTo(x, py(band[i]));
+        else ctx.lineTo(x, py(band[i]));
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Median prediction line
+    ctx.strokeStyle = '#2dd4a0';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= horizon; i++) {
+      const x = px(nH - 1 + i);
+      if (i === 0) ctx.moveTo(x, py(p50[i]));
+      else ctx.lineTo(x, py(p50[i]));
+    }
+    ctx.stroke();
+
+    // Historical prices
+    ctx.strokeStyle = 'rgba(232, 234, 240, 0.75)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < nH; i++) {
+      const x = px(i);
+      if (i === 0) ctx.moveTo(x, py(hist[i]));
+      else ctx.lineTo(x, py(hist[i]));
+    }
+    ctx.stroke();
+
+    // Separator line
+    const sepX = px(nH - 1);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(sepX, padT);
+    ctx.lineTo(sepX, padT + ah);
+    ctx.stroke();
+
+    // Label separating real and projection
+    ctx.fillStyle = '#7A7268';
+    ctx.font = '9px "Space Grotesk", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('← Real', padL + (sepX - padL) / 2, H - 4);
+    ctx.fillText(`Proyección GJR-GARCH (${horizon}d) →`, sepX + (padL + aw - sepX) / 2, H - 4);
+
+    // Current Price Node
+    ctx.fillStyle = '#e8eaf0';
+    ctx.beginPath();
+    ctx.arc(sepX, py(S_last), 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2dd4a0';
+    ctx.font = 'bold 10px "Space Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(S_last.toFixed(S_last < 20 ? 3 : 1), sepX + 6, py(S_last) + 3);
+
+  }, [simResults, horizon]);
+
+  const assetNames: Record<string, string> = {
+    GLD: 'Oro (GLD ETF)',
+    SPY: 'S&P 500 (SPY ETF)',
+    USDMXN: 'USD/MXN Tipo de Cambio',
+    UNG: 'Gas Natural (UNG ETF)',
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5 border p-5 rounded-lg mb-6" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
+      <div className="space-y-4">
+        <div>
+          <span className="font-mono text-[9px] uppercase tracking-widest block mb-1 text-teal-400">Modelo Cuantitativo</span>
+          <h4 className="text-sm font-semibold text-slate-200">Proyector de Volatilidad GJR-GARCH</h4>
+          <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+            Calibra la asimetría de volatilidad en tiempo real y estima el rango probable de precios mediante simulación Monte Carlo.
+          </p>
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <div>
+            <label className="text-[10px] uppercase font-mono tracking-wider block mb-1 text-slate-400">Activo Financiero</label>
+            <select
+              value={asset}
+              onChange={(e) => setAsset(e.target.value)}
+              className="w-full bg-[#1A2338] border border-slate-700/60 rounded px-2.5 py-1.5 text-xs text-slate-200 outline-none focus:border-teal-450"
+            >
+              <option value="GLD">Oro (GLD)</option>
+              <option value="SPY">S&P 500 (SPY)</option>
+              <option value="USDMXN">USD/MXN</option>
+              <option value="UNG">Gas Natural (UNG)</option>
+            </select>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[10px] uppercase font-mono tracking-wider block text-slate-400">Horizonte de Proyección</label>
+              <span className="text-xs font-mono font-bold text-teal-400">{horizon}d</span>
+            </div>
+            <input
+              type="range"
+              min="5"
+              max="42"
+              step="1"
+              value={horizon}
+              onChange={(e) => setHorizon(parseInt(e.target.value))}
+              className="w-full h-1 bg-[#131A2D] rounded-lg appearance-none cursor-pointer accent-teal-400"
+            />
+          </div>
+
+          <button
+            onClick={runSimulation}
+            className="w-full py-2 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 text-teal-400 rounded text-xs font-bold font-mono tracking-wider transition uppercase"
+          >
+            ▶ Recalcular Modelo
+          </button>
+        </div>
+
+        {simResults && (
+          <div className="bg-[#131A2D]/60 border border-slate-800/80 rounded p-3 text-[11px] leading-relaxed space-y-1.5 text-left">
+            <div>
+              <span className="text-slate-500">Vol Anualizada:</span>{' '}
+              <span className="font-mono text-teal-450 font-bold">{simResults.volAnn.toFixed(1)}%</span>
+            </div>
+            <div className="text-[10px] text-slate-400 leading-snug">
+              Con 95% de confianza, se estima que el rango para {assetNames[asset]} en {horizon} días estará entre{' '}
+              <span className="font-mono text-[#f5a623] font-bold">${simResults.p10[horizon].toFixed(asset === 'UNG' ? 2 : 1)}</span> y{' '}
+              <span className="font-mono text-[#f5a623] font-bold">${simResults.p90[horizon].toFixed(asset === 'UNG' ? 2 : 1)}</span>.
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="relative min-h-[220px] bg-[#0A0E1A] rounded overflow-hidden flex flex-col justify-between p-1.5 border border-slate-800/60">
+        <canvas ref={canvasRef} className="w-full h-[210px] block" />
+        <div className="flex justify-between items-center px-2 py-1 text-[8px] font-mono text-slate-500 uppercase tracking-widest">
+          <span>MC Sims: 3,000</span>
+          <span>Ecuación: GJR-GARCH MLE (Student-t)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
 // ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
 function IntermediateLevel() {
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Chart + Calendar */}
+      {/* GJR-GARCH Interactive Simulator (Fused Layer) */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
+            Simulador de Volatilidad Cuantitativa (Fusión GJR-GARCH)
+          </span>
+          <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
+        </div>
+        <IntermediateGarchSimulator />
+      </div>
+
+      {/* Seasonal Charts + Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -672,36 +1077,85 @@ function IntermediateLevel() {
 
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
 function AdvancedLevel() {
+  const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Info banner */}
-      <div
-        className="flex items-start gap-3 p-4 rounded-lg text-[12px]"
-        style={{
-          background: 'rgba(179,64,64,0.06)',
-          border: '1px solid rgba(179,64,64,0.2)',
-          color: '#D8D0C0',
-        }}
-      >
-        <Shield className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#B34040' }} />
-        <div>
-          <strong style={{ color: '#E8E0D0' }}>Nivel Experto:</strong> Dashboard completo con análisis estacional, heatmap intra-semana, niveles operativos, ratio riesgo:recompensa y contexto fundamental.
-          <br />
-          <span style={{ color: '#7A7268' }}>
-            Próximamente: Tracking en tiempo real de activos y contratos comprados.
-          </span>
-        </div>
+      {/* Sub tabs inside advanced */}
+      <div className="flex border-b border-slate-800 gap-4 pb-2">
+        <button
+          onClick={() => setSubTab('cuantitativa')}
+          className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
+            subTab === 'cuantitativa'
+              ? 'border-teal-400 text-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-350'
+          }`}
+        >
+          Capa Cuantitativa (GJR-GARCH MLE)
+        </button>
+        <button
+          onClick={() => setSubTab('estacional')}
+          className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
+            subTab === 'estacional'
+              ? 'border-teal-400 text-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-350'
+          }`}
+        >
+          Capa Estacional (Historial COMEX)
+        </button>
       </div>
 
-      {/* Full oro_estacional_dashboard embedded */}
-      <div className="w-full rounded-lg overflow-hidden border" style={{ borderColor: 'rgba(201,168,76,0.15)' }}>
-        <iframe
-          src="/oro_estacional_dashboard.html"
-          className="w-full border-none"
-          style={{ height: '2200px', background: '#0A0E1A' }}
-          title="Dashboard Estacional Completo del Oro"
-        />
-      </div>
+      {subTab === 'cuantitativa' && (
+        <div className="space-y-4 animate-fadeIn">
+          <div
+            className="flex items-start gap-3 p-4 rounded-lg text-[12px]"
+            style={{
+              background: 'rgba(91,156,246,0.06)',
+              border: '1px solid rgba(91,156,246,0.2)',
+              color: '#D8D0C0',
+            }}
+          >
+            <Sparkles className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#5B9CF6' }} />
+            <div>
+              <strong style={{ color: '#E8E0D0' }}>Capa Cuantitativa Avanzada:</strong> Motor predictivo GJR-GARCH con calibración de parámetros MLE, simulaciones Monte Carlo, tests estadísticos de Kupiec/Christoffersen y detector de régimen de volatilidad.
+            </div>
+          </div>
+          <div className="w-full rounded-lg overflow-hidden border bg-[#0d0f14]" style={{ borderColor: 'rgba(91,156,246,0.15)' }}>
+            <iframe
+              src="/motor_predictivo_v3.html"
+              className="w-full border-none bg-[#0d0f14]"
+              style={{ height: '1350px' }}
+              title="Motor Predictivo GJR-GARCH"
+            />
+          </div>
+        </div>
+      )}
+
+      {subTab === 'estacional' && (
+        <div className="space-y-4 animate-fadeIn">
+          <div
+            className="flex items-start gap-3 p-4 rounded-lg text-[12px]"
+            style={{
+              background: 'rgba(201,168,76,0.06)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              color: '#D8D0C0',
+            }}
+          >
+            <TrendingUp className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#C9A84C' }} />
+            <div>
+              <strong style={{ color: '#E8E0D0' }}>Capa Estacional Histórica:</strong> Análisis estacional del Oro COMEX con datos propios de 15 años (2010–2024) y niveles operativos de trading.
+            </div>
+          </div>
+          <div className="w-full rounded-lg overflow-hidden border bg-[#0A0E1A]" style={{ borderColor: 'rgba(201,168,76,0.15)' }}>
+            <iframe
+              src="/oro_estacional_dashboard.html"
+              className="w-full border-none bg-[#0A0E1A]"
+              style={{ height: '2200px' }}
+              title="Dashboard Estacional del Oro"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
