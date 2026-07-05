@@ -379,6 +379,24 @@ const GARCH_FALLBACK_PRICES: Record<string, number[]> = {
   ]
 };
 
+function randn() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function studentT(nu: number) {
+  const df = Math.max(3, Math.round(nu));
+  const z = randn();
+  let chi2 = 0;
+  for (let i = 0; i < df; i++) {
+    chi2 += Math.pow(randn(), 2);
+  }
+  const t = z / Math.sqrt(chi2 / df);
+  return t * Math.sqrt((df - 2) / df);
+}
+
 function calibrateAndSimulateGJR(assetKey: string, horizon: number) {
   const prices = GARCH_FALLBACK_PRICES[assetKey] || GARCH_FALLBACK_PRICES['GLD'];
   const returns: number[] = [];
