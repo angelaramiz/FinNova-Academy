@@ -29,6 +29,8 @@ import { api } from './lib/api';
 import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
 import RegisterRequest from './components/RegisterRequest';
+import MarketLanding from './components/MarketLanding';
+import CoursesCatalogLanding from './components/CoursesCatalogLanding';
 import { supabase } from './lib/supabaseClient';
 
 
@@ -416,7 +418,11 @@ function AppContent() {
     navigate(`/${role}`);
   };
 
-  if ((!isAuthenticated || !profile) && location.pathname !== '/register') {
+  // Public routes that don't require authentication
+  const publicPaths = ['/', '/cursos', '/register'];
+  const isPublicRoute = publicPaths.includes(location.pathname);
+
+  if ((!isAuthenticated || !profile) && !isPublicRoute) {
     return (
       <Login
         backendWarming={backendWarming}
@@ -541,6 +547,10 @@ function AppContent() {
         )}
 
         <Routes>
+          {/* PUBLIC LANDING PAGES */}
+          <Route path="/" element={<MarketLanding />} />
+          <Route path="/cursos" element={<CoursesCatalogLanding />} />
+
           {/* PUBLIC REGISTRATION ROUTE */}
           <Route path="/register" element={<RegisterRequest />} />
 
@@ -562,8 +572,8 @@ function AppContent() {
             />
           } />
 
-          {/* ROOT REDIRECT FALLBACK */}
-          <Route path="*" element={<Navigate to="/student" replace />} />
+          {/* FALLBACK */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 

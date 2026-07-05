@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORO · Análisis Estacional · Instituto de Derivados</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --night:    #0A0E1A;
+    --deep:     #0F1628;
+    --steel:    #1E3A5F;
+    --gold:     #C9A84C;
+    --gold-dim: #8B7035;
+    --gold-hi:  #E8C96A;
+    --parch:    #E8E0D0;
+    --parch2:   #C8C0B0;
+    --green:    #2A7A4B;
+    --green-bg: rgba(42,122,75,0.12);
+    --red:      #B34040;
+    --red-bg:   rgba(179,64,64,0.12);
+    --amber:    #C87D2A;
+    --text:     #D8D0C0;
+    --muted:    #7A7268;
+    --line:     rgba(201,168,76,0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--night);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--line);
+    background: var(--deep);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo-group { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px; color: var(--gold); font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .logo-text { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--parch2); font-weight: 500; }
+  .logo-sub  { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 24px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--gold); letter-spacing: 0.1em;
+  }
+  .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.7); }
+  }
+  .cta-header {
+    padding: 8px 20px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; background: transparent;
+    transition: all 0.2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .cta-header:hover { background: var(--gold); color: var(--night); }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 60px 40px 48px;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--gold);
+    letter-spacing: 0.25em; text-transform: uppercase;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-eyebrow::after { content:''; flex:1; height:1px; background:var(--gold-dim); }
+  .hero-title {
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--parch);
+    margin-bottom: 10px;
+  }
+  .hero-title span { color: var(--gold); }
+  .hero-subtitle { font-size: 15px; color: var(--muted); max-width: 480px; margin-bottom: 32px; line-height: 1.7; }
+  .hero-stats { display: flex; gap: 32px; }
+  .hstat { }
+  .hstat-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px; font-weight: 700;
+    color: var(--gold); display: block; line-height: 1;
+  }
+  .hstat-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+  /* ── ANIMATED CHART CANVAS (hero right) ── */
+  .hero-chart-wrap {
+    position: relative; height: 220px;
+    border: 1px solid var(--line);
+    background: var(--deep);
+    overflow: hidden;
+  }
+  #heroCanvas { width: 100%; height: 100%; display: block; }
+  .chart-label {
+    position: absolute; bottom: 10px; right: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--gold-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── MAIN GRID ── */
+  .main { padding: 40px; display: grid; gap: 24px; }
+
+  /* ── SIGNAL BANNER ── */
+  .signal-banner {
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(42,122,75,0.06));
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 22px 28px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+  }
+  .signal-icon {
+    font-size: 32px; width: 56px; height: 56px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .signal-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--gold);
+    letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .signal-text { font-size: 17px; font-weight: 600; color: var(--parch); }
+  .signal-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .signal-conf {
+    text-align: right;
+  }
+  .conf-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px; font-weight: 700; color: var(--green);
+    display: block; line-height: 1;
+  }
+  .conf-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── 3-COL GRID ── */
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .two-col   { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; }
+
+  /* ── PANEL ── */
+  .panel {
+    background: var(--deep);
+    border: 1px solid var(--line);
+    padding: 24px;
+  }
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--gold);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title .pt-line { flex:1; height:1px; background:var(--line); margin-left: 12px; }
+
+  /* ── YEAR TABLE ── */
+  .year-table { width: 100%; border-collapse: collapse; }
+  .year-table th {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; color: var(--muted);
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 0 8px 10px;
+    text-align: left; border-bottom: 1px solid var(--line);
+    font-weight: 400;
+  }
+  .year-table th:last-child, .year-table td:last-child { text-align: right; }
+  .year-table tr.data-row {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+    cursor: default;
+  }
+  .year-table tr.data-row:hover { background: rgba(201,168,76,0.04); }
+  .year-table td {
+    padding: 8px 8px;
+    font-family: 'Space Mono', monospace; font-size: 11.5px;
+  }
+  .year-table td.yr   { color: var(--muted); font-size: 11px; }
+  .year-table td.px   { color: var(--text); }
+  .year-table td.chg.pos { color: var(--green); }
+  .year-table td.chg.neg { color: var(--red); }
+  .year-table td.pnl.pos { color: var(--green); font-weight: 700; }
+  .year-table td.pnl.neg { color: var(--red); }
+  .year-table td.res { text-align: right; }
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.1em;
+  }
+  .badge.win { background: var(--green-bg); color: var(--green); border: 1px solid rgba(42,122,75,0.3); }
+  .badge.loss { background: var(--red-bg); color: var(--red); border: 1px solid rgba(179,64,64,0.3); }
+
+  /* ── BAR CHART ── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: grid; grid-template-columns: 70px 1fr 52px; align-items: center; gap: 10px; }
+  .bar-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+  .bar-track { height: 20px; background: rgba(255,255,255,0.04); position: relative; overflow: hidden; }
+  .bar-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    transition: width 1.2s cubic-bezier(.22,1,.36,1);
+  }
+  .bar-fill.pos { background: linear-gradient(90deg, rgba(42,122,75,0.3), rgba(42,122,75,0.7)); }
+  .bar-fill.neg { background: linear-gradient(90deg, rgba(179,64,64,0.3), rgba(179,64,64,0.7)); }
+  .bar-val { font-family: 'Space Mono', monospace; font-size: 10px; text-align: right; }
+  .bar-val.pos { color: var(--green); }
+  .bar-val.neg { color: var(--red); }
+
+  /* ── WEEK HEATMAP ── */
+  .week-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 4px; }
+  .week-cell {
+    aspect-ratio: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; cursor: pointer;
+    transition: transform 0.15s;
+    border: 1px solid transparent;
+  }
+  .week-cell:hover { transform: scale(1.08); z-index: 2; }
+  .wc-day { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--muted); letter-spacing: 0.05em; }
+  .wc-val { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; }
+  .wc-pct { font-size: 8px; color: var(--muted); }
+
+  /* ── LEVELS ── */
+  .levels-grid { display: grid; gap: 10px; }
+  .level-row {
+    display: grid; grid-template-columns: 24px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-left: 2px solid;
+    background: var(--deep);
+  }
+  .level-icon { font-size: 14px; text-align: center; }
+  .level-name { font-size: 12px; color: var(--parch2); font-weight: 500; }
+  .level-sub  { font-size: 10px; color: var(--muted); }
+  .level-price {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px; font-weight: 700;
+    text-align: right;
+  }
+  .level-row.entry  { border-color: var(--gold); }
+  .level-row.t1     { border-color: var(--green); }
+  .level-row.t2     { border-color: #1a6b3a; }
+  .level-row.stop   { border-color: var(--red); }
+  .level-row.entry .level-price { color: var(--gold); }
+  .level-row.t1     .level-price { color: var(--green); }
+  .level-row.t2     .level-price { color: #2a9a5b; }
+  .level-row.stop   .level-price { color: var(--red); }
+
+  /* ── STAT CARDS ── */
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat-card {
+    background: var(--deep);
+    border: 1px solid var(--line);
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.gold::before  { background: var(--gold); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.red::before   { background: var(--red); }
+  .stat-card.steel::before { background: var(--steel); }
+  .sc-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+  .sc-val   {
+    font-family: 'Space Mono', monospace;
+    font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 6px;
+  }
+  .sc-sub   { font-size: 11px; color: var(--muted); }
+  .stat-card.gold  .sc-val { color: var(--gold); }
+  .stat-card.green .sc-val { color: var(--green); }
+  .stat-card.red   .sc-val { color: var(--red); }
+  .stat-card.steel .sc-val { color: var(--parch2); }
+
+  /* ── CALENDAR VISUAL ── */
+  .calendar-strip { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; }
+  .cal-month {
+    padding: 8px 4px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; letter-spacing: 0.05em;
+    border-top: 3px solid;
+    position: relative;
+  }
+  .cal-month .cm-label { color: var(--muted); }
+  .cal-month .cm-signal { font-size: 8px; margin-top: 3px; font-weight: 700; }
+  .cal-month.bullish  { border-color: var(--green); background: rgba(42,122,75,0.08); }
+  .cal-month.bearish  { border-color: var(--red);   background: rgba(179,64,64,0.08); }
+  .cal-month.neutral  { border-color: var(--muted); background: transparent; }
+  .cal-month.active   { border-color: var(--gold); background: rgba(201,168,76,0.12); }
+  .cal-month.bullish  .cm-signal { color: var(--green); }
+  .cal-month.bearish  .cm-signal { color: var(--red); }
+  .cal-month.neutral  .cm-signal { color: var(--muted); }
+  .cal-month.active   .cm-signal { color: var(--gold); }
+
+  /* ── MINI INTRAWEEK ── */
+  .intra-grid { display: grid; grid-template-columns: repeat(8,1fr); gap: 6px; margin-top: 8px; }
+  .intra-cell {
+    text-align: center; padding: 10px 4px 8px;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .intra-cell.highlight { border-color: rgba(201,168,76,0.5); background: rgba(201,168,76,0.06); }
+  .intra-cell.today { border-color: var(--gold); }
+  .ic-day  { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--muted); }
+  .ic-date { font-size: 8px; color: var(--muted); margin-bottom: 6px; }
+  .ic-val  { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; }
+  .ic-pos  { color: var(--green); }
+  .ic-neg  { color: var(--red); }
+  .ic-neu  { color: var(--muted); }
+  .ic-badge {
+    font-size: 8px; margin-top: 4px;
+    font-family: 'Space Mono', monospace; letter-spacing: 0.05em;
+  }
+
+  /* ── INSTITUTE CTA ── */
+  .institute-cta {
+    margin-top: 8px;
+    background: linear-gradient(135deg, var(--deep) 0%, #0D1E35 100%);
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: center;
+  }
+  .ic-pre {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--gold);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .ic-title { font-size: 26px; font-weight: 700; color: var(--parch); line-height: 1.2; margin-bottom: 12px; }
+  .ic-desc  { font-size: 13px; color: var(--muted); line-height: 1.7; max-width: 520px; }
+  .ic-pills { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .pill {
+    padding: 5px 14px;
+    border: 1px solid var(--line);
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .cta-big {
+    display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
+  }
+  .btn-primary {
+    padding: 14px 32px;
+    background: var(--gold);
+    color: var(--night);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border: none; cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { background: var(--gold-hi); transform: translateY(-1px); }
+  .btn-secondary {
+    padding: 10px 24px;
+    background: transparent;
+    color: var(--gold);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid rgba(201,168,76,0.4);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer {
+    padding: 20px 40px;
+    border-top: 1px solid var(--line);
+    font-size: 10px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 24px;
+  }
+
+  /* ── TOOLTIP ── */
+  #tooltip {
+    position: fixed; pointer-events: none;
+    background: var(--deep); border: 1px solid var(--gold);
+    padding: 10px 14px; z-index: 999;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    opacity: 0; transition: opacity 0.15s;
+    max-width: 200px;
+  }
+  #tooltip.show { opacity: 1; }
+
+  /* ── TABS ── */
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .tab-btn {
+    padding: 10px 20px;
+    background: transparent; border: none;
+    color: var(--muted); font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding: 32px 20px; }
+    .three-col, .two-col, .stat-cards { grid-template-columns: 1fr; }
+    .main { padding: 20px; }
+    .site-header { padding: 14px 20px; }
+    .institute-cta { grid-template-columns: 1fr; }
+    .cta-big { align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pulse, .bar-fill { animation: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="site-header">
+  <div class="logo-group">
+    <div class="logo-mark">ID</div>
+    <div>
+      <div class="logo-text">Instituto de Derivados</div>
+      <div class="logo-sub">Análisis Cuantitativo · Mercados de Futuros</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="pulse"></div>
+      <span id="livePrice">ORO ~$4,078</span>
+    </div>
+    <button class="cta-header" onclick="document.querySelector('.institute-cta').scrollIntoView({behavior:'smooth'})">Conoce el Instituto</button>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">Análisis Estacional · Datos Propios 2010–2024</div>
+    <h1 class="hero-title">ORO COMEX<br><span>Ventana de Julio</span></h1>
+    <p class="hero-subtitle">15 años de datos propios revelan que el 6–7 de julio marca el inicio del período alcista estacional del oro. Cinco fuentes independientes confirman la misma fecha.</p>
+    <div class="hero-stats">
+      <div class="hstat">
+        <span class="hstat-val" id="animConf">0%</span>
+        <div class="hstat-lbl">1ª sem. julio</div>
+      </div>
+      <div class="hstat">
+        <span class="hstat-val">15</span>
+        <div class="hstat-lbl">Años de datos</div>
+      </div>
+      <div class="hstat">
+        <span class="hstat-val" id="animPnl">$0</span>
+        <div class="hstat-lbl">P&L prom/contrato</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-chart-wrap">
+    <canvas id="heroCanvas"></canvas>
+    <div class="chart-label">JUN→JUL P&L/CONTRATO · 2016–2024</div>
+  </div>
+</section>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- Stat cards -->
+  <div class="stat-cards">
+    <div class="stat-card gold">
+      <div class="sc-label">Precio actual</div>
+      <div class="sc-val">$4,078</div>
+      <div class="sc-sub">COMEX GC · 3 Jul 2026</div>
+    </div>
+    <div class="stat-card green">
+      <div class="sc-label">Señal estacional</div>
+      <div class="sc-val">LONG</div>
+      <div class="sc-sub">A partir del 7 julio 2026</div>
+    </div>
+    <div class="stat-card red">
+      <div class="sc-label">Stop-Loss</div>
+      <div class="sc-val">$3,960</div>
+      <div class="sc-sub">−2.9% desde entrada</div>
+    </div>
+    <div class="stat-card steel">
+      <div class="sc-label">Duración ventana</div>
+      <div class="sc-val">→ Feb 21</div>
+      <div class="sc-sub">50 años Seasonax</div>
+    </div>
+  </div>
+
+  <!-- Signal banner -->
+  <div class="signal-banner">
+    <div class="signal-icon">⬆</div>
+    <div>
+      <div class="signal-tag">Señal activa · Semana del 7 julio 2026</div>
+      <div class="signal-text">LONG Oro — Inicio del Rally Estacional de Verano</div>
+      <div class="signal-sub">5 fuentes independientes convergen: Seasonax (50 años), StoneX Research, DiscoveryAlert (25 años COMEX), datos propios 2010–2024</div>
+    </div>
+    <div class="signal-conf">
+      <span class="conf-num">73%</span>
+      <div class="conf-lbl">1ª semana julio<br>positiva (11/15 años)</div>
+    </div>
+  </div>
+
+  <!-- Calendar strip -->
+  <div class="panel">
+    <div class="panel-title">Ciclo Anual del Oro · Señales por Mes <div class="pt-line"></div></div>
+    <div class="calendar-strip">
+      <div class="cal-month neutral">  <div class="cm-label">ENE</div><div class="cm-signal">+67%</div></div>
+      <div class="cal-month bearish">  <div class="cm-label">FEB</div><div class="cm-signal">SHORT</div></div>
+      <div class="cal-month neutral">  <div class="cm-label">MAR</div><div class="cm-signal">+53%</div></div>
+      <div class="cal-month bearish">  <div class="cm-label">ABR</div><div class="cm-signal">−60%</div></div>
+      <div class="cal-month bearish">  <div class="cm-label">MAY</div><div class="cm-signal">−60%</div></div>
+      <div class="cal-month bearish">  <div class="cm-label">JUN</div><div class="cm-signal">DÉBIL</div></div>
+      <div class="cal-month active">   <div class="cm-label">JUL ★</div><div class="cm-signal">ENTRADA</div></div>
+      <div class="cal-month bullish">  <div class="cm-label">AGO</div><div class="cm-signal">+65%</div></div>
+      <div class="cal-month bearish">  <div class="cm-label">SEP</div><div class="cm-signal">SHORT</div></div>
+      <div class="cal-month bullish">  <div class="cm-label">OCT</div><div class="cm-signal">+60%</div></div>
+      <div class="cal-month bullish">  <div class="cm-label">NOV</div><div class="cm-signal">+60%</div></div>
+      <div class="cal-month bullish">  <div class="cm-label">DIC</div><div class="cm-signal">+60%</div></div>
+    </div>
+  </div>
+
+  <!-- Two-col: table + levels -->
+  <div class="two-col">
+
+    <!-- Year table with tabs -->
+    <div class="panel">
+      <div class="panel-title">Historial Año por Año — Datos Propios <div class="pt-line"></div></div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this,'jun-jul')">Jun → Jul</button>
+        <button class="tab-btn" onclick="switchTab(this,'jul-ago')">Jun → Ago</button>
+        <button class="tab-btn" onclick="switchTab(this,'1sem')">1ª Semana Jul</button>
+      </div>
+
+      <!-- Tab: Jun→Jul -->
+      <div class="tab-pane active" id="tab-jun-jul">
+        <table class="year-table">
+          <thead><tr>
+            <th>Año</th><th>Entrada Jun</th><th>Salida Jul</th><th>Cambio</th><th>P&L / contrato</th><th>Resultado</th>
+          </tr></thead>
+          <tbody id="tbl-jun-jul"></tbody>
+        </table>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">GANADORES</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);font-weight:700;">10 / 15 · 67%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">P&L PROMEDIO</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;">+$2,967 / contrato</span>
+        </div>
+      </div>
+
+      <!-- Tab: Jun→Ago -->
+      <div class="tab-pane" id="tab-jul-ago">
+        <table class="year-table">
+          <thead><tr>
+            <th>Año</th><th>Entrada Jun</th><th>Salida Ago</th><th>Cambio</th><th>P&L / contrato</th><th>Resultado</th>
+          </tr></thead>
+          <tbody id="tbl-jul-ago"></tbody>
+        </table>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">GANADORES</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);font-weight:700;">9 / 15 · 60%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">P&L PROMEDIO</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;">+$6,127 / contrato</span>
+        </div>
+      </div>
+
+      <!-- Tab: 1ª Semana -->
+      <div class="tab-pane" id="tab-1sem">
+        <table class="year-table">
+          <thead><tr>
+            <th>Año</th><th>30-Jun</th><th>~7-10 Jul</th><th>Cambio</th><th>Resultado</th>
+          </tr></thead>
+          <tbody id="tbl-1sem"></tbody>
+        </table>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">GANADORES</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);font-weight:700;">11 / 15 · 73%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">RET. PROM. SEMANA</span>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;">+0.46%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div style="display:grid;gap:20px;">
+
+      <!-- Operational levels -->
+      <div class="panel">
+        <div class="panel-title">Niveles Operativos · Jul 7–10 2026 <div class="pt-line"></div></div>
+        <div class="levels-grid">
+          <div class="level-row entry">
+            <div class="level-icon">📍</div>
+            <div><div class="level-name">Entrada óptima</div><div class="level-sub">Retroceso lunes/martes</div></div>
+            <div class="level-price">$4,030–$4,050</div>
+          </div>
+          <div class="level-row t1">
+            <div class="level-icon">🎯</div>
+            <div><div class="level-name">Target 1</div><div class="level-sub">+1.5–2.0%</div></div>
+            <div class="level-price">$4,100–$4,120</div>
+          </div>
+          <div class="level-row t2">
+            <div class="level-icon">🎯</div>
+            <div><div class="level-name">Target 2</div><div class="level-sub">Rally estacional completo +3.5%</div></div>
+            <div class="level-price">$4,200</div>
+          </div>
+          <div class="level-row stop">
+            <div class="level-icon">🛑</div>
+            <div><div class="level-name">Stop-Loss</div><div class="level-sub">Invalida patrón estacional</div></div>
+            <div class="level-price">$3,960</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--gold);margin-bottom:6px;letter-spacing:0.1em;">RATIO RIESGO:RECOMPENSA</div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--muted);">Target 1</span><span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);">1 : 1.5</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:12px;color:var(--muted);">Target 2</span><span style="font-family:'Space Mono',monospace;font-size:12px;color:var(--green);">1 : 2.5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intraweek heatmap -->
+      <div class="panel">
+        <div class="panel-title">Patrón Intra-Semana <div class="pt-line"></div></div>
+        <div class="intra-grid" id="intraGrid"></div>
+        <div style="margin-top:12px;font-size:10px;color:var(--muted);">★ El mínimo ocurre el 30-Jun o 1-Jul en 56% de los años. El 7-Jul nunca fue el mínimo en 9 años.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly bar chart -->
+  <div class="three-col">
+    <div class="panel" style="grid-column:1/3;">
+      <div class="panel-title">Retorno Promedio Mensual — 15 años propios (2010–2024) <div class="pt-line"></div></div>
+      <div class="bar-chart" id="monthlyBars"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Contexto Fundamental <div class="pt-line"></div></div>
+      <div style="display:grid;gap:8px;" id="fundCards"></div>
+    </div>
+  </div>
+
+  <!-- Institute CTA -->
+  <div class="institute-cta">
+    <div>
+      <div class="ic-pre">Instituto de Derivados · Diplomados y Formación Profesional</div>
+      <div class="ic-title">Aprende a leer el mercado<br>como un profesional</div>
+      <div class="ic-desc">Este análisis es una muestra del nivel de rigor cuantitativo que aplicamos en nuestros diplomados de Finanzas Aplicadas. Datos propios, metodología MRCI, análisis de duración y gestión de riesgo activa.</div>
+      <div class="ic-pills">
+        <div class="pill">📊 Futuros y Derivados</div>
+        <div class="pill">🥇 Commodities</div>
+        <div class="pill">📐 Black-Scholes</div>
+        <div class="pill">📈 Análisis Técnico</div>
+        <div class="pill">⚖️ Gestión de Riesgo</div>
+      </div>
+    </div>
+    <div class="cta-big">
+      <button class="btn-primary">Solicitar Información →</button>
+      <button class="btn-secondary">Ver Programa Completo</button>
+      <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:4px;">Tecnológico de Monterrey · Finanzas Aplicadas</div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="disclaimer">
+  <span>© 2026 Instituto de Derivados · Análisis elaborado con datos propios 2010–2024 · LBMA PM Price · CME COMEX settlements · World Gold Council</span>
+  <span style="white-space:nowrap;">⚠ No constituye asesoría de inversión. Siempre gestiona tu riesgo.</span>
+</footer>
+
+<div id="tooltip"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const junJul = [
+  {yr:2010,e:1245,x:1184,pnl:-6100},{yr:2011,e:1499,x:1613,pnl:11400},
+  {yr:2012,e:1601,x:1615,pnl:1400}, {yr:2013,e:1225,x:1315,pnl:9000},
+  {yr:2014,e:1315,x:1303,pnl:-1200},{yr:2015,e:1173,x:1095,pnl:-7800},
+  {yr:2016,e:1322,x:1350,pnl:2800}, {yr:2017,e:1241,x:1269,pnl:2800},
+  {yr:2018,e:1252,x:1224,pnl:-2800},{yr:2019,e:1409,x:1427,pnl:1800},
+  {yr:2020,e:1781,x:1970,pnl:18900},{yr:2021,e:1766,x:1813,pnl:4700},
+  {yr:2022,e:1807,x:1757,pnl:-5000},{yr:2023,e:1912,x:1958,pnl:4600},
+  {yr:2024,e:2326,x:2426,pnl:10000}
+];
+const junAgo = [
+  {yr:2010,e:1245,x:1237,pnl:-800}, {yr:2011,e:1499,x:1826,pnl:32700},
+  {yr:2012,e:1601,x:1634,pnl:3300}, {yr:2013,e:1225,x:1399,pnl:17400},
+  {yr:2014,e:1315,x:1280,pnl:-3500},{yr:2015,e:1173,x:1135,pnl:-3800},
+  {yr:2016,e:1322,x:1311,pnl:-1100},{yr:2017,e:1241,x:1290,pnl:4900},
+  {yr:2018,e:1252,x:1201,pnl:-5100},{yr:2019,e:1409,x:1529,pnl:12000},
+  {yr:2020,e:1781,x:1967,pnl:18600},{yr:2021,e:1766,x:1813,pnl:4700},
+  {yr:2022,e:1807,x:1726,pnl:-8100},{yr:2023,e:1912,x:1942,pnl:3000},
+  {yr:2024,e:2326,x:2503,pnl:17700}
+];
+const sem1 = [
+  {yr:2010,e:1245,x:1210,chg:-2.81},{yr:2011,e:1499,x:1540,chg:2.74},
+  {yr:2012,e:1601,x:1615,chg:0.87}, {yr:2013,e:1225,x:1245,chg:1.63},
+  {yr:2014,e:1315,x:1320,chg:0.38}, {yr:2015,e:1173,x:1160,chg:-1.11},
+  {yr:2016,e:1322,x:1365,chg:3.25}, {yr:2017,e:1241,x:1225,chg:-1.29},
+  {yr:2018,e:1252,x:1255,chg:0.24}, {yr:2019,e:1409,x:1420,chg:0.78},
+  {yr:2020,e:1781,x:1800,chg:1.07}, {yr:2021,e:1766,x:1810,chg:2.49},
+  {yr:2022,e:1807,x:1740,chg:-3.71},{yr:2023,e:1912,x:1930,chg:0.94},
+  {yr:2024,e:2326,x:2360,chg:1.46}
+];
+
+const monthly = [
+  {m:'Ene',avg:0.66,pp:47},{m:'Feb',avg:0.92,pp:47},{m:'Mar',avg:1.35,pp:53},
+  {m:'Abr',avg:-0.33,pp:40},{m:'May',avg:-0.67,pp:40},{m:'Jun',avg:1.60,pp:67},
+  {m:'Jul',avg:2.11,pp:53},{m:'Ago',avg:-1.52,pp:27},{m:'Sep',avg:1.28,pp:60},
+  {m:'Oct',avg:-1.43,pp:47},{m:'Nov',avg:0.67,pp:60},{m:'Dic',avg:0.57,pp:47}
+];
+
+const intraWeek = [
+  {d:'30-Jun',date:'30/06',avg:-0.24,pp:56,note:''},
+  {d:'1-Jul', date:'01/07',avg:0.17, pp:56,note:''},
+  {d:'2-Jul', date:'02/07',avg:0.22, pp:67,note:''},
+  {d:'3-Jul', date:'03/07',avg:0.18, pp:56,note:'HOY'},
+  {d:'4-Jul', date:'04/07',avg:null, pp:null,note:'CERRADO'},
+  {d:'7-Jul', date:'07/07',avg:0.70, pp:67,note:'ENTRADA'},
+  {d:'8-Jul', date:'08/07',avg:0.08, pp:56,note:''},
+  {d:'9-Jul', date:'09/07',avg:0.23, pp:67,note:''},
+];
+
+const fundamentals = [
+  {icon:'✅',label:'Fed en pausa 3.50–3.75%',positive:true},
+  {icon:'✅',label:'Conflicto Medio Oriente: safe-haven bid',positive:true},
+  {icon:'✅',label:'Bancos centrales: 65% compras en H2',positive:true},
+  {icon:'✅',label:'Dólar bajo presión (DXY débil)',positive:true},
+  {icon:'⚠️',label:'Precio atípico ~$4,078 (2x histórico)',positive:false},
+  {icon:'⚠️',label:'NFP 4-Jul puede mover mercado',positive:false},
+  {icon:'⚠️',label:'4ª semana bajista — momentum negativo',positive:false},
+];
+
+// ── BUILD TABLES ─────────────────────────────────────────────────────────────
+function fmtPnl(v) {
+  return (v>=0?'+':'')+new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
+}
+function buildTable(tbodyId, data, cols) {
+  const tb = document.getElementById(tbodyId);
+  data.forEach(row => {
+    const chg = (row.x - row.e) / row.e * 100;
+    const win = row.pnl ? row.pnl > 0 : (row.chg > 0);
+    const tr = document.createElement('tr');
+    tr.className = 'data-row';
+    let cells = `<td class="yr">${row.yr}</td><td class="px">$${row.e.toLocaleString()}</td><td class="px">$${row.x.toLocaleString()}</td>`;
+    cells += `<td class="chg ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</td>`;
+    if (cols === 'pnl') cells += `<td class="pnl ${win?'pos':'neg'}">${fmtPnl(row.pnl)}</td>`;
+    cells += `<td class="res"><span class="badge ${win?'win':'loss'}">${win?'✅ SUBE':'❌ BAJA'}</span></td>`;
+    tr.innerHTML = cells;
+    tb.appendChild(tr);
+  });
+}
+buildTable('tbl-jun-jul', junJul, 'pnl');
+buildTable('tbl-jul-ago', junAgo, 'pnl');
+
+// 1ª semana special
+(function(){
+  const tb = document.getElementById('tbl-1sem');
+  sem1.forEach(row => {
+    const win = row.chg > 0;
+    const tr = document.createElement('tr'); tr.className = 'data-row';
+    tr.innerHTML = `<td class="yr">${row.yr}</td><td class="px">$${row.e.toLocaleString()}</td><td class="px">$${row.x.toLocaleString()}</td><td class="chg ${win?'pos':'neg'}">${row.chg>=0?'+':''}${row.chg.toFixed(2)}%</td><td class="res"><span class="badge ${win?'win':'loss'}">${win?'✅ SUBE':'❌ BAJA'}</span></td>`;
+    tb.appendChild(tr);
+  });
+})();
+
+// ── MONTHLY BARS ─────────────────────────────────────────────────────────────
+(function(){
+  const max = Math.max(...monthly.map(m=>Math.abs(m.avg)));
+  const cont = document.getElementById('monthlyBars');
+  monthly.forEach(m => {
+    const pos = m.avg >= 0;
+    const pct = Math.abs(m.avg)/max*100;
+    const isJul = m.m==='Jul';
+    const div = document.createElement('div');
+    div.className = 'bar-row';
+    div.innerHTML = `
+      <div class="bar-label" style="${isJul?'color:var(--gold);font-weight:700':''}">${m.m}${isJul?' ★':''}</div>
+      <div class="bar-track">
+        <div class="bar-fill ${pos?'pos':'neg'}" data-w="${pct}" style="width:0%;${isJul?'filter:brightness(1.3)':''}"></div>
+      </div>
+      <div class="bar-val ${pos?'pos':'neg'}">${pos?'+':''}${m.avg.toFixed(2)}%</div>`;
+    cont.appendChild(div);
+  });
+  setTimeout(()=>{
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      b.style.width = b.dataset.w+'%';
+    });
+  }, 400);
+})();
+
+// ── INTRAWEEK ────────────────────────────────────────────────────────────────
+(function(){
+  const g = document.getElementById('intraGrid');
+  intraWeek.forEach(d => {
+    const div = document.createElement('div');
+    const closed = d.avg === null;
+    const isToday = d.note==='HOY';
+    const isEntry = d.note==='ENTRADA';
+    div.className = 'intra-cell' + (isEntry?' highlight':'') + (isToday?' today':'');
+    if(closed) {
+      div.style.opacity='0.35';
+      div.innerHTML = `<div class="ic-day">${d.d}</div><div class="ic-date">${d.date}</div><div class="ic-val ic-neu">—</div><div class="ic-badge" style="color:var(--muted)">CERRADO</div>`;
+    } else {
+      const cls = d.avg>=0.3?'ic-pos':(d.avg<0?'ic-neg':'ic-neu');
+      const badgeTxt = isEntry?'★ ENTRADA':isToday?'◀ HOY':'';
+      const badgeCol = isEntry?'var(--gold)':isToday?'var(--parch2)':'transparent';
+      div.innerHTML = `<div class="ic-day">${d.d}</div><div class="ic-date">${d.date}</div><div class="ic-val ${cls}">${d.avg>=0?'+':''}${d.avg.toFixed(2)}%</div><div class="ic-badge" style="color:${badgeCol}">${badgeTxt}</div>`;
+    }
+    g.appendChild(div);
+  });
+})();
+
+// ── FUNDAMENTAL CARDS ────────────────────────────────────────────────────────
+(function(){
+  const cont = document.getElementById('fundCards');
+  fundamentals.forEach(f=>{
+    const div = document.createElement('div');
+    div.style.cssText=`display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid ${f.positive?'rgba(42,122,75,0.2)':'rgba(255,255,255,0.06)'};background:${f.positive?'rgba(42,122,75,0.06)':'rgba(255,255,255,0.02)'}`;
+    div.innerHTML=`<span style="font-size:13px;flex-shrink:0">${f.icon}</span><span style="font-size:11px;color:${f.positive?'var(--text)':'var(--muted)'};line-height:1.4">${f.label}</span>`;
+    cont.appendChild(div);
+  });
+})();
+
+// ── HERO CANVAS — animated bar chart ─────────────────────────────────────────
+(function(){
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  let animFrame = 0;
+  const animTotal = 80;
+  const data = junJul.filter(d=>d.yr>=2016);
+  const max = Math.max(...data.map(d=>Math.abs(d.pnl)));
+
+  function resize() {
+    canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+  resize();
+  window.addEventListener('resize', ()=>{resize();drawFrame(animTotal);});
+
+  function drawFrame(progress) {
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    ctx.clearRect(0,0,W,H);
+    const pad = {l:40,r:16,t:20,b:30};
+    const chartW = W-pad.l-pad.r;
+    const chartH = H-pad.t-pad.b;
+    const barW = chartW/data.length;
+    const mid = pad.t + chartH/2;
+
+    // Grid line
+    ctx.strokeStyle='rgba(201,168,76,0.08)';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,mid); ctx.lineTo(W-pad.r,mid); ctx.stroke();
+
+    // Zero label
+    ctx.fillStyle='rgba(201,168,76,0.3)';
+    ctx.font='9px Space Mono,monospace';
+    ctx.fillText('$0',4,mid+3);
+
+    data.forEach((d,i)=>{
+      const t = Math.min(progress/(animTotal*0.7) - i/data.length*0.5, 1);
+      if(t<=0) return;
+      const eased = t<1 ? 1-Math.pow(1-t,3) : 1;
+      const bH = (Math.abs(d.pnl)/max)*(chartH/2)*eased;
+      const bX = pad.l + i*barW + barW*0.15;
+      const bW = barW*0.7;
+      const isPos = d.pnl >= 0;
+      const isActive = i === data.length-1;
+
+      // Bar
+      const grad = ctx.createLinearGradient(0, isPos?mid-bH:mid, 0, isPos?mid:mid+bH);
+      if(isActive) {
+        grad.addColorStop(0, isPos?'rgba(201,168,76,0.9)':'rgba(179,64,64,0.9)');
+        grad.addColorStop(1, isPos?'rgba(201,168,76,0.3)':'rgba(179,64,64,0.3)');
+      } else {
+        grad.addColorStop(0, isPos?'rgba(42,122,75,0.8)':'rgba(179,64,64,0.7)');
+        grad.addColorStop(1, isPos?'rgba(42,122,75,0.2)':'rgba(179,64,64,0.2)');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(bX, isPos?mid-bH:mid, bW, bH);
+
+      // Year label
+      if(progress >= animTotal*0.6) {
+        ctx.fillStyle = isActive?'rgba(201,168,76,0.9)':'rgba(120,110,100,0.7)';
+        ctx.font = `${isActive?'700 ':''}9px Space Mono,monospace`;
+        ctx.textAlign='center';
+        ctx.fillText(d.yr.toString().slice(2), bX+bW/2, H-pad.b+12);
+      }
+
+      // Top value
+      if(progress >= animTotal*0.8 && eased > 0.9) {
+        const fmt = (d.pnl>=0?'+':'')+Math.round(d.pnl/1000)+'k';
+        ctx.fillStyle = isPos?'rgba(42,122,75,0.9)':'rgba(179,64,64,0.9)';
+        if(isActive) ctx.fillStyle='rgba(201,168,76,1)';
+        ctx.font=`${isActive?'700 ':''}8px Space Mono,monospace`;
+        ctx.textAlign='center';
+        const ty = isPos ? mid-bH-4 : mid+bH+10;
+        ctx.fillText(fmt, bX+bW/2, ty);
+      }
+    });
+    ctx.textAlign='left';
+  }
+
+  function animate() {
+    animFrame++;
+    drawFrame(animFrame);
+    if(animFrame < animTotal+20) requestAnimationFrame(animate);
+  }
+  setTimeout(animate, 600);
+})();
+
+// ── COUNTER ANIMATIONS ────────────────────────────────────────────────────────
+function animateCounter(el, target, prefix='', suffix='', duration=1400) {
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now-start)/duration,1);
+    const eased = 1-Math.pow(1-t,3);
+    const v = typeof target==='number' ? Math.round(target*eased) : target;
+    el.textContent = prefix + (typeof target==='number'?v.toLocaleString():target) + suffix;
+    if(t<1) requestAnimationFrame(tick);
+    else el.textContent = prefix + (typeof target==='number'?target.toLocaleString():target) + suffix;
+  }
+  requestAnimationFrame(tick);
+}
+setTimeout(()=>{
+  animateCounter(document.getElementById('animConf'),73,'','%');
+  animateCounter(document.getElementById('animPnl'),2967,'$','');
+},800);
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(btn, id) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────────────────
+const tip = document.getElementById('tooltip');
+document.querySelectorAll('.intra-cell').forEach(c=>{
+  c.addEventListener('mousemove', e=>{
+    const d = intraWeek[Array.from(c.parentNode.children).indexOf(c)];
+    if(!d||d.avg===null){tip.classList.remove('show');return;}
+    tip.innerHTML = `<div style="color:var(--gold);margin-bottom:4px">${d.d}</div><div>Prom. ${d.avg>=0?'+':''}${d.avg.toFixed(2)}%</div><div>% días positivos: ${d.pp}%</div>`;
+    tip.style.left=(e.clientX+14)+'px';
+    tip.style.top=(e.clientY-10)+'px';
+    tip.classList.add('show');
+  });
+  c.addEventListener('mouseleave',()=>tip.classList.remove('show'));
+});
+</script>
+</body>
+</html>
