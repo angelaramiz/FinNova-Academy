@@ -46,6 +46,31 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Dynamic theme syncing for global layout wrapper
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved);
+      }
+    };
+    window.addEventListener('storage', handleThemeChange);
+    window.addEventListener('themechange', handleThemeChange);
+    return () => {
+      window.removeEventListener('storage', handleThemeChange);
+      window.removeEventListener('themechange', handleThemeChange);
+    };
+  }, []);
+
+  const isLight = theme === 'light';
+  const bgColor = isLight ? '#EEE9DF' : '#0a0f1d';
+  const textColor = isLight ? '#1B2632' : '#cbd5e1';
+
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -450,29 +475,63 @@ function AppContent() {
   }
 
   return (
-    <div id="finance-platform-core" className="min-h-screen bg-[#0a0f1d] text-slate-300 flex flex-col font-sans selection:bg-teal-450 selection:text-neutral-900">
+    <div
+      id="finance-platform-core"
+      className="min-h-screen flex flex-col font-sans selection:bg-teal-450 selection:text-neutral-900 transition-colors duration-200"
+      style={{
+        backgroundColor: bgColor,
+        color: textColor,
+      }}
+    >
       
       {/* -------------------------------------------------------------
           NAVBAR HEADER
           ------------------------------------------------------------- */}
-      <header id="platform-navbar-header" className={`sticky top-0 z-50 bg-[#0a0f1d]/85 backdrop-blur-md border-b border-slate-800/50 px-4 py-3 shadow-md ${location.pathname.startsWith('/student') ? 'hidden md:block' : ''}`}>
+      <header
+        id="platform-navbar-header"
+        className={`sticky top-0 z-50 backdrop-blur-md px-4 py-3 shadow-md transition-colors duration-200 ${location.pathname.startsWith('/student') ? 'hidden md:block' : ''}`}
+        style={{
+          backgroundColor: isLight ? 'rgba(238, 233, 223, 0.85)' : 'rgba(10, 15, 29, 0.85)',
+          borderBottom: `2.5px solid ${isLight ? '#1B2632' : 'rgba(51, 65, 85, 0.5)'}`,
+        }}
+      >
         <div className={`mx-auto flex items-center justify-between w-full ${location.pathname.startsWith('/student') ? 'px-4 md:px-6' : 'max-w-7xl'}`}>
           
           {/* Logo Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="bg-slate-900 border border-slate-800/60 p-2 rounded-xl text-teal-400 shadow-sm">
+            <div
+              className="p-2 rounded-xl shadow-sm transition-colors"
+              style={{
+                backgroundColor: isLight ? '#C9C1B1' : '#0f172a',
+                border: `2px solid ${isLight ? '#1B2632' : '#1e293b'}`,
+                color: isLight ? '#1B2632' : '#2dd4bf',
+              }}
+            >
               <TrendingUp className="w-4.5 h-4.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm tracking-wide text-slate-200 block">
+                <span
+                  className="font-extrabold text-sm tracking-wide block"
+                  style={{ color: isLight ? '#1B2632' : '#e2e8f0' }}
+                >
                   FINNOVA ACADEMY
                 </span>
-                <span className="bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[8px] px-1.5 py-0.5 rounded-md font-mono font-bold leading-none">
+                <span
+                  className="text-[8px] px-1.5 py-0.5 rounded-md font-mono font-bold leading-none"
+                  style={{
+                    backgroundColor: isLight ? 'rgba(163, 81, 57, 0.12)' : 'rgba(45, 212, 160, 0.1)',
+                    border: `1.5px solid ${isLight ? '#A35139' : 'rgba(45, 212, 160, 0.3)'}`,
+                    color: isLight ? '#A35139' : '#2dd4bf',
+                  }}
+                >
                   v1.0.0
                 </span>
               </div>
-              <span className="text-[9px] text-teal-400/80 font-mono font-semibold tracking-wider uppercase block">
+              <span
+                className="text-[9px] font-mono font-semibold tracking-wider uppercase block"
+                style={{ color: isLight ? '#A35139' : 'rgba(45, 212, 160, 0.8)' }}
+              >
                 Enterprise LMS & AI Certification
               </span>
             </div>
@@ -481,14 +540,21 @@ function AppContent() {
           {/* Nav links based on permission and routes */}
           {profile && (
             <>
-              <nav className="hidden md:flex items-center gap-1.5 bg-slate-900/40 border border-slate-800/60 p-1 rounded-xl">
+              <nav
+                className="hidden md:flex items-center gap-1.5 p-1 rounded-xl"
+                style={{
+                  backgroundColor: isLight ? '#C9C1B1' : 'rgba(15, 23, 42, 0.4)',
+                  border: `2px solid ${isLight ? '#1B2632' : 'rgba(30, 41, 59, 0.6)'}`,
+                }}
+              >
                 <Link
                   to="/student"
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border ${
-                    currentViewMode === 'student'
-                      ? 'bg-slate-900 border-slate-800/80 text-teal-400 shadow-inner'
-                      : 'text-slate-400 hover:text-slate-200 border-transparent'
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border`}
+                  style={{
+                    backgroundColor: currentViewMode === 'student' ? (isLight ? '#EEE9DF' : '#0f172a') : 'transparent',
+                    borderColor: currentViewMode === 'student' ? (isLight ? '#1B2632' : '#1e293b') : 'transparent',
+                    color: currentViewMode === 'student' ? (isLight ? '#1B2632' : '#2dd4bf') : (isLight ? '#2C3B4D' : '#94a3b8'),
+                  }}
                 >
                   <BookOpen className="w-3.5 h-3.5" /> Portal Alumno
                 </Link>
@@ -496,9 +562,18 @@ function AppContent() {
 
               {/* XP Badge and User Profile tag */}
               <div className="flex items-center gap-3">
-                <div className="bg-slate-950/60 px-3 py-1 rounded-full border border-slate-850/80 flex items-center gap-1.5 shadow-inner">
+                <div
+                  className="px-3 py-1 rounded-full flex items-center gap-1.5 shadow-inner"
+                  style={{
+                    backgroundColor: isLight ? '#C9C1B1' : 'rgba(2, 6, 23, 0.6)',
+                    border: `1.5px solid ${isLight ? '#1B2632' : '#1e293b'}`,
+                  }}
+                >
                   <Award className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-indigo-300 font-mono tracking-tight">
+                  <span
+                    className="text-xs font-semibold font-mono tracking-tight"
+                    style={{ color: isLight ? '#1B2632' : '#a5b4fc' }}
+                  >
                     {profile.pointsEarned} XP
                   </span>
                 </div>
@@ -506,20 +581,32 @@ function AppContent() {
                   <img 
                     src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'} 
                     alt="Profile Avatar" 
-                    className="w-7.5 h-7.5 rounded-full border border-slate-800 object-cover"
+                    className="w-7.5 h-7.5 rounded-full object-cover"
+                    style={{ border: `1.5px solid ${isLight ? '#1B2632' : '#334155'}` }}
                   />
                   <div className="hidden lg:block text-left">
-                    <p className="text-xs font-semibold text-slate-300 truncate max-w-[100px] leading-tight">
+                    <p
+                      className="text-xs font-semibold truncate max-w-[100px] leading-tight"
+                      style={{ color: isLight ? '#1B2632' : '#cbd5e1' }}
+                    >
                       {profile.fullName}
                     </p>
-                    <p className="text-[8px] text-teal-400 font-medium tracking-wider font-mono uppercase leading-none mt-0.5">
+                    <p
+                      className="text-[8px] font-medium tracking-wider font-mono uppercase leading-none mt-0.5"
+                      style={{ color: isLight ? '#A35139' : '#2dd4bf' }}
+                    >
                       {profile.certLevel}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="bg-slate-900/60 hover:bg-slate-850 border border-slate-850/80 text-slate-400 hover:text-slate-200 p-2 rounded-xl transition cursor-pointer"
+                  className="p-2 rounded-xl transition cursor-pointer"
+                  style={{
+                    backgroundColor: isLight ? '#C9C1B1' : 'rgba(15, 23, 42, 0.6)',
+                    border: `2px solid ${isLight ? '#1B2632' : 'rgba(30, 41, 59, 0.8)'}`,
+                    color: isLight ? '#1B2632' : '#94a3b8',
+                  }}
                   title="Cerrar Sesión"
                 >
                   <LogOut className="w-4 h-4" />
