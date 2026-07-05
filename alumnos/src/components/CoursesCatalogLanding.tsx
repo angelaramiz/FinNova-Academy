@@ -2,12 +2,14 @@
  * CoursesCatalogLanding.tsx
  * Landing informativa / catálogo de cursos.
  * Muestra qué aprenderá el alumno y un CTA hacia registro.
+ * 
+ * Rediseñado con estilo Minimalista Flat Design (Neo-brutalismo suave)
+ * Soporta modo Light y Dark basados en la paleta de colores del usuario.
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp,
   BookOpen,
   BarChart3,
   Shield,
@@ -19,8 +21,13 @@ import {
   CheckCircle2,
   Users,
   Clock,
-  Star
+  Star,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { themeColors } from './MarketLanding';
+
+type Theme = 'light' | 'dark';
 
 const MODULES = [
   {
@@ -42,7 +49,7 @@ const MODULES = [
     color: '#C87D2A',
   },
   {
-    icon: <TrendingUp className="w-6 h-6" />,
+    icon: <BarChart3 className="w-6 h-6" />, // Changed from TrendingUp to keep icons clean
     title: 'Análisis Técnico y Patrones de Mercado',
     description: 'Identifica patrones de precio, soportes, resistencias y señales de trading usando datos históricos reales.',
     topics: ['Velas japonesas', 'Soportes y resistencias', 'Medias móviles', 'Indicadores RSI y MACD'],
@@ -96,12 +103,24 @@ const BENEFITS = [
 ];
 
 export default function CoursesCatalogLanding() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  const colors = themeColors[theme];
+
+  // Sync theme
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen transition-colors duration-200"
       style={{
-        background: '#0A0E1A',
-        color: '#D8D0C0',
+        background: colors.bg,
+        color: colors.text,
         fontFamily: '"Space Grotesk", sans-serif',
       }}
     >
@@ -113,48 +132,62 @@ export default function CoursesCatalogLanding() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
       `}</style>
 
       {/* HEADER */}
       <header
-        className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
+        className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50 transition-colors"
         style={{
-          borderBottom: '1px solid rgba(201,168,76,0.15)',
-          background: '#0F1628',
-          backdropFilter: 'blur(12px)',
+          borderBottom: `2px solid ${colors.border}`,
+          background: colors.cardBg,
         }}
       >
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-85 transition">
           <div
-            className="w-9 h-9 flex items-center justify-center font-mono text-[13px] font-bold"
-            style={{ border: '1.5px solid #C9A84C', color: '#C9A84C' }}
+            className="w-9 h-9 flex items-center justify-center font-mono text-[14px] font-bold"
+            style={{ border: `2.5px solid ${colors.border}`, color: colors.text, background: colors.primary }}
           >
             FA
           </div>
-          <div>
-            <div className="text-[13px] tracking-[0.18em] uppercase font-medium" style={{ color: '#C8C0B0' }}>
+          <div className="text-left">
+            <div className="text-[13px] tracking-[0.18em] uppercase font-bold" style={{ color: colors.text }}>
               FinNova Academy
             </div>
-            <div className="text-[10px] tracking-[0.12em] uppercase" style={{ color: '#7A7268' }}>
+            <div className="text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: colors.textMuted }}>
               Catálogo de Formación Financiera
             </div>
           </div>
         </Link>
         <div className="flex items-center gap-3">
+          {/* Theme Toggler */}
+          <button
+            onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+            className="p-2 border rounded cursor-pointer transition-all active:scale-95 animate-fadeIn"
+            style={{
+              borderColor: colors.border,
+              background: colors.bg,
+              color: colors.text,
+            }}
+            title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
+
           <Link
             to="/"
-            className="hidden sm:inline-block px-4 py-2 text-[11px] font-semibold tracking-wider uppercase transition-all"
-            style={{ color: '#C9A84C' }}
+            className="hidden sm:inline-block px-4 py-2 text-[11px] font-bold tracking-wider uppercase transition-all"
+            style={{ color: colors.secondary }}
           >
             ← Dashboard
           </Link>
           <Link
             to="/register"
-            className="px-5 py-2 text-[11px] font-semibold tracking-wider uppercase transition-all duration-200"
+            className="px-5 py-2 text-[11px] font-bold tracking-wider uppercase transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
             style={{
-              background: '#C9A84C',
-              color: '#0A0E1A',
+              background: colors.primary,
+              borderColor: colors.border,
+              color: '#1B2632',
+              boxShadow: `3px 3px 0px 0px ${colors.border}`,
               fontFamily: '"Space Grotesk", sans-serif',
             }}
           >
@@ -164,37 +197,38 @@ export default function CoursesCatalogLanding() {
       </header>
 
       {/* HERO */}
-      <section className="px-5 md:px-10 py-16 md:py-24 text-center" style={{ borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+      <section className="px-5 md:px-10 py-16 md:py-24 text-center" style={{ borderBottom: `2px solid ${colors.border}` }}>
         <div className="max-w-3xl mx-auto animate-fadeIn">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
-              Programa Completo de Formación
+            <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
+              Programa de Formación Cuantitativa y Estacional
             </span>
           </div>
           <h1
-            className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-4"
-            style={{ color: '#E8E0D0' }}
+            className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight mb-4 animate-fadeIn"
+            style={{ color: colors.text }}
           >
             Aprende a Leer el Mercado<br />
-            <span style={{ color: '#C9A84C' }}>Como un Profesional</span>
+            <span style={{ color: colors.secondary }}>Como un Profesional</span>
           </h1>
-          <p className="text-[15px] leading-relaxed max-w-xl mx-auto mb-8" style={{ color: '#7A7268' }}>
-            Desde conceptos fundamentales hasta modelos cuantitativos avanzados. Formación práctica con datos reales, ejercicios interactivos evaluados por IA y certificación verificable.
+          <p className="text-[15px] leading-relaxed max-w-xl mx-auto mb-8 font-medium animate-fadeIn" style={{ color: colors.textMuted }}>
+            Domina los mercados mediante el uso de modelos estadísticos y patrones históricos. Clases prácticas, simuladores interactivos y mentoría IA personalizada.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             {STATS.map((stat) => (
               <div
                 key={stat.label}
-                className="flex items-center gap-2 px-4 py-2"
+                className="flex items-center gap-2 px-4 py-2 border rounded"
                 style={{
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  background: 'rgba(15,22,40,0.6)',
+                  borderColor: colors.border,
+                  background: colors.cardBg,
+                  boxShadow: `3px 3px 0px 0px ${colors.border}`
                 }}
               >
-                <span style={{ color: '#C9A84C' }}>{stat.icon}</span>
+                <span style={{ color: colors.secondary }}>{stat.icon}</span>
                 <div className="text-left">
-                  <span className="font-mono text-sm font-bold block" style={{ color: '#E8E0D0' }}>{stat.value}</span>
-                  <span className="text-[9px] uppercase tracking-wider" style={{ color: '#7A7268' }}>{stat.label}</span>
+                  <span className="font-mono text-sm font-bold block" style={{ color: colors.text }}>{stat.value}</span>
+                  <span className="text-[9px] uppercase tracking-wider font-bold" style={{ color: colors.textMuted }}>{stat.label}</span>
                 </div>
               </div>
             ))}
@@ -205,14 +239,14 @@ export default function CoursesCatalogLanding() {
       {/* MODULES GRID */}
       <section className="px-5 md:px-10 py-16 max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <div className="font-mono text-[10px] tracking-[0.25em] uppercase mb-3" style={{ color: '#C9A84C' }}>
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase mb-3 font-bold" style={{ color: colors.secondary }}>
             Módulos de Aprendizaje
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ color: '#E8E0D0' }}>
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-3" style={{ color: colors.text }}>
             Ruta de Formación Completa
           </h2>
-          <p className="text-[13px] max-w-lg mx-auto" style={{ color: '#7A7268' }}>
-            Cada módulo combina clips conceptuales, ejercicios prácticos y evaluaciones por IA para garantizar tu aprendizaje.
+          <p className="text-[13px] max-w-lg mx-auto font-medium" style={{ color: colors.textMuted }}>
+            Cada módulo combina clips de 60 segundos, laboratorios prácticos en Canvas y validaciones automáticas.
           </p>
         </div>
 
@@ -220,50 +254,53 @@ export default function CoursesCatalogLanding() {
           {MODULES.map((mod) => (
             <div
               key={mod.title}
-              className="p-6 rounded-lg flex flex-col justify-between transition-all duration-200 hover:translate-y-[-2px] group"
+              className="p-6 rounded flex flex-col justify-between transition-all duration-150 border group hover:translate-y-[-2px]"
               style={{
-                background: '#0F1628',
-                border: '1px solid rgba(201,168,76,0.15)',
+                background: colors.cardBg,
+                borderColor: colors.border,
+                boxShadow: `4px 4px 0px 0px ${colors.border}`
               }}
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className="p-2.5 rounded-lg"
+                    className="p-2 border"
                     style={{
-                      background: `${mod.color}15`,
-                      color: mod.color,
-                      border: `1px solid ${mod.color}30`,
+                      background: colors.bg,
+                      color: colors.text,
+                      borderColor: colors.border
                     }}
                   >
                     {mod.icon}
                   </div>
                   <span
-                    className="font-mono text-[9px] tracking-wider uppercase px-2 py-0.5"
+                    className="font-mono text-[9px] tracking-wider uppercase px-2 py-0.5 border"
                     style={{
-                      color: mod.color,
-                      border: `1px solid ${mod.color}30`,
-                      background: `${mod.color}10`,
+                      color: colors.text,
+                      borderColor: colors.border,
+                      background: colors.bg,
+                      fontWeight: 'bold'
                     }}
                   >
                     {mod.level}
                   </span>
                 </div>
-                <h3 className="text-sm font-semibold mb-2 group-hover:text-[#C9A84C] transition-colors" style={{ color: '#E8E0D0' }}>
+                <h3 className="text-sm font-bold mb-2 transition-colors group-hover:text-orange-450" style={{ color: colors.text }}>
                   {mod.title}
                 </h3>
-                <p className="text-[11px] leading-relaxed mb-4" style={{ color: '#7A7268' }}>
+                <p className="text-[11px] leading-relaxed mb-4 font-medium" style={{ color: colors.textMuted }}>
                   {mod.description}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {mod.topics.map(t => (
                     <span
                       key={t}
-                      className="text-[9px] px-2 py-0.5"
+                      className="text-[9px] px-2 py-0.5 border"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        color: '#A8A0A0',
+                        background: colors.bg,
+                        borderColor: colors.border,
+                        color: colors.text,
+                        fontWeight: 'bold'
                       }}
                     >
                       {t}
@@ -271,12 +308,12 @@ export default function CoursesCatalogLanding() {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(201,168,76,0.1)' }}>
-                <span className="font-mono text-[10px]" style={{ color: '#7A7268' }}>
+              <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: colors.border }}>
+                <span className="font-mono text-[10px] font-bold" style={{ color: colors.textMuted }}>
                   <Clock className="w-3 h-3 inline mr-1" />{mod.duration}
                 </span>
-                <span className="text-[10px] flex items-center gap-0.5 transition group-hover:text-[#C9A84C]" style={{ color: '#7A7268' }}>
-                  Ver Detalles <ChevronRight className="w-3 h-3" />
+                <span className="text-[10px] font-bold flex items-center gap-0.5 transition group-hover:text-orange-450" style={{ color: colors.secondary }}>
+                  Ver Módulo <ChevronRight className="w-3 h-3" />
                 </span>
               </div>
             </div>
@@ -286,34 +323,35 @@ export default function CoursesCatalogLanding() {
 
       {/* BENEFITS */}
       <section
-        className="px-5 md:px-10 py-16"
+        className="px-5 md:px-10 py-16 transition-colors"
         style={{
-          background: 'linear-gradient(135deg, #0F1628 0%, #0D1E35 100%)',
-          borderTop: '1px solid rgba(201,168,76,0.15)',
-          borderBottom: '1px solid rgba(201,168,76,0.15)',
+          background: colors.cardBg,
+          borderTop: `2px solid ${colors.border}`,
+          borderBottom: `2px solid ${colors.border}`,
         }}
       >
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <div className="font-mono text-[10px] tracking-[0.25em] uppercase mb-3" style={{ color: '#C9A84C' }}>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase mb-3 font-bold" style={{ color: colors.secondary }}>
               ¿Por qué FinNova Academy?
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold" style={{ color: '#E8E0D0' }}>
-              Metodología que Funciona
+            <h2 className="text-2xl md:text-3xl font-extrabold" style={{ color: colors.text }}>
+              Metodología Diseñada para Resultados
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {BENEFITS.map((b, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 p-4 rounded-lg"
+                className="flex items-start gap-3 p-4 rounded border text-left"
                 style={{
-                  background: 'rgba(42,122,75,0.06)',
-                  border: '1px solid rgba(42,122,75,0.15)',
+                  background: colors.bg,
+                  borderColor: colors.border,
+                  boxShadow: `3px 3px 0px 0px ${colors.border}`
                 }}
               >
-                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#2A7A4B' }} />
-                <span className="text-[12px]" style={{ color: '#D8D0C0' }}>{b}</span>
+                <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: colors.secondary }} />
+                <span className="text-[12px] font-semibold" style={{ color: colors.text }}>{b}</span>
               </div>
             ))}
           </div>
@@ -326,23 +364,25 @@ export default function CoursesCatalogLanding() {
           <div className="flex justify-center mb-4">
             <div className="flex">
               {[1, 2, 3, 4, 5].map(i => (
-                <Star key={i} className="w-5 h-5" style={{ color: '#C9A84C', fill: '#C9A84C' }} />
+                <Star key={i} className="w-5 h-5 fill-current" style={{ color: colors.primary }} />
               ))}
             </div>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold mb-4" style={{ color: '#E8E0D0' }}>
-            Comienza Tu Formación Hoy
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-4" style={{ color: colors.text }}>
+            Comienza Tu Formación Financiera
           </h2>
-          <p className="text-[14px] leading-relaxed mb-8 max-w-md mx-auto" style={{ color: '#7A7268' }}>
-            Regístrate ahora y accede a nuestro programa completo de formación financiera con herramientas interactivas y certificación validada por IA.
+          <p className="text-[14px] leading-relaxed mb-8 max-w-md mx-auto font-medium" style={{ color: colors.textMuted }}>
+            Regístrate hoy mismo y accede de inmediato al catálogo de cursos, laboratorios interactivos y certificación inteligente.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
-              className="px-10 py-4 font-bold text-[14px] tracking-wider uppercase transition-all duration-200 hover:-translate-y-0.5 inline-flex items-center justify-center gap-2"
+              className="px-10 py-4 font-bold text-[14px] tracking-wider uppercase transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer inline-flex items-center justify-center gap-2"
               style={{
-                background: '#C9A84C',
-                color: '#0A0E1A',
+                background: colors.primary,
+                borderColor: colors.border,
+                color: '#1B2632',
+                boxShadow: `4px 4px 0px 0px ${colors.border}`,
                 fontFamily: '"Space Grotesk", sans-serif',
               }}
             >
@@ -350,10 +390,12 @@ export default function CoursesCatalogLanding() {
             </Link>
             <Link
               to="/"
-              className="px-8 py-4 text-[13px] tracking-wider uppercase transition-all duration-200 hover:bg-[rgba(201,168,76,0.06)] inline-flex items-center justify-center"
+              className="px-8 py-4 text-[13px] tracking-wider uppercase transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer inline-flex items-center justify-center"
               style={{
-                border: '1px solid rgba(201,168,76,0.4)',
-                color: '#C9A84C',
+                background: colors.cardBg,
+                borderColor: colors.border,
+                color: colors.text,
+                boxShadow: `4px 4px 0px 0px ${colors.border}`,
                 fontFamily: '"Space Grotesk", sans-serif',
               }}
             >
@@ -365,14 +407,14 @@ export default function CoursesCatalogLanding() {
 
       {/* FOOTER */}
       <footer
-        className="px-5 md:px-10 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px]"
+        className="px-5 md:px-10 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-bold"
         style={{
-          borderTop: '1px solid rgba(201,168,76,0.15)',
-          color: '#7A7268',
+          borderTop: `2px solid ${colors.border}`,
+          color: colors.textMuted,
         }}
       >
-        <span>© 2026 FinNova Academy · Formación Financiera Práctica</span>
-        <span>Certificación validada por IA · Powered by Gemini</span>
+        <span>© 2026 FinNova Academy · Formación Práctica</span>
+        <span>Validación inteligente vía Gemini AI</span>
       </footer>
     </div>
   );

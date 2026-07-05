@@ -5,6 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Motor Predictivo v3 · Datos Reales · GJR-GARCH · MLE</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script>
+  function applyTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.style.setProperty('--bg', '#EEE9DF');
+      root.style.setProperty('--bg2', '#FFFFFF');
+      root.style.setProperty('--bg3', '#C9C1B1');
+      root.style.setProperty('--bg4', 'rgba(27, 38, 50, 0.08)');
+      root.style.setProperty('--border', 'rgba(27, 38, 50, 0.15)');
+      root.style.setProperty('--border2', 'rgba(27, 38, 50, 0.25)');
+      root.style.setProperty('--text', '#1B2632');
+      root.style.setProperty('--text2', '#2C3B4D');
+      root.style.setProperty('--text3', '#5c6480');
+      root.style.setProperty('--purple', '#A35139');
+      root.style.setProperty('--purple-d', '#8a432f');
+      root.style.setProperty('--purple-lt', 'rgba(163, 81, 57, 0.08)');
+      root.style.setProperty('--teal', '#FFB162');
+      root.style.setProperty('--teal-d', '#d9944a');
+      root.style.setProperty('--teal-lt', 'rgba(255, 177, 98, 0.08)');
+    } else {
+      root.style.removeProperty('--bg');
+      root.style.removeProperty('--bg2');
+      root.style.removeProperty('--bg3');
+      root.style.removeProperty('--bg4');
+      root.style.removeProperty('--border');
+      root.style.removeProperty('--border2');
+      root.style.removeProperty('--text');
+      root.style.removeProperty('--text2');
+      root.style.removeProperty('--text3');
+      root.style.removeProperty('--purple');
+      root.style.removeProperty('--purple-d');
+      root.style.removeProperty('--purple-lt');
+      root.style.removeProperty('--teal');
+      root.style.removeProperty('--teal-d');
+      root.style.removeProperty('--teal-lt');
+    }
+  }
+  applyTheme();
+  window.addEventListener('storage', applyTheme);
+  window.addEventListener('themechange', applyTheme);
+  setInterval(applyTheme, 500);
+</script>
 <style>
 :root{
   --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e28;--bg4:#222739;

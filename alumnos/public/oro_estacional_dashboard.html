@@ -4,6 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ORO · Análisis Estacional · Instituto de Derivados</title>
+<script>
+  function applyTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.style.setProperty('--night', '#EEE9DF');
+      root.style.setProperty('--deep', '#FFFFFF');
+      root.style.setProperty('--steel', 'rgba(27, 38, 50, 0.15)');
+      root.style.setProperty('--gold', '#A35139');
+      root.style.setProperty('--gold-dim', '#A35139');
+      root.style.setProperty('--gold-hi', '#FFB162');
+      root.style.setProperty('--parch', '#1B2632');
+      root.style.setProperty('--parch2', '#2C3B4D');
+      root.style.setProperty('--text', '#1B2632');
+      root.style.setProperty('--muted', '#5c6480');
+    } else {
+      root.style.removeProperty('--night');
+      root.style.removeProperty('--deep');
+      root.style.removeProperty('--steel');
+      root.style.removeProperty('--gold');
+      root.style.removeProperty('--gold-dim');
+      root.style.removeProperty('--gold-hi');
+      root.style.removeProperty('--parch');
+      root.style.removeProperty('--parch2');
+      root.style.removeProperty('--text');
+      root.style.removeProperty('--muted');
+    }
+  }
+  applyTheme();
+  window.addEventListener('storage', applyTheme);
+  window.addEventListener('themechange', applyTheme);
+  setInterval(applyTheme, 500);
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 

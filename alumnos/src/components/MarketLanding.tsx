@@ -3,7 +3,10 @@
  * Landing page principal del portal de alumnos con dashboard financiero
  * de 3 niveles de comprensión: Básico, Intermedio y Avanzado.
  * 
- * Inspirado en el dashboard de oro estacional (oro_estacional_dashboard.html).
+ * Rediseñado con estilo Minimalista Flat Design (Neo-brutalismo suave)
+ * Soporta modo Light y Dark basados en la paleta de colores del usuario:
+ * - Light: Palladian (#EEE9DF), Oatmeal (#C9C1B1), Burning Flame (#FFB162), Truffle (#A35139), Abyssal Blue (#1B2632)
+ * - Dark: Abyssal Blue (#1B2632), Blue Fantastic (#2C3B4D), Burning Flame (#FFB162), Truffle (#A35139), Palladian (#EEE9DF)
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -14,15 +17,40 @@ import {
   Gauge,
   ArrowUpRight,
   ArrowDownRight,
-  Minus,
   ChevronRight,
   Sparkles,
   Eye,
   Lock,
-  BookOpen,
-  GraduationCap,
+  Sun,
+  Moon,
   Shield
 } from 'lucide-react';
+
+// ─── THEME CONFIGURATION ───────────────────────────────────────────────────────
+export const themeColors = {
+  light: {
+    bg: '#EEE9DF',          // Palladian
+    cardBg: '#FFFFFF',      // Pure white for crisp cards
+    cardSecondary: '#C9C1B1', // Oatmeal
+    text: '#1B2632',        // Abyssal Anchorfish Blue
+    textMuted: '#2C3B4D',   // Blue Fantastic
+    primary: '#FFB162',     // Burning Flame
+    secondary: '#A35139',   // Truffle Trouble
+    border: '#1B2632',      // Abyssal Anchorfish Blue
+  },
+  dark: {
+    bg: '#1B2632',          // Abyssal Anchorfish Blue
+    cardBg: '#2C3B4D',      // Blue Fantastic
+    cardSecondary: '#1F2937', // Dark slate
+    text: '#EEE9DF',        // Palladian
+    textMuted: '#C9C1B1',   // Oatmeal
+    primary: '#FFB162',     // Burning Flame
+    secondary: '#A35139',   // Truffle Trouble
+    border: '#EEE9DF',      // Palladian
+  }
+};
+
+type Theme = 'light' | 'dark';
 
 // ─── DATA ──────────────────────────────────────────────────────────────────────
 const ASSETS = [
@@ -74,33 +102,12 @@ const PNL_DATA = [
   { yr: 2024, e: 2326, x: 2426, pnl: 10000 },
 ];
 
-const INTRA_WEEK = [
-  { d: '30-Jun', avg: -0.24, pp: 56, note: '' },
-  { d: '1-Jul', avg: 0.17, pp: 56, note: '' },
-  { d: '2-Jul', avg: 0.22, pp: 67, note: '' },
-  { d: '3-Jul', avg: 0.18, pp: 56, note: 'HOY' },
-  { d: '4-Jul', avg: null, pp: null, note: 'CERRADO' },
-  { d: '7-Jul', avg: 0.70, pp: 67, note: 'ENTRADA' },
-  { d: '8-Jul', avg: 0.08, pp: 56, note: '' },
-  { d: '9-Jul', avg: 0.23, pp: 67, note: '' },
-];
-
-const FUNDAMENTALS = [
-  { icon: '✅', label: 'Fed en pausa 3.50–3.75%', positive: true },
-  { icon: '✅', label: 'Conflicto Medio Oriente: safe-haven bid', positive: true },
-  { icon: '✅', label: 'Bancos centrales: 65% compras en H2', positive: true },
-  { icon: '✅', label: 'Dólar bajo presión (DXY débil)', positive: true },
-  { icon: '⚠️', label: 'Precio atípico ~$4,078 (2x histórico)', positive: false },
-  { icon: '⚠️', label: 'NFP puede mover mercado', positive: false },
-];
-
 // ─── MARKET MOOD GAUGE ─────────────────────────────────────────────────────────
-function MarketMoodGauge() {
+function MarketMoodGauge({ theme }: { theme: Theme }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [animProgress, setAnimProgress] = useState(0);
-  // Mood value: 0 = strong sell, 0.5 = neutral, 1 = strong buy
-  // Based on seasonal signal: 73% bullish for July = 0.73
   const moodValue = 0.73;
+  const colors = themeColors[theme];
 
   useEffect(() => {
     let frame = 0;
@@ -139,23 +146,21 @@ function MarketMoodGauge() {
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startAngle, endAngle);
     ctx.lineWidth = 20;
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineCap = 'round';
+    ctx.strokeStyle = theme === 'light' ? 'rgba(27,38,50,0.08)' : 'rgba(238,233,223,0.08)';
+    ctx.lineCap = 'butt';
     ctx.stroke();
 
     // Gradient arc (sell: red → neutral: amber → buy: green)
     const gradient = ctx.createLinearGradient(cx - radius, cy, cx + radius, cy);
-    gradient.addColorStop(0, '#B34040');
-    gradient.addColorStop(0.35, '#C87D2A');
-    gradient.addColorStop(0.5, '#8B8B3A');
-    gradient.addColorStop(0.65, '#4A9A4A');
-    gradient.addColorStop(1, '#2A7A4B');
+    gradient.addColorStop(0, '#A35139'); // Truffle/Reddish
+    gradient.addColorStop(0.5, '#C9C1B1'); // Oatmeal/Neutral
+    gradient.addColorStop(1, '#FFB162'); // Burning Flame/Buy
 
     ctx.beginPath();
     ctx.arc(cx, cy, radius, startAngle, endAngle);
     ctx.lineWidth = 20;
     ctx.strokeStyle = gradient;
-    ctx.lineCap = 'round';
+    ctx.lineCap = 'butt';
     ctx.stroke();
 
     // Needle
@@ -165,44 +170,44 @@ function MarketMoodGauge() {
     const nx = cx + Math.cos(needleAngle) * needleLen;
     const ny = cy + Math.sin(needleAngle) * needleLen;
 
+    // Needle line
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(nx, ny);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#C9A84C';
-    ctx.lineCap = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = colors.border;
     ctx.stroke();
 
     // Center dot
     ctx.beginPath();
-    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-    ctx.fillStyle = '#C9A84C';
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = colors.border;
     ctx.fill();
 
     // Labels
-    ctx.font = '600 10px "Space Grotesk", sans-serif';
-    ctx.fillStyle = '#B34040';
+    ctx.font = 'bold 10px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#A35139';
     ctx.textAlign = 'left';
     ctx.fillText('VENDER', cx - radius + 5, cy + 16);
 
-    ctx.fillStyle = '#7A7268';
+    ctx.fillStyle = colors.textMuted;
     ctx.textAlign = 'center';
     ctx.fillText('NEUTRAL', cx, cy - radius + 30);
 
-    ctx.fillStyle = '#2A7A4B';
+    ctx.fillStyle = colors.secondary;
     ctx.textAlign = 'right';
     ctx.fillText('COMPRAR', cx + radius - 5, cy + 16);
 
-  }, [animProgress, moodValue]);
+  }, [animProgress, moodValue, theme, colors]);
 
   return (
     <div className="flex flex-col items-center">
       <canvas ref={canvasRef} />
       <div className="flex items-center gap-2 -mt-1">
-        <span className="text-xs font-mono font-bold" style={{ color: '#2A7A4B' }}>
+        <span className="text-xs font-mono font-bold" style={{ color: colors.secondary }}>
           SEÑAL: COMPRA
         </span>
-        <span className="text-[10px] font-mono" style={{ color: '#7A7268' }}>
+        <span className="text-[10px] font-mono" style={{ color: colors.textMuted }}>
           (73% confianza estacional)
         </span>
       </div>
@@ -211,8 +216,9 @@ function MarketMoodGauge() {
 }
 
 // ─── ANIMATED HERO CHART (Canvas) ──────────────────────────────────────────────
-function HeroChart() {
+function HeroChart({ theme }: { theme: Theme }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colors = themeColors[theme];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -239,21 +245,21 @@ function HeroChart() {
       const W = canvas.offsetWidth;
       const H = canvas.offsetHeight;
       ctx.clearRect(0, 0, W, H);
-      const pad = { l: 40, r: 16, t: 20, b: 30 };
+      const pad = { l: 45, r: 16, t: 20, b: 30 };
       const chartW = W - pad.l - pad.r;
       const chartH = H - pad.t - pad.b;
       const barW = chartW / data.length;
       const mid = pad.t + chartH / 2;
 
-      // Grid line
-      ctx.strokeStyle = 'rgba(201,168,76,0.08)';
-      ctx.lineWidth = 1;
+      // Base flat line
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(pad.l, mid);
       ctx.lineTo(W - pad.r, mid);
       ctx.stroke();
 
-      ctx.fillStyle = 'rgba(201,168,76,0.3)';
+      ctx.fillStyle = colors.textMuted;
       ctx.font = '9px "Space Mono", monospace';
       ctx.textAlign = 'left';
       ctx.fillText('$0', 4, mid + 3);
@@ -266,37 +272,31 @@ function HeroChart() {
         const bX = pad.l + i * barW + barW * 0.15;
         const bW = barW * 0.7;
         const isPos = d.pnl >= 0;
-        const isActive = i === data.length - 1;
 
-        const grad = ctx.createLinearGradient(0, isPos ? mid - bH : mid, 0, isPos ? mid : mid + bH);
-        if (isActive) {
-          grad.addColorStop(0, isPos ? 'rgba(201,168,76,0.9)' : 'rgba(179,64,64,0.9)');
-          grad.addColorStop(1, isPos ? 'rgba(201,168,76,0.3)' : 'rgba(179,64,64,0.3)');
-        } else {
-          grad.addColorStop(0, isPos ? 'rgba(42,122,75,0.8)' : 'rgba(179,64,64,0.7)');
-          grad.addColorStop(1, isPos ? 'rgba(42,122,75,0.2)' : 'rgba(179,64,64,0.2)');
-        }
-        ctx.fillStyle = grad;
+        // Solid flat colors
+        ctx.fillStyle = isPos ? colors.primary : colors.secondary;
+        ctx.strokeStyle = colors.border;
+        ctx.lineWidth = 1.5;
         ctx.fillRect(bX, isPos ? mid - bH : mid, bW, bH);
+        ctx.strokeRect(bX, isPos ? mid - bH : mid, bW, bH);
 
+        // Labels
         if (progress >= animTotal * 0.6) {
-          ctx.fillStyle = isActive ? 'rgba(201,168,76,0.9)' : 'rgba(120,110,100,0.7)';
-          ctx.font = `${isActive ? 'bold ' : ''}9px "Space Mono", monospace`;
+          ctx.fillStyle = colors.text;
+          ctx.font = 'bold 9px "Space Mono", monospace';
           ctx.textAlign = 'center';
           ctx.fillText(d.yr.toString().slice(2), bX + bW / 2, H - pad.b + 12);
         }
 
         if (progress >= animTotal * 0.8 && eased > 0.9) {
           const fmt = (d.pnl >= 0 ? '+' : '') + Math.round(d.pnl / 1000) + 'k';
-          ctx.fillStyle = isPos ? 'rgba(42,122,75,0.9)' : 'rgba(179,64,64,0.9)';
-          if (isActive) ctx.fillStyle = 'rgba(201,168,76,1)';
-          ctx.font = `${isActive ? 'bold ' : ''}8px "Space Mono", monospace`;
+          ctx.fillStyle = colors.text;
+          ctx.font = 'bold 8px "Space Mono", monospace';
           ctx.textAlign = 'center';
-          const ty = isPos ? mid - bH - 4 : mid + bH + 10;
+          const ty = isPos ? mid - bH - 6 : mid + bH + 12;
           ctx.fillText(fmt, bX + bW / 2, ty);
         }
       });
-      ctx.textAlign = 'left';
     }
 
     function animate() {
@@ -304,153 +304,22 @@ function HeroChart() {
       drawFrame(animFrame);
       if (animFrame < animTotal + 20) requestAnimationFrame(animate);
     }
-    setTimeout(animate, 600);
+    setTimeout(animate, 200);
 
     const handleResize = () => { resize(); drawFrame(animTotal); };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [theme, colors]);
 
   return (
-    <div className="relative h-[200px] border border-[rgba(201,168,76,0.15)] bg-[#0F1628] overflow-hidden rounded-lg">
+    <div
+      className="relative h-[200px] overflow-hidden rounded"
+      style={{
+        border: `2px solid ${colors.border}`,
+        background: colors.cardBg,
+      }}
+    >
       <canvas ref={canvasRef} className="w-full h-full block" />
-      <div className="absolute bottom-2 right-3 font-mono text-[10px] tracking-wider" style={{ color: '#8B7035' }}>
-        JUN→JUL P&L/CONTRATO · 2016–2024
-      </div>
-    </div>
-  );
-}
-
-// ─── LEVEL SELECTOR TABS ────────────────────────────────────────────────────────
-type Level = 'basico' | 'intermedio' | 'avanzado';
-
-const LEVELS: { key: Level; label: string; icon: React.ReactNode; color: string; description: string }[] = [
-  {
-    key: 'basico',
-    label: 'Básico',
-    icon: <Eye className="w-4 h-4" />,
-    color: '#2A7A4B',
-    description: 'Para cualquier persona. Datos simples y visuales.',
-  },
-  {
-    key: 'intermedio',
-    label: 'Intermedio',
-    icon: <BarChart3 className="w-4 h-4" />,
-    color: '#C87D2A',
-    description: 'Datos ampliados y parámetros ajustables.',
-  },
-  {
-    key: 'avanzado',
-    label: 'Avanzado',
-    icon: <Lock className="w-4 h-4" />,
-    color: '#B34040',
-    description: 'Dashboard completo para expertos.',
-  },
-];
-
-// ─── BASIC LEVEL COMPONENT ─────────────────────────────────────────────────────
-function BasicLevel() {
-  return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Price chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
-              Precio del Oro · En Vivo
-            </span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
-          </div>
-          <HeroChart />
-          <p className="text-[11px] mt-2" style={{ color: '#7A7268' }}>
-            Cada barra muestra cuánto dinero ganarías (verde) o perderías (rojo) por contrato de oro en el período Jun→Jul, año por año.
-          </p>
-        </div>
-
-        {/* Market Mood Gauge */}
-        <div className="border p-5 rounded-lg" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Gauge className="w-4 h-4" style={{ color: '#C9A84C' }} />
-            <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
-              Humor del Mercado
-            </span>
-          </div>
-          <MarketMoodGauge />
-          <p className="text-[11px] mt-3 text-center" style={{ color: '#7A7268' }}>
-            Basado en 15 años de datos históricos del oro. En julio, el mercado tiende a subir el 73% de las veces.
-          </p>
-        </div>
-      </div>
-
-      {/* Asset Panel */}
-      <div className="border p-5 rounded-lg" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
-            Panel de Activos Principales
-          </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ASSETS.map((asset) => (
-            <div
-              key={asset.ticker}
-              className="border p-4 rounded-lg transition-all duration-200 hover:scale-[1.02]"
-              style={{
-                borderColor: 'rgba(255,255,255,0.06)',
-                background: 'rgba(255,255,255,0.02)',
-              }}
-            >
-              <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: '#7A7268' }}>
-                {asset.name}
-              </div>
-              <div className="font-mono text-lg font-bold" style={{ color: asset.color }}>
-                ${asset.price.toLocaleString()}
-              </div>
-              <div className="flex items-center gap-1 mt-1">
-                {asset.change >= 0 ? (
-                  <ArrowUpRight className="w-3 h-3" style={{ color: '#2A7A4B' }} />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3" style={{ color: '#B34040' }} />
-                )}
-                <span
-                  className="font-mono text-xs"
-                  style={{ color: asset.change >= 0 ? '#2A7A4B' : '#B34040' }}
-                >
-                  {asset.change >= 0 ? '+' : ''}{asset.change}%
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Simple Signal Banner */}
-      <div
-        className="p-5 rounded-lg flex flex-col sm:flex-row items-center gap-4"
-        style={{
-          background: 'linear-gradient(135deg, rgba(201,168,76,0.08), rgba(42,122,75,0.06))',
-          border: '1px solid rgba(201,168,76,0.3)',
-        }}
-      >
-        <div className="text-3xl">⬆</div>
-        <div className="flex-1 text-center sm:text-left">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase" style={{ color: '#C9A84C' }}>
-            Señal del Mercado · Julio 2026
-          </div>
-          <div className="text-[15px] font-semibold mt-1" style={{ color: '#E8E0D0' }}>
-            El oro tiende a subir en julio — ¡Buen momento para observar!
-          </div>
-          <div className="text-[11px] mt-1" style={{ color: '#7A7268' }}>
-            Basado en datos históricos de 15 años. No es asesoría de inversión.
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="font-mono text-3xl font-bold" style={{ color: '#2A7A4B' }}>73%</span>
-          <div className="text-[9px] uppercase tracking-wider" style={{ color: '#7A7268' }}>
-            Probabilidad<br/>Histórica
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -509,24 +378,6 @@ const GARCH_FALLBACK_PRICES: Record<string, number[]> = {
     7.10, 7.24, 7.17, 7.04, 6.92, 7.05, 7.19, 7.12, 6.99, 7.20
   ]
 };
-
-function randn() {
-  let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
-
-function studentT(nu: number) {
-  const df = Math.max(3, Math.round(nu));
-  const z = randn();
-  let chi2 = 0;
-  for (let i = 0; i < df; i++) {
-    chi2 += Math.pow(randn(), 2);
-  }
-  const t = z / Math.sqrt(chi2 / df);
-  return t * Math.sqrt((df - 2) / df);
-}
 
 function calibrateAndSimulateGJR(assetKey: string, horizon: number) {
   const prices = GARCH_FALLBACK_PRICES[assetKey] || GARCH_FALLBACK_PRICES['GLD'];
@@ -616,11 +467,12 @@ function calibrateAndSimulateGJR(assetKey: string, horizon: number) {
   return { hist: prices.slice(-40), p10, p50, p90, volAnn, S_last };
 }
 
-function IntermediateGarchSimulator() {
+function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
   const [asset, setAsset] = useState('GLD');
   const [horizon, setHorizon] = useState(21);
   const [simResults, setSimResults] = useState<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colors = themeColors[theme];
 
   const runSimulation = useCallback(() => {
     const res = calibrateAndSimulateGJR(asset, horizon);
@@ -667,7 +519,7 @@ function IntermediateGarchSimulator() {
     // Grid lines
     for (let i = 0; i <= 4; i++) {
       const y = padT + (i / 4) * ah;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = theme === 'light' ? 'rgba(27, 38, 50, 0.08)' : 'rgba(238, 233, 223, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, y);
@@ -675,7 +527,7 @@ function IntermediateGarchSimulator() {
       ctx.stroke();
 
       const val = vMax - (i / 4) * (vMax - vMin);
-      ctx.fillStyle = '#5c6480';
+      ctx.fillStyle = colors.textMuted;
       ctx.font = '9px "Space Mono", monospace';
       ctx.textAlign = 'right';
       ctx.fillText(val.toFixed(val < 20 ? 2 : 0), padL - 5, y + 3);
@@ -684,7 +536,7 @@ function IntermediateGarchSimulator() {
     // Cone Fill (IC 80%)
     ctx.save();
     ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#f5a623';
+    ctx.fillStyle = colors.primary;
     ctx.beginPath();
     for (let i = 0; i <= horizon; i++) {
       const x = px(nH - 1 + i);
@@ -701,7 +553,7 @@ function IntermediateGarchSimulator() {
     // Upper/Lower dotted lines
     ctx.save();
     ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = 'rgba(245, 166, 35, 0.6)';
+    ctx.strokeStyle = theme === 'light' ? 'rgba(163, 81, 57, 0.5)' : 'rgba(255, 177, 98, 0.5)';
     ctx.lineWidth = 1;
     for (const band of [p10, p90]) {
       ctx.beginPath();
@@ -715,8 +567,8 @@ function IntermediateGarchSimulator() {
     ctx.restore();
 
     // Median prediction line
-    ctx.strokeStyle = '#2dd4a0';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = colors.secondary;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     for (let i = 0; i <= horizon; i++) {
       const x = px(nH - 1 + i);
@@ -726,8 +578,8 @@ function IntermediateGarchSimulator() {
     ctx.stroke();
 
     // Historical prices
-    ctx.strokeStyle = 'rgba(232, 234, 240, 0.75)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = colors.text;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     for (let i = 0; i < nH; i++) {
       const x = px(i);
@@ -738,8 +590,8 @@ function IntermediateGarchSimulator() {
 
     // Separator line
     const sepX = px(nH - 1);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(sepX, padT);
@@ -747,23 +599,23 @@ function IntermediateGarchSimulator() {
     ctx.stroke();
 
     // Label separating real and projection
-    ctx.fillStyle = '#7A7268';
-    ctx.font = '9px "Space Grotesk", sans-serif';
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = 'bold 9px "Space Grotesk", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('← Real', padL + (sepX - padL) / 2, H - 4);
     ctx.fillText(`Proyección GJR-GARCH (${horizon}d) →`, sepX + (padL + aw - sepX) / 2, H - 4);
 
     // Current Price Node
-    ctx.fillStyle = '#e8eaf0';
+    ctx.fillStyle = colors.text;
     ctx.beginPath();
-    ctx.arc(sepX, py(S_last), 4, 0, Math.PI * 2);
+    ctx.arc(sepX, py(S_last), 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#2dd4a0';
+    ctx.fillStyle = colors.secondary;
     ctx.font = 'bold 10px "Space Mono", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(S_last.toFixed(S_last < 20 ? 3 : 1), sepX + 6, py(S_last) + 3);
+    ctx.fillText(S_last.toFixed(S_last < 20 ? 3 : 1), sepX + 7, py(S_last) + 3);
 
-  }, [simResults, horizon]);
+  }, [simResults, horizon, theme, colors]);
 
   const assetNames: Record<string, string> = {
     GLD: 'Oro (GLD ETF)',
@@ -773,23 +625,39 @@ function IntermediateGarchSimulator() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5 border p-5 rounded-lg mb-6" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
+    <div
+      className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5 p-5 mb-6 transition-colors"
+      style={{
+        border: `2px solid ${colors.border}`,
+        background: colors.cardBg,
+        boxShadow: `4px 4px 0px 0px ${colors.border}`
+      }}
+    >
       <div className="space-y-4">
         <div>
-          <span className="font-mono text-[9px] uppercase tracking-widest block mb-1 text-teal-400">Modelo Cuantitativo</span>
-          <h4 className="text-sm font-semibold text-slate-200">Proyector de Volatilidad GJR-GARCH</h4>
-          <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">
+          <span className="font-mono text-[9px] uppercase tracking-widest block mb-1 text-orange-400 font-bold">
+            Modelo Cuantitativo
+          </span>
+          <h4 className="text-sm font-semibold" style={{ color: colors.text }}>Proyector GJR-GARCH</h4>
+          <p className="text-[10px] mt-0.5 leading-relaxed font-medium" style={{ color: colors.textMuted }}>
             Calibra la asimetría de volatilidad en tiempo real y estima el rango probable de precios mediante simulación Monte Carlo.
           </p>
         </div>
 
         <div className="space-y-3 pt-2">
           <div>
-            <label className="text-[10px] uppercase font-mono tracking-wider block mb-1 text-slate-400">Activo Financiero</label>
+            <label className="text-[10px] uppercase font-mono tracking-wider block mb-1" style={{ color: colors.textMuted }}>
+              Activo Financiero
+            </label>
             <select
               value={asset}
               onChange={(e) => setAsset(e.target.value)}
-              className="w-full bg-[#1A2338] border border-slate-700/60 rounded px-2.5 py-1.5 text-xs text-slate-200 outline-none focus:border-teal-450"
+              className="w-full border rounded px-2.5 py-1.5 text-xs outline-none font-bold"
+              style={{
+                background: colors.bg,
+                borderColor: colors.border,
+                color: colors.text
+              }}
             >
               <option value="GLD">Oro (GLD)</option>
               <option value="SPY">S&P 500 (SPY)</option>
@@ -800,8 +668,10 @@ function IntermediateGarchSimulator() {
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-[10px] uppercase font-mono tracking-wider block text-slate-400">Horizonte de Proyección</label>
-              <span className="text-xs font-mono font-bold text-teal-400">{horizon}d</span>
+              <label className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: colors.textMuted }}>
+                Horizonte
+              </label>
+              <span className="text-xs font-mono font-bold" style={{ color: colors.secondary }}>{horizon}d</span>
             </div>
             <input
               type="range"
@@ -810,38 +680,189 @@ function IntermediateGarchSimulator() {
               step="1"
               value={horizon}
               onChange={(e) => setHorizon(parseInt(e.target.value))}
-              className="w-full h-1 bg-[#131A2D] rounded-lg appearance-none cursor-pointer accent-teal-400"
+              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: colors.bgSecondary,
+                accentColor: colors.primary
+              }}
             />
           </div>
 
           <button
             onClick={runSimulation}
-            className="w-full py-2 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 text-teal-400 rounded text-xs font-bold font-mono tracking-wider transition uppercase"
+            className="w-full py-2 border hover:opacity-90 rounded text-xs font-bold font-mono tracking-wider transition uppercase cursor-pointer"
+            style={{
+              background: colors.primary,
+              borderColor: colors.border,
+              color: '#1B2632'
+            }}
           >
-            ▶ Recalcular Modelo
+            ▶ Recalcular
           </button>
         </div>
 
         {simResults && (
-          <div className="bg-[#131A2D]/60 border border-slate-800/80 rounded p-3 text-[11px] leading-relaxed space-y-1.5 text-left">
+          <div
+            className="border rounded p-3 text-[11px] leading-relaxed space-y-1.5 text-left"
+            style={{
+              background: colors.bg,
+              borderColor: colors.border
+            }}
+          >
             <div>
-              <span className="text-slate-500">Vol Anualizada:</span>{' '}
-              <span className="font-mono text-teal-450 font-bold">{simResults.volAnn.toFixed(1)}%</span>
+              <span style={{ color: colors.textMuted }}>Vol Anualizada:</span>{' '}
+              <span className="font-mono font-bold" style={{ color: colors.secondary }}>{simResults.volAnn.toFixed(1)}%</span>
             </div>
-            <div className="text-[10px] text-slate-400 leading-snug">
-              Con 95% de confianza, se estima que el rango para {assetNames[asset]} en {horizon} días estará entre{' '}
-              <span className="font-mono text-[#f5a623] font-bold">${simResults.p10[horizon].toFixed(asset === 'UNG' ? 2 : 1)}</span> y{' '}
-              <span className="font-mono text-[#f5a623] font-bold">${simResults.p90[horizon].toFixed(asset === 'UNG' ? 2 : 1)}</span>.
+            <div className="text-[10px] leading-snug font-medium" style={{ color: colors.textMuted }}>
+              Con 95% de confianza, {assetNames[asset]} se mantendrá entre{' '}
+              <span className="font-mono font-bold" style={{ color: colors.secondary }}>
+                ${simResults.p10[horizon].toFixed(asset === 'UNG' ? 2 : 1)}
+              </span>{' '}
+              y{' '}
+              <span className="font-mono font-bold" style={{ color: colors.secondary }}>
+                ${simResults.p90[horizon].toFixed(asset === 'UNG' ? 2 : 1)}
+              </span>.
             </div>
           </div>
         )}
       </div>
 
-      <div className="relative min-h-[220px] bg-[#0A0E1A] rounded overflow-hidden flex flex-col justify-between p-1.5 border border-slate-800/60">
+      <div
+        className="relative min-h-[220px] rounded overflow-hidden flex flex-col justify-between p-1.5 border"
+        style={{
+          background: colors.bg,
+          borderColor: colors.border
+        }}
+      >
         <canvas ref={canvasRef} className="w-full h-[210px] block" />
         <div className="flex justify-between items-center px-2 py-1 text-[8px] font-mono text-slate-500 uppercase tracking-widest">
-          <span>MC Sims: 3,000</span>
-          <span>Ecuación: GJR-GARCH MLE (Student-t)</span>
+          <span>Simulaciones: 3,000</span>
+          <span>Modelo: GJR-GARCH Student-t</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BASIC LEVEL COMPONENT ─────────────────────────────────────────────────────
+interface LevelProps {
+  theme: Theme;
+}
+
+function BasicLevel({ theme }: LevelProps) {
+  const colors = themeColors[theme];
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
+              Precio del Oro · Histórico Jun→Jul
+            </span>
+            <div className="flex-1 h-0.5" style={{ background: colors.border }} />
+          </div>
+          <HeroChart theme={theme} />
+          <p className="text-[11px] mt-2 font-medium" style={{ color: colors.textMuted }}>
+            Muestra el rendimiento por contrato del oro en el período Jun→Jul de cada año. Las barras representan las ganancias o pérdidas netas de la estacionalidad.
+          </p>
+        </div>
+
+        {/* Market Mood Gauge */}
+        <div
+          className="border p-5 rounded"
+          style={{
+            borderColor: colors.border,
+            background: colors.cardBg,
+            boxShadow: `4px 4px 0px 0px ${colors.border}`
+          }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
+              Medidor de Humor del Mercado
+            </span>
+          </div>
+          <MarketMoodGauge theme={theme} />
+          <p className="text-[11px] mt-3 text-center font-medium" style={{ color: colors.textMuted }}>
+            Análisis estacional de commodities. Históricamente, el precio del oro sube un 73% de las veces durante julio.
+          </p>
+        </div>
+      </div>
+
+      {/* Asset Panel */}
+      <div
+        className="border p-5 rounded"
+        style={{
+          borderColor: colors.border,
+          background: colors.cardBg,
+          boxShadow: `4px 4px 0px 0px ${colors.border}`
+        }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
+            Panel de Activos Principales
+          </span>
+          <div className="flex-1 h-0.5" style={{ background: colors.border }} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {ASSETS.map((asset) => (
+            <div
+              key={asset.ticker}
+              className="border p-4 rounded transition-all duration-200"
+              style={{
+                borderColor: colors.border,
+                background: colors.bg,
+              }}
+            >
+              <div className="text-[9px] uppercase tracking-wider mb-1 font-bold" style={{ color: colors.textMuted }}>
+                {asset.name}
+              </div>
+              <div className="font-mono text-lg font-bold" style={{ color: colors.text }}>
+                ${asset.price.toLocaleString()}
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                {asset.change >= 0 ? (
+                  <ArrowUpRight className="w-3 h-3" style={{ color: colors.secondary }} />
+                ) : (
+                  <ArrowDownRight className="w-3 h-3" style={{ color: colors.secondary }} />
+                )}
+                <span
+                  className="font-mono text-xs font-bold"
+                  style={{ color: colors.secondary }}
+                >
+                  {asset.change >= 0 ? '+' : ''}{asset.change}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Simple Signal Banner */}
+      <div
+        className="p-5 rounded flex flex-col sm:flex-row items-center gap-4 text-left"
+        style={{
+          background: colors.cardBg,
+          border: `2px solid ${colors.border}`,
+          boxShadow: `4px 4px 0px 0px ${colors.border}`
+        }}
+      >
+        <div className="text-3xl text-orange-400">⬆</div>
+        <div className="flex-1 text-center sm:text-left">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold" style={{ color: colors.secondary }}>
+            Ciclo de Commodities · Señal Estacional
+          </div>
+          <div className="text-[15px] font-bold mt-1" style={{ color: colors.text }}>
+            El oro tiende a subir en julio — Período de alta probabilidad alcista
+          </div>
+          <div className="text-[11px] mt-1 font-medium" style={{ color: colors.textMuted }}>
+            Basado en datos de 15 años de COMEX. No es asesoría financiera.
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="font-mono text-3xl font-bold" style={{ color: colors.secondary }}>73%</span>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: colors.textMuted }}>
+            Probabilidad<br/>Histórica
+          </div>
         </div>
       </div>
     </div>
@@ -849,71 +870,74 @@ function IntermediateGarchSimulator() {
 }
 
 // ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
-// ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
-function IntermediateLevel() {
+function IntermediateLevel({ theme }: LevelProps) {
+  const colors = themeColors[theme];
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* GJR-GARCH Interactive Simulator (Fused Layer) */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
+          <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
             Simulador de Volatilidad Cuantitativa (Fusión GJR-GARCH)
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
+          <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
-        <IntermediateGarchSimulator />
+        <IntermediateGarchSimulator theme={theme} />
       </div>
 
       {/* Seasonal Charts + Calendar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
+            <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
               Rendimiento Estacional Jun→Jul · 15 Años
             </span>
           </div>
-          <HeroChart />
+          <HeroChart theme={theme} />
         </div>
 
         {/* Monthly Bar Chart */}
-        <div className="border p-5 rounded-lg" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
+        <div
+          className="border p-5 rounded"
+          style={{
+            borderColor: colors.border,
+            background: colors.cardBg,
+            boxShadow: `4px 4px 0px 0px ${colors.border}`
+          }}
+        >
           <div className="flex items-center gap-2 mb-4">
-            <span className="font-mono text-[10px] tracking-[0.2em] uppercase" style={{ color: '#C9A84C' }}>
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold" style={{ color: colors.secondary }}>
               Retorno Promedio Mensual (2010–2024)
             </span>
           </div>
           <div className="space-y-2">
             {MONTHLY_RETURNS.map((m) => {
               const maxVal = Math.max(...MONTHLY_RETURNS.map(r => Math.abs(r.avg)));
-              const pct = (Math.abs(m.avg) / maxVal) * 100;
+              const pctVal = (Math.abs(m.avg) / maxVal) * 100;
               const isPos = m.avg >= 0;
               const isJul = m.m === 'Jul';
               return (
                 <div key={m.m} className="grid grid-cols-[55px_1fr_50px] items-center gap-2">
                   <span
-                    className="font-mono text-[10px]"
+                    className="font-mono text-[10px] font-bold"
                     style={{
-                      color: isJul ? '#C9A84C' : '#7A7268',
-                      fontWeight: isJul ? 700 : 400,
+                      color: isJul ? colors.secondary : colors.textMuted,
                     }}
                   >
                     {m.m}{isJul ? ' ★' : ''}
                   </span>
-                  <div className="h-4 relative overflow-hidden rounded-sm" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <div className="h-4 relative overflow-hidden border" style={{ background: colors.bg, borderColor: colors.border }}>
                     <div
-                      className="absolute left-0 top-0 h-full rounded-sm transition-all duration-1000"
+                      className="absolute left-0 top-0 h-full transition-all duration-1000"
                       style={{
-                        width: `${pct}%`,
-                        background: isPos
-                          ? 'linear-gradient(90deg, rgba(42,122,75,0.3), rgba(42,122,75,0.7))'
-                          : 'linear-gradient(90deg, rgba(179,64,64,0.3), rgba(179,64,64,0.7))',
-                        filter: isJul ? 'brightness(1.3)' : undefined,
+                        width: `${pctVal}%`,
+                        background: isPos ? colors.primary : colors.secondary,
                       }}
                     />
                   </div>
                   <span
-                    className="font-mono text-[10px] text-right"
-                    style={{ color: isPos ? '#2A7A4B' : '#B34040' }}
+                    className="font-mono text-[10px] text-right font-bold"
+                    style={{ color: isPos ? colors.text : colors.secondary }}
                   >
                     {isPos ? '+' : ''}{m.avg.toFixed(2)}%
                   </span>
@@ -925,44 +949,34 @@ function IntermediateLevel() {
       </div>
 
       {/* Calendar Strip */}
-      <div className="border p-5 rounded-lg" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
+      <div
+        className="border p-5 rounded"
+        style={{
+          borderColor: colors.border,
+          background: colors.cardBg,
+          boxShadow: `4px 4px 0px 0px ${colors.border}`
+        }}
+      >
         <div className="flex items-center gap-2 mb-4">
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase" style={{ color: '#C9A84C' }}>
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold" style={{ color: colors.secondary }}>
             Ciclo Anual del Oro · Señales por Mes
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
+          <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1 border-t border-l" style={{ borderColor: colors.border }}>
           {CALENDAR_SIGNALS.map((cal) => {
-            const borderColor = {
-              bullish: '#2A7A4B',
-              bearish: '#B34040',
-              neutral: '#7A7268',
-              active: '#C9A84C',
-            }[cal.type];
-            const bg = {
-              bullish: 'rgba(42,122,75,0.08)',
-              bearish: 'rgba(179,64,64,0.08)',
-              neutral: 'transparent',
-              active: 'rgba(201,168,76,0.12)',
-            }[cal.type];
-            const textColor = {
-              bullish: '#2A7A4B',
-              bearish: '#B34040',
-              neutral: '#7A7268',
-              active: '#C9A84C',
-            }[cal.type];
+            const bgVal = cal.type === 'active' ? colors.primary : cal.type === 'bullish' ? colors.cardSecondary : 'transparent';
             return (
               <div
                 key={cal.m}
-                className="p-2 text-center"
+                className="p-2 text-center border-r border-b"
                 style={{
-                  borderTop: `3px solid ${borderColor}`,
-                  background: bg,
+                  borderColor: colors.border,
+                  background: bgVal,
                 }}
               >
-                <div className="font-mono text-[8px]" style={{ color: '#7A7268' }}>{cal.m}</div>
-                <div className="font-mono text-[8px] mt-1 font-bold" style={{ color: textColor }}>{cal.signal}</div>
+                <div className="font-mono text-[8px] font-bold" style={{ color: colors.text }}>{cal.m}</div>
+                <div className="font-mono text-[8px] mt-1 font-bold" style={{ color: colors.secondary }}>{cal.signal}</div>
               </div>
             );
           })}
@@ -970,12 +984,19 @@ function IntermediateLevel() {
       </div>
 
       {/* P&L Table */}
-      <div className="border p-5 rounded-lg overflow-x-auto" style={{ borderColor: 'rgba(201,168,76,0.15)', background: '#0F1628' }}>
+      <div
+        className="border p-5 rounded overflow-x-auto"
+        style={{
+          borderColor: colors.border,
+          background: colors.cardBg,
+          boxShadow: `4px 4px 0px 0px ${colors.border}`
+        }}
+      >
         <div className="flex items-center gap-2 mb-4">
-          <span className="font-mono text-[10px] tracking-[0.2em] uppercase" style={{ color: '#C9A84C' }}>
+          <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold" style={{ color: colors.secondary }}>
             Historial Año por Año — Jun → Jul
           </span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(201,168,76,0.15)' }} />
+          <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
         <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -983,10 +1004,10 @@ function IntermediateLevel() {
               {['Año', 'Entrada Jun', 'Salida Jul', 'Cambio', 'P&L/contrato', 'Resultado'].map((h) => (
                 <th
                   key={h}
-                  className="font-mono text-[9px] uppercase tracking-wider pb-2 font-normal"
+                  className="font-mono text-[9px] uppercase tracking-wider pb-2 font-bold"
                   style={{
-                    color: '#7A7268',
-                    borderBottom: '1px solid rgba(201,168,76,0.15)',
+                    color: colors.textMuted,
+                    borderBottom: `2px solid ${colors.border}`,
                     padding: '0 8px 10px',
                   }}
                 >
@@ -1002,25 +1023,26 @@ function IntermediateLevel() {
               return (
                 <tr
                   key={row.yr}
-                  className="transition-colors hover:bg-[rgba(201,168,76,0.04)]"
-                  style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                  className="transition-colors"
+                  style={{ borderBottom: `1px solid ${colors.border}` }}
                 >
-                  <td className="font-mono text-[11px] py-2 px-2" style={{ color: '#7A7268' }}>{row.yr}</td>
-                  <td className="font-mono text-[11px] py-2 px-2" style={{ color: '#D8D0C0' }}>${row.e.toLocaleString()}</td>
-                  <td className="font-mono text-[11px] py-2 px-2" style={{ color: '#D8D0C0' }}>${row.x.toLocaleString()}</td>
-                  <td className="font-mono text-[11px] py-2 px-2" style={{ color: chg >= 0 ? '#2A7A4B' : '#B34040' }}>
+                  <td className="font-mono text-[11px] py-2.5 px-2" style={{ color: colors.text }}>{row.yr}</td>
+                  <td className="font-mono text-[11px] py-2.5 px-2" style={{ color: colors.textMuted }}>${row.e.toLocaleString()}</td>
+                  <td className="font-mono text-[11px] py-2.5 px-2" style={{ color: colors.textMuted }}>${row.x.toLocaleString()}</td>
+                  <td className="font-mono text-[11px] py-2.5 px-2 font-bold" style={{ color: chg >= 0 ? colors.text : colors.secondary }}>
                     {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
                   </td>
-                  <td className="font-mono text-[11px] py-2 px-2 font-bold" style={{ color: win ? '#2A7A4B' : '#B34040' }}>
+                  <td className="font-mono text-[11px] py-2.5 px-2 font-bold" style={{ color: win ? colors.text : colors.secondary }}>
                     {row.pnl >= 0 ? '+' : ''}${Math.abs(row.pnl).toLocaleString()}
                   </td>
-                  <td className="py-2 px-2 text-right">
+                  <td className="py-2.5 px-2 text-right">
                     <span
-                      className="inline-block font-mono text-[9px] tracking-wider px-2 py-0.5"
+                      className="inline-block font-mono text-[9px] tracking-wider px-2 py-0.5 border"
                       style={{
-                        background: win ? 'rgba(42,122,75,0.12)' : 'rgba(179,64,64,0.12)',
-                        color: win ? '#2A7A4B' : '#B34040',
-                        border: `1px solid ${win ? 'rgba(42,122,75,0.3)' : 'rgba(179,64,64,0.3)'}`,
+                        background: win ? colors.primary : colors.bg,
+                        color: colors.text,
+                        borderColor: colors.border,
+                        fontWeight: 'bold'
                       }}
                     >
                       {win ? '✅ SUBE' : '❌ BAJA'}
@@ -1031,43 +1053,44 @@ function IntermediateLevel() {
             })}
           </tbody>
         </table>
-        <div className="flex justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(201,168,76,0.15)' }}>
-          <span className="font-mono text-[10px]" style={{ color: '#7A7268' }}>GANADORES</span>
-          <span className="font-mono text-[12px] font-bold" style={{ color: '#2A7A4B' }}>10 / 15 · 67%</span>
+        <div className="flex justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
+          <span className="font-mono text-[10px] font-bold" style={{ color: colors.textMuted }}>GANADORES</span>
+          <span className="font-mono text-[12px] font-bold" style={{ color: colors.text }}>10 / 15 · 67%</span>
         </div>
         <div className="flex justify-between mt-1.5">
-          <span className="font-mono text-[10px]" style={{ color: '#7A7268' }}>P&L PROMEDIO</span>
-          <span className="font-mono text-[12px] font-bold" style={{ color: '#C9A84C' }}>+$2,967 / contrato</span>
+          <span className="font-mono text-[10px] font-bold" style={{ color: colors.textMuted }}>P&L PROMEDIO</span>
+          <span className="font-mono text-[12px] font-bold" style={{ color: colors.secondary }}>+$2,967 / contrato</span>
         </div>
       </div>
 
       {/* Signal banner for intermediate */}
       <div
-        className="p-5 rounded-lg grid gap-5"
+        className="p-5 rounded grid gap-5"
         style={{
-          background: 'linear-gradient(135deg, rgba(201,168,76,0.08), rgba(42,122,75,0.06))',
-          border: '1px solid rgba(201,168,76,0.3)',
+          background: colors.cardBg,
+          border: `2px solid ${colors.border}`,
+          boxShadow: `4px 4px 0px 0px ${colors.border}`,
           gridTemplateColumns: 'auto 1fr auto',
         }}
       >
-        <div className="w-14 h-14 flex items-center justify-center text-2xl border rounded-lg" style={{ background: 'rgba(201,168,76,0.1)', borderColor: 'rgba(201,168,76,0.3)' }}>
+        <div className="w-14 h-14 flex items-center justify-center text-2xl border" style={{ background: colors.bg, borderColor: colors.border }}>
           ⬆
         </div>
-        <div>
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: '#C9A84C' }}>
-            Señal Activa · Semana del 7 julio 2026
+        <div className="text-left">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase mb-1 font-bold" style={{ color: colors.secondary }}>
+            Señal Activa · Rally Estacional
           </div>
-          <div className="text-[15px] font-semibold" style={{ color: '#E8E0D0' }}>
-            LONG Oro — Inicio del Rally Estacional de Verano
+          <div className="text-[15px] font-bold" style={{ color: colors.text }}>
+            LONG Oro — Inicio de Flujo Fuerte
           </div>
-          <div className="text-[11px] mt-0.5" style={{ color: '#7A7268' }}>
-            5 fuentes independientes convergen: Seasonax (50 años), StoneX Research, DiscoveryAlert (25 años COMEX)
+          <div className="text-[11px] mt-0.5 font-medium" style={{ color: colors.textMuted }}>
+            Convergencia de fuentes cuantitativas independientes. Historial positivo de 11 de los últimos 15 años.
           </div>
         </div>
         <div className="text-right">
-          <span className="font-mono text-4xl font-bold" style={{ color: '#2A7A4B' }}>73%</span>
-          <div className="text-[9px] uppercase tracking-wider" style={{ color: '#7A7268' }}>
-            1ª semana julio<br/>positiva (11/15 años)
+          <span className="font-mono text-4xl font-bold" style={{ color: colors.secondary }}>73%</span>
+          <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: colors.textMuted }}>
+            Confianza<br/>Estacional
           </div>
         </div>
       </div>
@@ -1076,30 +1099,31 @@ function IntermediateLevel() {
 }
 
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
-function AdvancedLevel() {
+function AdvancedLevel({ theme }: LevelProps) {
   const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
+  const colors = themeColors[theme];
 
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Sub tabs inside advanced */}
-      <div className="flex border-b border-slate-800 gap-4 pb-2">
+      <div className="flex gap-4 pb-1 border-b" style={{ borderColor: colors.border }}>
         <button
           onClick={() => setSubTab('cuantitativa')}
-          className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
-            subTab === 'cuantitativa'
-              ? 'border-teal-400 text-teal-400'
-              : 'border-transparent text-slate-500 hover:text-slate-350'
-          }`}
+          className="pb-2 text-xs font-bold font-mono tracking-wide transition uppercase cursor-pointer"
+          style={{
+            borderBottom: subTab === 'cuantitativa' ? `3px solid ${colors.secondary}` : '3px solid transparent',
+            color: subTab === 'cuantitativa' ? colors.secondary : colors.textMuted,
+          }}
         >
           Capa Cuantitativa (GJR-GARCH MLE)
         </button>
         <button
           onClick={() => setSubTab('estacional')}
-          className={`pb-2 text-xs font-semibold font-mono tracking-wide border-b-2 transition uppercase cursor-pointer ${
-            subTab === 'estacional'
-              ? 'border-teal-400 text-teal-400'
-              : 'border-transparent text-slate-500 hover:text-slate-350'
-          }`}
+          className="pb-2 text-xs font-bold font-mono tracking-wide transition uppercase cursor-pointer"
+          style={{
+            borderBottom: subTab === 'estacional' ? `3px solid ${colors.secondary}` : '3px solid transparent',
+            color: subTab === 'estacional' ? colors.secondary : colors.textMuted,
+          }}
         >
           Capa Estacional (Historial COMEX)
         </button>
@@ -1108,23 +1132,31 @@ function AdvancedLevel() {
       {subTab === 'cuantitativa' && (
         <div className="space-y-4 animate-fadeIn">
           <div
-            className="flex items-start gap-3 p-4 rounded-lg text-[12px]"
+            className="flex items-start gap-3 p-4 rounded text-[12px] text-left"
             style={{
-              background: 'rgba(91,156,246,0.06)',
-              border: '1px solid rgba(91,156,246,0.2)',
-              color: '#D8D0C0',
+              background: colors.cardBg,
+              border: `2px solid ${colors.border}`,
+              boxShadow: `4px 4px 0px 0px ${colors.border}`,
+              color: colors.text,
             }}
           >
-            <Sparkles className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#5B9CF6' }} />
+            <Sparkles className="w-5 h-5 shrink-0 mt-0.5" style={{ color: colors.secondary }} />
             <div>
-              <strong style={{ color: '#E8E0D0' }}>Capa Cuantitativa Avanzada:</strong> Motor predictivo GJR-GARCH con calibración de parámetros MLE, simulaciones Monte Carlo, tests estadísticos de Kupiec/Christoffersen y detector de régimen de volatilidad.
+              <strong style={{ color: colors.text }}>Capa Cuantitativa Avanzada:</strong> Motor predictivo GJR-GARCH con calibración de parámetros MLE, simulaciones Monte Carlo, tests estadísticos de Kupiec/Christoffersen y detector de régimen de volatilidad.
             </div>
           </div>
-          <div className="w-full rounded-lg overflow-hidden border bg-[#0d0f14]" style={{ borderColor: 'rgba(91,156,246,0.15)' }}>
+          <div
+            className="w-full rounded overflow-hidden border"
+            style={{
+              borderColor: colors.border,
+              boxShadow: `4px 4px 0px 0px ${colors.border}`
+            }}
+          >
+            {/* Syncing theme to the iframe via dynamic URL or shared localStorage trigger */}
             <iframe
-              src="/motor_predictivo_v3.html"
-              className="w-full border-none bg-[#0d0f14]"
-              style={{ height: '1350px' }}
+              src={`/motor_predictivo_v3.html?theme=${theme}`}
+              className="w-full border-none"
+              style={{ height: '1350px', background: colors.cardBg }}
               title="Motor Predictivo GJR-GARCH"
             />
           </div>
@@ -1134,23 +1166,30 @@ function AdvancedLevel() {
       {subTab === 'estacional' && (
         <div className="space-y-4 animate-fadeIn">
           <div
-            className="flex items-start gap-3 p-4 rounded-lg text-[12px]"
+            className="flex items-start gap-3 p-4 rounded text-[12px] text-left"
             style={{
-              background: 'rgba(201,168,76,0.06)',
-              border: '1px solid rgba(201,168,76,0.2)',
-              color: '#D8D0C0',
+              background: colors.cardBg,
+              border: `2px solid ${colors.border}`,
+              boxShadow: `4px 4px 0px 0px ${colors.border}`,
+              color: colors.text,
             }}
           >
-            <TrendingUp className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#C9A84C' }} />
+            <TrendingUp className="w-5 h-5 shrink-0 mt-0.5" style={{ color: colors.secondary }} />
             <div>
-              <strong style={{ color: '#E8E0D0' }}>Capa Estacional Histórica:</strong> Análisis estacional del Oro COMEX con datos propios de 15 años (2010–2024) y niveles operativos de trading.
+              <strong style={{ color: colors.text }}>Capa Estacional Histórica:</strong> Análisis estacional del Oro COMEX con datos propios de 15 años (2010–2024) y niveles operativos de trading.
             </div>
           </div>
-          <div className="w-full rounded-lg overflow-hidden border bg-[#0A0E1A]" style={{ borderColor: 'rgba(201,168,76,0.15)' }}>
+          <div
+            className="w-full rounded overflow-hidden border"
+            style={{
+              borderColor: colors.border,
+              boxShadow: `4px 4px 0px 0px ${colors.border}`
+            }}
+          >
             <iframe
-              src="/oro_estacional_dashboard.html"
-              className="w-full border-none bg-[#0A0E1A]"
-              style={{ height: '2200px' }}
+              src={`/oro_estacional_dashboard.html?theme=${theme}`}
+              className="w-full border-none"
+              style={{ height: '2200px', background: colors.cardBg }}
               title="Dashboard Estacional del Oro"
             />
           </div>
@@ -1161,45 +1200,49 @@ function AdvancedLevel() {
 }
 
 // ─── CTA BANNER ────────────────────────────────────────────────────────────────
-function CtaBanner() {
+function CtaBanner({ theme }: LevelProps) {
+  const colors = themeColors[theme];
   return (
     <div
-      className="p-6 md:p-10 rounded-lg mt-8"
+      className="p-6 md:p-10 rounded text-left transition-colors"
       style={{
-        background: 'linear-gradient(135deg, #0F1628 0%, #0D1E35 100%)',
-        border: '1px solid rgba(201,168,76,0.3)',
+        background: colors.cardBg,
+        border: `2px solid ${colors.border}`,
+        boxShadow: `4px 4px 0px 0px ${colors.border}`
       }}
     >
       <div className="flex flex-col lg:flex-row gap-8 items-center justify-between">
         <div className="max-w-xl">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: '#C9A84C' }}>
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase mb-3 font-bold" style={{ color: colors.secondary }}>
             FinNova Academy · Formación Financiera Práctica
           </div>
-          <h3 className="text-2xl font-bold leading-tight mb-3" style={{ color: '#E8E0D0' }}>
+          <h3 className="text-2xl font-bold leading-tight mb-3" style={{ color: colors.text }}>
             ¿Quieres entender los niveles<br />básico, intermedio y experto?
           </h3>
-          <p className="text-[13px] leading-relaxed" style={{ color: '#7A7268' }}>
+          <p className="text-[13px] leading-relaxed font-medium" style={{ color: colors.textMuted }}>
             Explora nuestros cursos y contenido educativo diseñado para que puedas sacarle provecho al mercado financiero. Desde conceptos fundamentales hasta análisis técnico avanzado — aprende a tu ritmo con certificación validada por IA.
           </p>
           <div className="flex gap-2 mt-4 flex-wrap">
             {['📊 Futuros y Derivados', '🥇 Commodities', '📈 Análisis Técnico', '⚖️ Gestión de Riesgo'].map(p => (
               <span
                 key={p}
-                className="text-[11px] px-3 py-1"
-                style={{ border: '1px solid rgba(201,168,76,0.15)', color: '#7A7268' }}
+                className="text-[11px] px-3 py-1 border"
+                style={{ borderColor: colors.border, color: colors.text, background: colors.bg, fontWeight: 'bold' }}
               >
                 {p}
               </span>
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-3 shrink-0">
+        <div className="flex flex-col gap-3 shrink-0 w-full sm:w-auto">
           <Link
             to="/cursos"
-            className="px-8 py-3.5 font-bold text-[13px] tracking-wider uppercase text-center transition-all duration-200 hover:-translate-y-0.5"
+            className="px-8 py-3.5 font-bold text-[13px] tracking-wider uppercase text-center transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
             style={{
-              background: '#C9A84C',
-              color: '#0A0E1A',
+              background: colors.primary,
+              borderColor: colors.border,
+              color: '#1B2632',
+              boxShadow: `3px 3px 0px 0px ${colors.border}`,
               fontFamily: '"Space Grotesk", sans-serif',
             }}
           >
@@ -1207,10 +1250,12 @@ function CtaBanner() {
           </Link>
           <Link
             to="/register"
-            className="px-6 py-2.5 text-[12px] tracking-wider uppercase text-center transition-all duration-200 hover:bg-[rgba(201,168,76,0.06)]"
+            className="px-6 py-2.5 text-[12px] tracking-wider uppercase text-center transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
             style={{
-              border: '1px solid rgba(201,168,76,0.4)',
-              color: '#C9A84C',
+              background: colors.cardBg,
+              borderColor: colors.border,
+              color: colors.text,
+              boxShadow: `3px 3px 0px 0px ${colors.border}`,
               fontFamily: '"Space Grotesk", sans-serif',
             }}
           >
@@ -1226,6 +1271,21 @@ function CtaBanner() {
 export default function MarketLanding() {
   const [activeLevel, setActiveLevel] = useState<Level>('basico');
   const [livePrice, setLivePrice] = useState(4078);
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('theme');
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  const colors = themeColors[theme];
+
+  // Sync theme to document body class and local storage
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    // Disseminate to static documents loaded in iframes
+    try {
+      window.dispatchEvent(new Event('themechange'));
+    } catch (_) {}
+  }, [theme]);
 
   // Simulated live price animation
   useEffect(() => {
@@ -1237,10 +1297,10 @@ export default function MarketLanding() {
 
   return (
     <div
-      className="min-h-screen"
+      className="min-h-screen transition-colors duration-200"
       style={{
-        background: '#0A0E1A',
-        color: '#D8D0C0',
+        background: colors.bg,
+        color: colors.text,
         fontFamily: '"Space Grotesk", sans-serif',
       }}
     >
@@ -1253,52 +1313,59 @@ export default function MarketLanding() {
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes pulseDot { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
       `}</style>
 
       {/* HEADER */}
       <header
-        className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50"
+        className="flex items-center justify-between px-5 md:px-10 py-4 sticky top-0 z-50 transition-colors"
         style={{
-          borderBottom: '1px solid rgba(201,168,76,0.15)',
-          background: '#0F1628',
-          backdropFilter: 'blur(12px)',
+          borderBottom: `2px solid ${colors.border}`,
+          background: colors.cardBg,
         }}
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-9 h-9 flex items-center justify-center font-mono text-[13px] font-bold"
-            style={{ border: '1.5px solid #C9A84C', color: '#C9A84C' }}
+            className="w-9 h-9 flex items-center justify-center font-mono text-[14px] font-bold"
+            style={{ border: `2.5px solid ${colors.border}`, color: colors.text, background: colors.primary }}
           >
             FA
           </div>
-          <div>
-            <div className="text-[13px] tracking-[0.18em] uppercase font-medium" style={{ color: '#C8C0B0' }}>
+          <div className="text-left">
+            <div className="text-[13px] tracking-[0.18em] uppercase font-bold" style={{ color: colors.text }}>
               FinNova Academy
             </div>
-            <div className="text-[10px] tracking-[0.12em] uppercase" style={{ color: '#7A7268' }}>
+            <div className="text-[10px] tracking-[0.12em] uppercase font-bold" style={{ color: colors.textMuted }}>
               Análisis Cuantitativo · Mercados Financieros
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-5">
-          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] tracking-wider" style={{ color: '#C9A84C' }}>
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{
-                background: '#C9A84C',
-                animation: 'pulseDot 2s ease-in-out infinite',
-              }}
-            />
+        <div className="flex items-center gap-4">
+          {/* Theme Toggler Button */}
+          <button
+            onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+            className="p-2 border rounded cursor-pointer transition-all active:scale-95"
+            style={{
+              borderColor: colors.border,
+              background: colors.bg,
+              color: colors.text,
+            }}
+            title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
+
+          <div className="hidden sm:flex items-center gap-2 font-mono text-[11px] tracking-wider font-bold" style={{ color: colors.secondary }}>
             ORO ~${Math.round(livePrice).toLocaleString()}
           </div>
+
           <Link
             to="/cursos"
-            className="px-5 py-2 text-[11px] font-semibold tracking-wider uppercase transition-all duration-200"
+            className="px-5 py-2 text-[11px] font-bold tracking-wider uppercase transition-all duration-150 border active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
             style={{
-              border: '1px solid #C9A84C',
-              color: '#C9A84C',
-              background: 'transparent',
+              borderColor: colors.border,
+              color: colors.text,
+              background: colors.primary,
+              boxShadow: `3px 3px 0px 0px ${colors.border}`,
               fontFamily: '"Space Grotesk", sans-serif',
             }}
           >
@@ -1308,42 +1375,42 @@ export default function MarketLanding() {
       </header>
 
       {/* HERO */}
-      <section className="px-5 md:px-10 py-12 md:py-16" style={{ borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+      <section className="px-5 md:px-10 py-12 md:py-16 text-left" style={{ borderBottom: `2px solid ${colors.border}` }}>
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
           <div>
             <div className="flex items-center gap-2 mb-5">
-              <span className="font-mono text-[10px] tracking-[0.25em] uppercase" style={{ color: '#C9A84C' }}>
-                Dashboard de Mercado · Datos Reales 2010–2024
+              <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
+                Dashboard de Mercado · Análisis Real
               </span>
-              <div className="flex-1 h-px" style={{ background: '#8B7035' }} />
+              <div className="flex-1 h-0.5" style={{ background: colors.border }} />
             </div>
             <h1
-              className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-3"
-              style={{ color: '#E8E0D0' }}
+              className="text-4xl md:text-5xl font-extrabold leading-[1.1] tracking-tight mb-3"
+              style={{ color: colors.text }}
             >
               Entiende el Mercado<br />
-              <span style={{ color: '#C9A84C' }}>a Tu Nivel</span>
+              <span style={{ color: colors.secondary }}>a Tu Nivel</span>
             </h1>
-            <p className="text-[15px] leading-relaxed max-w-md mb-8" style={{ color: '#7A7268' }}>
+            <p className="text-[15px] leading-relaxed max-w-md mb-8 font-medium" style={{ color: colors.textMuted }}>
               Explora datos financieros reales en 3 niveles de complejidad. Desde lo más básico hasta herramientas avanzadas de análisis profesional.
             </p>
             <div className="flex gap-6">
               <div>
-                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: '#C9A84C' }}>3</span>
-                <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: '#7A7268' }}>Niveles</div>
+                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: colors.secondary }}>3</span>
+                <div className="text-[10px] uppercase tracking-wider mt-1 font-bold" style={{ color: colors.textMuted }}>Niveles</div>
               </div>
               <div>
-                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: '#C9A84C' }}>15</span>
-                <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: '#7A7268' }}>Años de datos</div>
+                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: colors.secondary }}>15</span>
+                <div className="text-[10px] uppercase tracking-wider mt-1 font-bold" style={{ color: colors.textMuted }}>Años de datos</div>
               </div>
               <div>
-                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: '#C9A84C' }}>$4k+</span>
-                <div className="text-[10px] uppercase tracking-wider mt-1" style={{ color: '#7A7268' }}>Precio actual</div>
+                <span className="font-mono text-3xl font-bold block leading-none" style={{ color: colors.secondary }}>$4k+</span>
+                <div className="text-[10px] uppercase tracking-wider mt-1 font-bold" style={{ color: colors.textMuted }}>Precio actual</div>
               </div>
             </div>
           </div>
           <div className="hidden lg:block">
-            <HeroChart />
+            <HeroChart theme={theme} />
           </div>
         </div>
       </section>
@@ -1356,31 +1423,28 @@ export default function MarketLanding() {
             <button
               key={lvl.key}
               onClick={() => setActiveLevel(lvl.key)}
-              className="flex items-center gap-3 px-5 py-3.5 rounded-lg transition-all duration-200 text-left flex-1 cursor-pointer"
+              className="flex items-center gap-3 px-5 py-3.5 rounded transition-all duration-150 text-left flex-1 cursor-pointer border active:translate-x-0.5 active:translate-y-0.5"
               style={{
-                border: activeLevel === lvl.key
-                  ? `2px solid ${lvl.color}`
-                  : '2px solid rgba(255,255,255,0.06)',
-                background: activeLevel === lvl.key
-                  ? `${lvl.color}10`
-                  : 'rgba(255,255,255,0.02)',
+                borderColor: colors.border,
+                background: activeLevel === lvl.key ? colors.primary : colors.cardBg,
+                boxShadow: activeLevel === lvl.key ? 'none' : `3px 3px 0px 0px ${colors.border}`,
               }}
             >
               <div
-                className="p-2 rounded-lg"
+                className="p-2 border"
                 style={{
-                  background: `${lvl.color}15`,
-                  color: lvl.color,
-                  border: `1px solid ${lvl.color}30`,
+                  background: activeLevel === lvl.key ? colors.cardBg : colors.bg,
+                  color: colors.text,
+                  borderColor: colors.border,
                 }}
               >
                 {lvl.icon}
               </div>
               <div>
-                <div className="font-semibold text-sm" style={{ color: activeLevel === lvl.key ? lvl.color : '#D8D0C0' }}>
+                <div className="font-bold text-sm" style={{ color: colors.text }}>
                   {lvl.label}
                 </div>
-                <div className="text-[10px]" style={{ color: '#7A7268' }}>
+                <div className="text-[10px] font-medium" style={{ color: colors.textMuted }}>
                   {lvl.description}
                 </div>
               </div>
@@ -1389,24 +1453,24 @@ export default function MarketLanding() {
         </div>
 
         {/* Active Level Content */}
-        {activeLevel === 'basico' && <BasicLevel />}
-        {activeLevel === 'intermedio' && <IntermediateLevel />}
-        {activeLevel === 'avanzado' && <AdvancedLevel />}
+        {activeLevel === 'basico' && <BasicLevel theme={theme} />}
+        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} />}
+        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} />}
 
         {/* CTA — Only for basic and intermediate */}
-        {activeLevel !== 'avanzado' && <CtaBanner />}
+        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} />}
       </main>
 
       {/* FOOTER */}
       <footer
-        className="px-5 md:px-10 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px]"
+        className="px-5 md:px-10 py-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] font-bold"
         style={{
-          borderTop: '1px solid rgba(201,168,76,0.15)',
-          color: '#7A7268',
+          borderTop: `2px solid ${colors.border}`,
+          color: colors.textMuted,
         }}
       >
-        <span>© 2026 FinNova Academy · Datos propios 2010–2024 · LBMA PM Price · CME COMEX</span>
-        <span>⚠ No constituye asesoría de inversión. Siempre gestiona tu riesgo.</span>
+        <span>© 2026 FinNova Academy · Datos de 15 años · LBMA PM Price · CME COMEX</span>
+        <span>⚠ No constituye asesoría de inversión. Gestiona tu riesgo.</span>
       </footer>
     </div>
   );
