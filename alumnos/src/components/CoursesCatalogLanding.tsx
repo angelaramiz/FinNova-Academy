@@ -115,6 +115,9 @@ export default function CoursesCatalogLanding() {
     localStorage.setItem('theme', theme);
     document.body.style.backgroundColor = colors.bg;
     document.documentElement.style.backgroundColor = colors.bg;
+    try {
+      window.dispatchEvent(new Event('themechange'));
+    } catch (_) {}
   }, [theme, colors.bg]);
 
   return (
