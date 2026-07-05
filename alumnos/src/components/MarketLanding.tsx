@@ -29,7 +29,7 @@ import {
 // ─── THEME CONFIGURATION ───────────────────────────────────────────────────────
 export const themeColors = {
   light: {
-    bg: '#EEE9DF',          // Palladian
+    bg: '#E2DCD0',          // Warm Palladian-Oatmeal blend for high card contrast
     cardBg: '#FFFFFF',      // Pure white for crisp cards
     cardSecondary: '#C9C1B1', // Oatmeal
     text: '#1B2632',        // Abyssal Anchorfish Blue

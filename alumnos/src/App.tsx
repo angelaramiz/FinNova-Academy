@@ -68,7 +68,7 @@ function AppContent() {
   }, []);
 
   const isLight = theme === 'light';
-  const bgColor = isLight ? '#EEE9DF' : '#0a0f1d';
+  const bgColor = isLight ? '#E2DCD0' : '#0a0f1d';
   const textColor = isLight ? '#1B2632' : '#cbd5e1';
 
   // Authentication State
@@ -491,7 +491,7 @@ function AppContent() {
         id="platform-navbar-header"
         className={`sticky top-0 z-50 backdrop-blur-md px-4 py-3 shadow-md transition-colors duration-200 ${location.pathname.startsWith('/student') ? 'hidden md:block' : ''}`}
         style={{
-          backgroundColor: isLight ? 'rgba(238, 233, 223, 0.85)' : 'rgba(10, 15, 29, 0.85)',
+          backgroundColor: isLight ? 'rgba(226, 220, 208, 0.85)' : 'rgba(10, 15, 29, 0.85)',
           borderBottom: `2.5px solid ${isLight ? '#1B2632' : 'rgba(51, 65, 85, 0.5)'}`,
         }}
       >
