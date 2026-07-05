@@ -1267,7 +1267,29 @@ function CtaBanner({ theme }: LevelProps) {
   );
 }
 
-// ─── MAIN LANDING COMPONENT ────────────────────────────────────────────────────
+type Level = 'basico' | 'intermedio' | 'avanzado';
+
+const LEVELS: { key: Level; label: string; icon: React.ReactNode; description: string }[] = [
+  {
+    key: 'basico',
+    label: 'Básico',
+    icon: <Eye className="w-4 h-4" />,
+    description: 'Para principiantes. Datos visuales y directos.',
+  },
+  {
+    key: 'intermedio',
+    label: 'Intermedio',
+    icon: <BarChart3 className="w-4 h-4" />,
+    description: 'Datos históricos y proyector de volatilidad.',
+  },
+  {
+    key: 'avanzado',
+    label: 'Avanzado',
+    icon: <Lock className="w-4 h-4" />,
+    description: 'Análisis cuantitativo avanzado y estacionalidad.',
+  },
+];
+
 export default function MarketLanding() {
   const [activeLevel, setActiveLevel] = useState<Level>('basico');
   const [livePrice, setLivePrice] = useState(4078);
