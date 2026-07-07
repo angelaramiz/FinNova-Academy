@@ -50,7 +50,7 @@ export const themeColors = {
   }
 };
 
-type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark';
 
 // ─── DATA ──────────────────────────────────────────────────────────────────────
 const ASSETS = [
@@ -743,7 +743,7 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
               onChange={(e) => setHorizon(parseInt(e.target.value))}
               className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
               style={{
-                background: colors.bgSecondary,
+                background: colors.cardSecondary,
                 accentColor: colors.primary
               }}
             />

@@ -641,9 +641,9 @@ function AppContent() {
           {/* PUBLIC REGISTRATION ROUTE */}
           <Route path="/register" element={<RegisterRequest />} />
 
-          {/* STUDENT PANEL ROOT & NESTED ROUTING */}
           <Route path="/student/*" element={
             <StudentPanel 
+              theme={theme}
               profile={profile}
               courses={courses}
               selectedCourse={selectedCourse}
