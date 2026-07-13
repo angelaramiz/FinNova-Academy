@@ -127,6 +127,32 @@ Nuestra pasarela en `src/webhooks/n8n.ts` exige validez criptográfica por defec
 
 ---
 
+## 📊 MARKET LANDING — DASHBOARD FINANCIERO
+
+El portal de alumnos incluye un dashboard de mercado de 3 niveles de profundidad:
+
+### Nivel Básico
+Cards con precio, cambio, velas semanales y mood del mercado. Datos via `/api/market/prices`.
+
+### Nivel Intermedio
+Simulador **GJR-GARCH** interactivo: calibración MLE, simulación Monte Carlo (3,000+ caminos), cono de proyección con percentiles 10/50/90. Resetea `simResults` al cambiar horizonte para evitar inconsistencias.
+
+### Nivel Avanzado
+**Motor Predictivo v3** — pipeline completo embebido en iframe:
+- **CAPA 1**: Datos reales de Yahoo Finance cacheados en el HTML al build (`loadEmbeddedData()`)
+- **CAPA 2**: GJR-GARCH MLE con ν Student-t auto, antithetic variates
+- **CAPA 3**: Backtesting (Kupiec + Christoffersen), Walk-forward OOS
+- Terminal React que captura logs del motor via `postMessage` + notificación de source
+
+### Stack de Datos
+| Capa | Fuente | Método |
+|------|--------|--------|
+| Precios actuales | Finnova-back `/api/market/prices` | REST API |
+| Histórico GARCH | Yahoo Finance (caché embebido) | `loadEmbeddedData()` offline |
+| Analytics por asset | Finnova-back `/api/market/prices` (monthlyReturns, calendarSignals, pnlHistory) | REST API |
+
+---
+
 ## 🛡️ NOTAS DE SEGURIDAD, RLS Y COMPLIANCE
 
 1. **Row-Level Security (RLS) Activo**: El archivo `supabase/schema.sql` establece políticas de control estrictas. Los estudiantes **solo** pueden consultar registros marcados como publicados (`isPublished = true`) y leer su propio historial de progreso (`userId = auth.uid()`). Los instructores gozan de privilegios CRUD completos previa verificación del rol almacenado en `profiles`.
