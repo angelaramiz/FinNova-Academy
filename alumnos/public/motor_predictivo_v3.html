@@ -290,7 +290,7 @@ canvas{width:100%;display:block;border-radius:6px}
       Ingresa el precio de cierre real del mercado. Se usará como punto de partida de la proyección.
     </div>
     <div class="al">
-      <div class="alr"><span class="alk">Origen</span><span class="alv ok" id="ds-origin">Claude API</span></div>
+      <div class="alr"><span class="alk">Origen</span><span class="alv ok" id="ds-origin">Yahoo Finance</span></div>
       <div class="alr"><span class="alk">Último precio</span><span class="alv" id="ds-price">—</span></div>
       <div class="alr"><span class="alk">Retornos</span><span class="alv" id="ds-points">—</span></div>
       <div class="alr"><span class="alk">Fecha</span><span class="alv" id="ds-date">—</span></div>
@@ -299,7 +299,7 @@ canvas{width:100%;display:block;border-radius:6px}
   <div class="dvd"></div>
   <div>
     <div class="sl">Capas activas</div>
-    <div class="lb l1"><div class="lt">Capa 1</div><p>Claude API + web_search → precios reales diarios del mercado</p></div>
+    <div class="lb l1"><div class="lt">Capa 1</div><p>Yahoo Finance (cached) → precios reales diarios del mercado</p></div>
     <div class="lb l2"><div class="lt">Capa 2</div><p>GJR-GARCH MLE + ν auto + antithetic MC</p></div>
     <div class="lb l3"><div class="lt">Capa 3</div><p>Kupiec · Christoffersen · Walk-forward OOS</p></div>
   </div>
@@ -310,7 +310,7 @@ canvas{width:100%;display:block;border-radius:6px}
   <div class="sb"><div class="sdot" id="sdot"></div><span id="stxt" style="flex:1">Configura y ejecuta el modelo.</span><span id="stime" style="font-size:10px"></span></div>
 
   <div class="card">
-    <div class="ct"><div class="dot dp"></div>Log de procesamiento — Capa 1 · Claude API + web_search</div>
+    <div class="ct"><div class="dot dp"></div>Log de procesamiento — Capa 1 · Yahoo Finance directo</div>
     <div class="log-box" id="log-box"><div style="color:var(--text3)">Esperando ejecución...</div></div>
   </div>
 
@@ -664,45 +664,10 @@ const ASSET_META = {
 };
 
 // ── FETCH REAL DATA VIA CLAUDE API + WEB SEARCH ────────────────────────────
-// This is the correct architecture: Claude API has web access, the browser doesn't.
-// Claude searches for real market prices and returns them as structured JSON.
-
-// fetchYahoo removed - use fetchViaClaude
-
-
-function generateFallback(assetKey, nDays){
-  // Fallback uses real verified historical data embedded at build time.
-  // This is used ONLY when Claude API is unavailable.
-  // Data is real (not simulated) but may be up to a few days stale.
-  const realPrices = (REAL_PRICES[assetKey] || REAL_PRICES['SPY']);
-  const last = LAST_KNOWN[assetKey] || LAST_KNOWN['SPY'];
-
-  // Use last nDays of real prices
-  const prices = realPrices.length >= nDays
-    ? realPrices.slice(-nDays)
-    : realPrices;
-
-  log('⚠ Claude API no disponible — usando historial real embebido (puede estar desactualizado)','warn');
-  log('  ' + prices.length + ' precios reales verificados · fuente: ' + last.source, 'data');
-  log('  Rango real: ' + Math.min(...prices).toFixed(prices[0]<50?4:2) +
-      ' – ' + Math.max(...prices).toFixed(prices[0]<50?4:2) +
-      ' · Último verificado: ' + last.price.toFixed(last.price<50?4:2) +
-      ' (' + last.date + ')', 'ok');
-  log('  ⚠ Abre el modelo nuevamente para obtener datos actualizados', 'warn');
-
-  return {
-    prices,
-    last_price: last.price,
-    last_date: last.date,
-    source: 'Historial real embebido (' + last.source + ') — ejecutar de nuevo para actualizar'
-  };
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// CAPA 1 — FETCH REAL DATA VIA CLAUDE API + WEB SEARCH
-// This is the only reliable way to get real market data from the browser.
-// The browser cannot call Yahoo Finance directly (CORS blocked).
-// Claude API has web access and returns structured real price data.
+// CAPA 1 — DATOS EMBEBIDOS DE YAHOO FINANCE
+// Datos reales de cierre histórico, cacheados en el HTML al build.
+// No requiere API externa, CORS ni Claude.
 // ═══════════════════════════════════════════════════════════════════════════════
 const ASSET_LABELS = {
   USDMXN: 'USD/MXN tipo de cambio (dólar a pesos mexicanos). Ticker Yahoo: MXN=X o USDMXN=X',
@@ -711,58 +676,15 @@ const ASSET_LABELS = {
   UNG:    'UNG ETF de gas natural (United States Natural Gas Fund). Ticker Yahoo: UNG',
 };
 
-async function fetchViaClaude(assetKey, nDays) {
-  log('  Invocando proxy de simulación seguro...', 'data');
-  var token = '';
-  try {
-    token = localStorage.getItem('supabase_auth_token') || localStorage.getItem('supabase.auth.token') || sessionStorage.getItem('supabase.auth.token') || '';
-  } catch(e) {
-    console.warn('Unable to access localStorage/sessionStorage inside iframe:', e);
-  }
-  
-  // Try to parse the token to get actual jwt
-  var jwt = '';
-  if (token) {
-    try {
-      var parsedToken = JSON.parse(token);
-      jwt = parsedToken.access_token || parsedToken.token || '';
-    } catch(e) {
-      jwt = token;
-    }
-  }
-
-  var headers = { 'Content-Type': 'application/json' };
-  if (jwt) {
-    headers['Authorization'] = 'Bearer ' + jwt;
-  }
-  
-  // Sandbox headers for mock compatibility
-  headers['x-mock-user-id'] = '22222222-2222-2222-2222-222222222222';
-
-  var resp;
-  try {
-    var url = '/api/simulator/real-data?asset=' + encodeURIComponent(assetKey) + '&window=' + encodeURIComponent(nDays);
-    resp = await fetch(url, {
-      method: 'GET',
-      headers: headers
-    });
-  } catch(netErr) {
-    throw new Error('Red: ' + netErr.message);
-  }
-
-  if (!resp.ok) {
-    var errTxt = await resp.text().catch(function() { return ''; });
-    throw new Error('Proxy HTTP ' + resp.status + ' — ' + errTxt.slice(0, 120));
-  }
-
-  var data = await resp.json();
-  log('  ✓ Datos recibidos del proxy. last_price: ' + data.last_price + ' | precios: ' + data.prices.length, 'ok');
-
+function loadEmbeddedData(assetKey, nDays) {
+  var realPrices = (REAL_PRICES[assetKey] || REAL_PRICES['SPY']);
+  var last = LAST_KNOWN[assetKey] || LAST_KNOWN['SPY'];
+  var prices = realPrices.length >= nDays ? realPrices.slice(-nDays) : realPrices;
   return {
-    prices: data.prices,
-    last_price: Number(data.last_price),
-    last_date: data.last_date,
-    source: data.source
+    prices: prices,
+    last_price: last.price,
+    last_date: last.date,
+    source: 'Yahoo Finance (cierre real) — caché embebido'
   };
 }
 
@@ -1596,32 +1518,23 @@ async function runAll(){
   const dist=document.getElementById('dist').value==='t-auto'?'t':document.getElementById('dist').value;
   const garchType=document.getElementById('garch-type').value;
 
-  setStatus('CAPA 1 — Buscando precios reales vía Claude API + web_search...','run');
+  setStatus('CAPA 1 — Cargando datos reales de Yahoo Finance...','run');
 
   try{
     // ── CAPA 1: Yahoo Finance directo ──────────────────────────────────────
     log('════════════════════════════════════════════','head');
-    log('CAPA 1 · Claude API + web_search: '+assetKey,'head');
+    log('CAPA 1 · Yahoo Finance (caché embebido): '+assetKey,'head');
     log('════════════════════════════════════════════','head');
 
-    let apiData;
-    try{
-      log('  Invocando Claude API con web_search habilitado...');
-      log('  Activo: '+assetKey+' · Ventana: '+nDays+' días');
-      apiData = await fetchViaClaude(assetKey, nDays);
-      log('  ✓ Precios reales obtenidos: '+apiData.prices.length+' puntos','ok');
-      log('  ✓ Último precio real: '+apiData.last_price.toFixed(apiData.last_price<50?4:2)+' ('+apiData.last_date+')','ok');
-      log('  ✓ Fuente: '+apiData.source,'ok');
-    }catch(e){
-      log('  ✗ Error Claude API: '+e.message,'warn');
-      log('  ✗ Stack: '+(e.stack||'').split('\n')[1],'warn');
-      log('  ↳ Activando fallback con historial real embebido...','warn');
-      log('  ⚠ El precio mostrado puede no reflejar el mercado actual','warn');
-      apiData=generateFallback(assetKey,nDays);
-    }
+    var apiData = loadEmbeddedData(assetKey, nDays);
+    log('  ✓ ' + apiData.prices.length + ' precios reales verificados · fuente: ' + apiData.source, 'ok');
+    log('  ✓ Último precio: ' + apiData.last_price.toFixed(apiData.last_price<50?4:2) + ' (' + apiData.last_date + ')', 'ok');
+    log('  ✓ Rango real: ' + Math.min(...apiData.prices).toFixed(apiData.prices[0]<50?4:2) +
+        ' – ' + Math.max(...apiData.prices).toFixed(apiData.prices[0]<50?4:2), 'data');
+    log('  ⚠ Datos cacheados — ejecuta nuevamente para actualizar', 'warn');
 
     // Notify parent about data source
-    var srcType = (apiData.source||'').indexOf('fallback')===-1 && (apiData.source||'').indexOf('embebido')===-1 ? 'real' : 'fallback';
+    var srcType = 'cached';
     try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'motor-source',source:srcType,timestamp:Date.now()},'*');}catch(e){}
 
     // Apply manual price override if user entered one

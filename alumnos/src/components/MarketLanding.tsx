@@ -1123,7 +1123,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
 // ─── MOTOR LOG TERMINAL ────────────────────────────────────────────────────────
 function MotorLogTerminal({ theme }: { theme: Theme }) {
   const [lines, setLines] = useState<{ msg: string; cls: string }[]>([]);
-  const [source, setSource] = useState<{ type: 'real' | 'fallback'; timestamp: number } | null>(null);
+  const [source, setSource] = useState<{ type: 'real' | 'fallback' | 'cached'; timestamp: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const colors = themeColors[theme];
 
@@ -1162,15 +1162,17 @@ function MotorLogTerminal({ theme }: { theme: Theme }) {
         <div
           className="flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-bold animate-fadeIn"
           style={{
-            background: source.type === 'real' ? 'rgba(45,212,160,0.12)' : 'rgba(245,95,95,0.12)',
+            background: source.type === 'real' ? 'rgba(45,212,160,0.12)' : source.type === 'cached' ? 'rgba(91,156,246,0.12)' : 'rgba(245,95,95,0.12)',
             borderBottom: `1px solid ${colors.border}`,
-            color: source.type === 'real' ? '#2dd4a0' : '#f55f5f',
+            color: source.type === 'real' ? '#2dd4a0' : source.type === 'cached' ? '#5b9cf6' : '#f55f5f',
           }}
         >
-          <span className="text-base">{source.type === 'real' ? '✅' : '⚠️'}</span>
+          <span className="text-base">{source.type === 'real' ? '✅' : source.type === 'cached' ? '📦' : '⚠️'}</span>
           <span>
             {source.type === 'real'
               ? 'Datos en tiempo real — Claude API + web_search'
+              : source.type === 'cached'
+              ? 'Datos cacheados de Yahoo Finance — puede no reflejar el mercado actual'
               : 'Datos de respaldo (fallback) — el precio mostrado puede no reflejar el mercado actual'}
           </span>
           <button
