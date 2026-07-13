@@ -538,7 +538,7 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
       ctx.fillStyle = colors.textMuted;
       ctx.font = '9px "Space Mono", monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(val.toFixed(val < 20 ? 2 : 0), padL - 5, y + 3);
+      ctx.fillText((val ?? 0).toFixed(val < 20 ? 2 : 0), padL - 5, y + 3);
     }
 
     // Cone Fill (IC 80%)
@@ -621,7 +621,7 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
     ctx.fillStyle = colors.secondary;
     ctx.font = 'bold 10px "Space Mono", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(S_last.toFixed(S_last < 20 ? 3 : 1), sepX + 7, py(S_last) + 3);
+    ctx.fillText((S_last ?? 0).toFixed(S_last < 20 ? 3 : 1), sepX + 7, py(S_last) + 3);
 
   }, [simResults, horizon, theme, colors]);
 
@@ -719,16 +719,16 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
           >
             <div>
               <span style={{ color: colors.textMuted }}>Vol Anualizada:</span>{' '}
-              <span className="font-mono font-bold" style={{ color: colors.secondary }}>{simResults.volAnn.toFixed(1)}%</span>
+              <span className="font-mono font-bold" style={{ color: colors.secondary }}>{(simResults.volAnn ?? 0).toFixed(1)}%</span>
             </div>
             <div className="text-[10px] leading-snug font-medium" style={{ color: colors.textMuted }}>
               Con 95% de confianza, {assetNames[asset]} se mantendrá entre{' '}
               <span className="font-mono font-bold" style={{ color: colors.secondary }}>
-                ${simResults.p10[horizon].toFixed(asset === 'UNG' ? 2 : 1)}
+                ${(simResults.p10[horizon] ?? 0).toFixed(asset === 'UNG' ? 2 : 1)}
               </span>{' '}
               y{' '}
               <span className="font-mono font-bold" style={{ color: colors.secondary }}>
-                ${simResults.p90[horizon].toFixed(asset === 'UNG' ? 2 : 1)}
+                ${(simResults.p90[horizon] ?? 0).toFixed(asset === 'UNG' ? 2 : 1)}
               </span>.
             </div>
           </div>
@@ -961,7 +961,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
                     className="font-mono text-[10px] text-right font-bold"
                     style={{ color: isPos ? colors.text : colors.secondary }}
                   >
-                    {isPos ? '+' : ''}{m.avg.toFixed(2)}%
+                    {isPos ? '+' : ''}{(m.avg ?? 0).toFixed(2)}%
                   </span>
                 </div>
               );
@@ -1052,7 +1052,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
                   <td className="font-mono text-[11px] py-2.5 px-2" style={{ color: colors.textMuted }}>${row.e.toLocaleString()}</td>
                   <td className="font-mono text-[11px] py-2.5 px-2" style={{ color: colors.textMuted }}>${row.x.toLocaleString()}</td>
                   <td className="font-mono text-[11px] py-2.5 px-2 font-bold" style={{ color: chg >= 0 ? colors.text : colors.secondary }}>
-                    {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
+                    {chg >= 0 ? '+' : ''}{(chg ?? 0).toFixed(2)}%
                   </td>
                   <td className="font-mono text-[11px] py-2.5 px-2 font-bold" style={{ color: win ? colors.text : colors.secondary }}>
                     {row.pnl >= 0 ? '+' : ''}${Math.abs(row.pnl).toLocaleString()}
