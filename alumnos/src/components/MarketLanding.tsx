@@ -25,6 +25,7 @@ import {
   Moon,
   Shield
 } from 'lucide-react';
+import { api } from '../lib/api';
 
 // ─── THEME CONFIGURATION ───────────────────────────────────────────────────────
 export const themeColors = {
@@ -53,11 +54,18 @@ export const themeColors = {
 export type Theme = 'light' | 'dark';
 
 // ─── DATA ──────────────────────────────────────────────────────────────────────
-const ASSETS = [
-  { name: 'Oro', ticker: 'XAU', price: 4078, change: 1.24, color: '#C9A84C' },
-  { name: 'Plata', ticker: 'XAG', price: 32.85, change: 0.67, color: '#A8B2C1' },
-  { name: 'Petróleo', ticker: 'CL', price: 73.42, change: -0.89, color: '#6B8A5E' },
-  { name: 'S&P 500', ticker: 'SPX', price: 5528, change: 0.33, color: '#5B8DEF' },
+const ASSET_COLORS: Record<string, string> = {
+  XAU: '#C9A84C',
+  XAG: '#A8B2C1',
+  CL: '#6B8A5E',
+  SPX: '#5B8DEF',
+};
+
+const DEFAULT_ASSETS = [
+  { name: 'Oro', ticker: 'XAU', price: 4113, change: -0.42 },
+  { name: 'Plata', ticker: 'XAG', price: 34.50, change: 0.38 },
+  { name: 'Petroleo', ticker: 'CL', price: 75.80, change: -1.15 },
+  { name: 'S&P 500', ticker: 'SPX', price: 6024, change: 0.55 },
 ];
 
 const MONTHLY_RETURNS = [
@@ -810,9 +818,10 @@ interface LevelProps {
   theme: Theme;
   selectedAsset: string;
   setSelectedAsset: (ticker: string) => void;
+  marketAssets: { name: string; ticker: string; price: number; change: number }[];
 }
 
-function BasicLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
+function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -867,8 +876,9 @@ function BasicLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
           <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ASSETS.map((asset) => {
+          {marketAssets.map((asset) => {
             const isActive = selectedAsset === asset.ticker;
+            const color = ASSET_COLORS[asset.ticker] || '#5B8DEF';
             return (
               <div
                 key={asset.ticker}
@@ -938,7 +948,7 @@ function BasicLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
 }
 
 // ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
-function IntermediateLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
+function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -1167,7 +1177,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset }: LevelProp
 }
 
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
-function AdvancedLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
+function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
   const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
   const colors = themeColors[theme];
 
@@ -1268,7 +1278,7 @@ function AdvancedLevel({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
 }
 
 // ─── CTA BANNER ────────────────────────────────────────────────────────────────
-function CtaBanner({ theme, selectedAsset, setSelectedAsset }: LevelProps) {
+function CtaBanner({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div
@@ -1362,6 +1372,7 @@ export default function MarketLanding() {
   const [activeLevel, setActiveLevel] = useState<Level>('basico');
   const [selectedAsset, setSelectedAsset] = useState<string>('XAU');
   const [livePrice, setLivePrice] = useState(4078);
+  const [marketAssets, setMarketAssets] = useState(DEFAULT_ASSETS);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
@@ -1374,19 +1385,40 @@ export default function MarketLanding() {
     localStorage.setItem('theme', theme);
     document.body.style.backgroundColor = colors.bg;
     document.documentElement.style.backgroundColor = colors.bg;
-    // Disseminate to static documents loaded in iframes
     try {
       window.dispatchEvent(new Event('themechange'));
     } catch (_) {}
   }, [theme, colors.bg]);
 
-  // Simulated live price animation
+  // Fetch real market data from backend
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLivePrice(prev => prev + (Math.random() - 0.48) * 2);
-    }, 3000);
-    return () => clearInterval(interval);
+    let mounted = true;
+
+    async function fetchPrices() {
+      try {
+        const data = await api.getMarketPrices();
+        if (!mounted) return;
+        if (data.assets && data.assets.length > 0) {
+          setMarketAssets(data.assets);
+          const selected = data.assets.find((a: any) => a.ticker === selectedAsset);
+          if (selected) setLivePrice(selected.price);
+        }
+      } catch (err) {
+        console.warn('[Market] API fallback, using defaults');
+        setMarketAssets(DEFAULT_ASSETS);
+      }
+    }
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
+
+  // Update livePrice when selectedAsset changes and we have real data
+  useEffect(() => {
+    const selected = marketAssets.find(a => a.ticker === selectedAsset);
+    if (selected) setLivePrice(selected.price);
+  }, [selectedAsset, marketAssets]);
 
   return (
     <div
@@ -1546,12 +1578,12 @@ export default function MarketLanding() {
         </div>
 
         {/* Active Level Content */}
-        {activeLevel === 'basico' && <BasicLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
-        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
-        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
+        {activeLevel === 'basico' && <BasicLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
+        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
+        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
 
         {/* CTA — Only for basic and intermediate */}
-        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} />}
+        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
       </main>
 
       {/* FOOTER */}

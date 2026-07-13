@@ -227,6 +227,10 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
+  // Market Data
+  getMarketPrices: () => apiFetch<{ assets: any[]; updated: string; cacheAgeSeconds: number }>('/api/market/prices'),
+
+  // Admin
   getRegisterRequests: () => apiFetch<any[]>('/api/auth/register-requests'),
   approveRegisterRequest: (id: string) => apiFetch<any>(`/api/auth/register-requests/${id}/approve`, {
     method: 'POST',
