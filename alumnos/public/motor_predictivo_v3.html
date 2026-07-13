@@ -1369,6 +1369,7 @@ function log(msg,cls=''){
   if(el.querySelector('[style]'))el.innerHTML='';
   const d=document.createElement('div');d.className='aline'+(cls?' '+cls:'');d.textContent=msg;
   el.appendChild(d);el.scrollTop=el.scrollHeight;
+  try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'motor-log',msg:msg,cls:cls},'*');}catch(e){}
 }
 function setStatus(t,s){document.getElementById('stxt').textContent=t;document.getElementById('sdot').className='sdot '+(s||'');}
 function setTime(ms){document.getElementById('stime').textContent=ms?`${(ms/1e3).toFixed(2)}s`:''}

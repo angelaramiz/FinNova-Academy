@@ -687,7 +687,7 @@ function IntermediateGarchSimulator({ theme }: { theme: Theme }) {
               max="42"
               step="1"
               value={horizon}
-              onChange={(e) => setHorizon(parseInt(e.target.value))}
+              onChange={(e) => { setSimResults(null); setHorizon(parseInt(e.target.value)); }}
               className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
               style={{
                 background: colors.cardSecondary,
@@ -1120,6 +1120,78 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
   );
 }
 
+// ─── MOTOR LOG TERMINAL ────────────────────────────────────────────────────────
+function MotorLogTerminal({ theme }: { theme: Theme }) {
+  const [lines, setLines] = useState<{ msg: string; cls: string }[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const colors = themeColors[theme];
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'motor-log') {
+        setLines(prev => [...prev, { msg: e.data.msg, cls: e.data.cls || '' }]);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [lines]);
+
+  const clsColor = (c: string) => {
+    if (c === 'ok') return colors.secondary;
+    if (c === 'warn') return '#f5a623';
+    if (c === 'data') return '#8b7ff5';
+    if (c === 'head') return colors.text;
+    return colors.textMuted;
+  };
+
+  return (
+    <div
+      className="w-full rounded overflow-hidden border"
+      style={{ borderColor: colors.border, marginTop: 12 }}
+    >
+      <div
+        className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider"
+        style={{ background: colors.cardSecondary, color: colors.textMuted, borderBottom: `1px solid ${colors.border}` }}
+      >
+        <div className="w-2 h-2 rounded-full" style={{ background: colors.primary }} />
+        Terminal del Motor Predictivo
+        <span className="text-[9px] font-normal opacity-60">({lines.length} líneas)</span>
+      </div>
+      <div
+        ref={scrollRef}
+        className="font-mono text-[11px] leading-relaxed overflow-y-auto"
+        style={{
+          maxHeight: 260,
+          background: '#0d0f14',
+          color: '#5c6480',
+          padding: '8px 12px',
+        }}
+      >
+        {lines.length === 0 && (
+          <div className="opacity-40 italic">Esperando datos del motor... Ejecuta el modelo arriba.</div>
+        )}
+        {lines.map((l, i) => (
+          <div
+            key={i}
+            className="aline"
+            style={{ color: clsColor(l.cls), whiteSpace: 'pre-wrap', opacity: 0, animation: 'fi 0.3s forwards' }}
+          >
+            {l.msg}
+          </div>
+        ))}
+      </div>
+      <style>{`
+        @keyframes fi { to { opacity: 1; } }
+        .aline { animation: fi 0.3s forwards; }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
 function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets, assetAnalytics }: LevelProps) {
   const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
@@ -1182,6 +1254,7 @@ function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets, a
               title="Motor Predictivo GJR-GARCH"
             />
           </div>
+          <MotorLogTerminal theme={theme} />
         </div>
       )}
 
