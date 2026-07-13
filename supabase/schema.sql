@@ -1,5 +1,61 @@
 -- SQL schema for AuraFi Academy / FinNova Supabase Database
 
+-- 0. Profiles Table (usuarios del sistema)
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT,
+    full_name TEXT NOT NULL,
+    avatar_url TEXT,
+    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
+    password_hash TEXT,
+    must_change_password BOOLEAN DEFAULT false,
+    otp_code TEXT,
+    otp_expires TIMESTAMPTZ,
+    points_earned INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 0a. Allowed Emails (correos pre-autorizados)
+CREATE TABLE IF NOT EXISTS allowed_emails (
+    email TEXT PRIMARY KEY,
+    role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'instructor', 'admin')),
+    full_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE allowed_emails ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role can read allowed emails" ON allowed_emails FOR SELECT USING (true);
+
+-- 0b. Account Requests (solicitudes públicas de registro)
+CREATE TABLE IF NOT EXISTS account_requests (
+    id TEXT PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL CHECK (role IN ('student', 'instructor')),
+    specialty TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE account_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can submit a registration request" ON account_requests FOR INSERT WITH CHECK (true);
+
+-- 0c. Email Queue (cola persistente de correos)
+CREATE TABLE IF NOT EXISTS email_queue (
+    id TEXT PRIMARY KEY,
+    to_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    html_body TEXT NOT NULL,
+    text_body TEXT NOT NULL,
+    email_type TEXT NOT NULL CHECK (email_type IN ('credentials', 'otp')),
+    retries INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'dead')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_attempt_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_email_queue_status_retries ON email_queue (status, retries, created_at);
+ALTER TABLE email_queue ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "deny_public_access" ON email_queue FOR ALL USING (false);
+COMMENT ON TABLE email_queue IS 'Cola persistente de correos. Almacena envíos fallidos para reintento.';
+
 -- 1. Courses Table
 CREATE TABLE IF NOT EXISTS courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

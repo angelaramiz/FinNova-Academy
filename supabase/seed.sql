@@ -14,7 +14,7 @@
 -- -------------------------------------------------------------
 -- DIRECTORIO DE CORREOS PERMITIDOS (ALLOWED EMAILS)
 -- -------------------------------------------------------------
-insert into public.allowed_emails (email, role, fullName)
+insert into public.allowed_emails (email, role, full_name)
 values
     ('profesor.senior@finanzas.edu', 'instructor', 'Profe Finanzas Senior'),
     ('student_tester@gmail.com', 'student', 'Inversor Novato'),
@@ -36,17 +36,17 @@ on conflict (id) do nothing;
 -- -------------------------------------------------------------
 -- Para evitar errores de integridad con auth.users en local Postgres puro,
 -- insertamos primero perfiles de bypass útiles para desarrollo.
-insert into public.profiles (id, fullName, avatarUrl, role, pointsEarned)
+insert into public.profiles (id, full_name, avatar_url, role, points_earned)
 values
     ('11111111-1111-1111-1111-111111111111', 'Profe Finanzas Senior', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200', 'instructor', 500)
 on conflict (id) do nothing;
 
-insert into public.profiles (id, fullName, avatarUrl, role, pointsEarned)
+insert into public.profiles (id, full_name, avatar_url, role, points_earned)
 values
     ('22222222-2222-2222-2222-222222222222', 'Inversor Novato', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200', 'student', 80)
 on conflict (id) do nothing;
 
-insert into public.profiles (id, fullName, avatarUrl, role, pointsEarned)
+insert into public.profiles (id, full_name, avatar_url, role, points_earned)
 values
     ('33333333-3333-3333-3333-333333333333', 'Administrador Master', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200', 'admin', 0)
 on conflict (id) do nothing;
@@ -55,7 +55,7 @@ on conflict (id) do nothing;
 -- CURSOS / RUTA DE APRENDIZAJE
 -- -------------------------------------------------------------
 -- Curso 1: Fundamentos de Inversión (Principiante)
-insert into public.courses (id, title, description, difficulty, slug, imageUrl, instructorId, isPublished)
+insert into public.courses (id, title, description, difficulty, slug, image_url, instructor_id, is_published)
 values (
     'c0000000-0000-0000-0000-000000000001',
     'Mentalidad y Fundamentos de Inversión',
@@ -68,7 +68,7 @@ values (
 ) on conflict (id) do nothing;
 
 -- Curso 2: Finanzas Corporativas y Análisis (Intermedio)
-insert into public.courses (id, title, description, difficulty, slug, imageUrl, instructorId, isPublished)
+insert into public.courses (id, title, description, difficulty, slug, image_url, instructor_id, is_published)
 values (
     'c0000000-0000-0000-0000-000000000002',
     'Análisis de Empresas y Ratios Financieros',
@@ -84,7 +84,7 @@ values (
 -- CLIPS (Videos estilo TikTok/Reels de < 60s)
 -- -------------------------------------------------------------
 -- Clips para Curso 1
-insert into public.clips (id, courseId, title, description, videoProviderId, videoUrl, duration, sequenceOrder, status)
+insert into public.clips (id, course_id, title, description, video_provider_id, video_url, duration, sequence_order, status)
 values
     (
         'f0000001-0000-0000-0000-000000000001',
@@ -111,7 +111,7 @@ values
 on conflict (id) do nothing;
 
 -- Clips para Curso 2
-insert into public.clips (id, courseId, title, description, videoProviderId, videoUrl, duration, sequenceOrder, status)
+insert into public.clips (id, course_id, title, description, video_provider_id, video_url, duration, sequence_order, status)
 values
     (
         'f0000002-0000-0000-0000-000000000001',
@@ -141,7 +141,7 @@ on conflict (id) do nothing;
 -- EXERCISES (Ejercicios prácticos de Micro-learning)
 -- -------------------------------------------------------------
 -- Ejercicio 1 (Interés Compuesto) - Tipo: Fórmula / Matemática
-insert into public.exercises (id, clipId, title, exerciseType, question, prompt, correctAnswer, rubrics, maxPoints)
+insert into public.exercises (id, clip_id, title, exercise_type, question, prompt, correct_answer, rubrics, max_points)
 values (
     'e0000001-0000-0000-0000-000000000001',
     'f0000001-0000-0000-0000-000000000001',
@@ -155,7 +155,7 @@ values (
 ) on conflict (id) do nothing;
 
 -- Ejercicio 2 (Diversificación) - Tipo: Opción Múltiple
-insert into public.exercises (id, clipId, title, exerciseType, question, prompt, correctAnswer, rubrics, maxPoints)
+insert into public.exercises (id, clip_id, title, exercise_type, question, prompt, correct_answer, rubrics, max_points)
 values (
     'e0000001-0000-0000-0000-000000000002',
     'f0000001-0000-0000-0000-000000000002',
@@ -169,7 +169,7 @@ values (
 ) on conflict (id) do nothing;
 
 -- Ejercicio 3 (Múltiplo P/E) - Tipo: Cálculo de Ratio
-insert into public.exercises (id, clipId, title, exerciseType, question, prompt, correctAnswer, rubrics, maxPoints)
+insert into public.exercises (id, clip_id, title, exercise_type, question, prompt, correct_answer, rubrics, max_points)
 values (
     'e0000002-0000-0000-0000-000000000001',
     'f0000002-0000-0000-0000-000000000001',
@@ -185,7 +185,7 @@ values (
 -- -------------------------------------------------------------
 -- HISTORIAL DE DE PIPELINES (n8n Webhook reviews logs)
 -- -------------------------------------------------------------
-insert into public.pipeline_reviews (id, clipId, inputPrompt, draftAudioUrl, voiceModelUsed, videoGenerationPrompt, renderedVideoUrl, pipelineId, status, reviewerNotes)
+insert into public.pipeline_reviews (id, clip_id, input_prompt, draft_audio_url, voice_model_used, video_generation_prompt, rendered_video_url, pipeline_id, status, reviewer_notes)
 values (
     'd0000000-0000-0000-0000-000000000001',
     'f0000001-0000-0000-0000-000000000001',
