@@ -52,3 +52,6 @@ supabase/tmp_query_approved.sql
 # CodeGraph database directory
 .codegraph/
 .codegraph
+
+# Agent local configuration
+.agent/
