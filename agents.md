@@ -14,6 +14,24 @@
 
 ## Cambios Recientes (2026-07-13)
 
+### Motor Predictivo v3 — Rediseño Completo
+- Eliminada dependencia de Claude API (fallaba con HTML en vez de JSON)
+- **Nuevo**: `loadEmbeddedData()` — datos reales de Yahoo Finance cacheados en el HTML al build
+- Sin llamadas de red, sin CORS, sin API keys
+- Terminal React (`MotorLogTerminal`) que captura logs del motor via `postMessage`
+- Notificación por source: `📦 Datos cacheados de Yahoo Finance` en banner azul
+- Logs limpios: CAPA 1·Yahoo Finance directo → CAPA 2·GJR-GARCH MLE → CAPA 3·Backtesting
+
+### MarketLanding — Dashboard de Mercado
+- 3 niveles de análisis: Básico (cards), Intermedio (simulador GJR-GARCH), Avanzado (motor predictivo v3)
+- Datos dinámicos vía `/api/market/prices` desde Finnova-back
+- `?? 0` guards en todos los `.toFixed()` para evitar crashes con datos incompletos
+- `setSimResults(null)` al cambiar horizonte en el simulador Intermedio
+- Tab Avanzado ahora incluye terminal del motor en vivo debajo del iframe
+
+### Infra
+- `.agent/` completo en `.gitignore` y removido del tracking de git
+
 ### Seguridad
 - Claves expuestas rotadas (Supabase service role, anon key, Gemini API key)
 - `.env.local` en `.gitignore` (raíz, `alumnos/`, `staff/`)
@@ -44,6 +62,7 @@
 - `.gitignore` ya no excluye `backend/`, `staff/`, `supabase/`, `app/`
 - `staff/` usa puerto 3001 (no compite con `alumnos/` 3000)
 - Archivo LICENSE (Apache-2.0) agregado
+- `.agent/` completo ignorado por git y removido del tracking
 
 ## Reglas Básicas de Operación
 1.  **No asumir**: Siempre verificar el estado local antes de proceder.
