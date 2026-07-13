@@ -68,53 +68,13 @@ const DEFAULT_ASSETS = [
   { name: 'S&P 500', ticker: 'SPX', price: 6024, change: 0.55 },
 ];
 
-const MONTHLY_RETURNS = [
-  { m: 'Ene', avg: 0.66, pp: 47 }, { m: 'Feb', avg: 0.92, pp: 47 },
-  { m: 'Mar', avg: 1.35, pp: 53 }, { m: 'Abr', avg: -0.33, pp: 40 },
-  { m: 'May', avg: -0.67, pp: 40 }, { m: 'Jun', avg: 1.60, pp: 67 },
-  { m: 'Jul', avg: 2.11, pp: 53 }, { m: 'Ago', avg: -1.52, pp: 27 },
-  { m: 'Sep', avg: 1.28, pp: 60 }, { m: 'Oct', avg: -1.43, pp: 47 },
-  { m: 'Nov', avg: 0.67, pp: 60 }, { m: 'Dic', avg: 0.57, pp: 47 },
-];
-
-const CALENDAR_SIGNALS = [
-  { m: 'ENE', signal: '+67%', type: 'neutral' },
-  { m: 'FEB', signal: 'SHORT', type: 'bearish' },
-  { m: 'MAR', signal: '+53%', type: 'neutral' },
-  { m: 'ABR', signal: '−60%', type: 'bearish' },
-  { m: 'MAY', signal: '−60%', type: 'bearish' },
-  { m: 'JUN', signal: 'DÉBIL', type: 'bearish' },
-  { m: 'JUL ★', signal: 'ENTRADA', type: 'active' },
-  { m: 'AGO', signal: '+65%', type: 'bullish' },
-  { m: 'SEP', signal: 'SHORT', type: 'bearish' },
-  { m: 'OCT', signal: '+60%', type: 'bullish' },
-  { m: 'NOV', signal: '+60%', type: 'bullish' },
-  { m: 'DIC', signal: '+60%', type: 'bullish' },
-];
-
-const PNL_DATA = [
-  { yr: 2010, e: 1245, x: 1184, pnl: -6100 },
-  { yr: 2011, e: 1499, x: 1613, pnl: 11400 },
-  { yr: 2012, e: 1601, x: 1615, pnl: 1400 },
-  { yr: 2013, e: 1225, x: 1315, pnl: 9000 },
-  { yr: 2014, e: 1315, x: 1303, pnl: -1200 },
-  { yr: 2015, e: 1173, x: 1095, pnl: -7800 },
-  { yr: 2016, e: 1322, x: 1350, pnl: 2800 },
-  { yr: 2017, e: 1241, x: 1269, pnl: 2800 },
-  { yr: 2018, e: 1252, x: 1224, pnl: -2800 },
-  { yr: 2019, e: 1409, x: 1427, pnl: 1800 },
-  { yr: 2020, e: 1781, x: 1970, pnl: 18900 },
-  { yr: 2021, e: 1766, x: 1813, pnl: 4700 },
-  { yr: 2022, e: 1807, x: 1757, pnl: -5000 },
-  { yr: 2023, e: 1912, x: 1958, pnl: 4600 },
-  { yr: 2024, e: 2326, x: 2426, pnl: 10000 },
-];
+const ASSET_NAMES: Record<string, string> = { XAU: 'Oro', XAG: 'Plata', CL: 'Petroleo', SPX: 'S&P 500' };
+const ASSET_LABELS: Record<string, string> = { XAU: 'oro', XAG: 'plata', CL: 'petroleo', SPX: 'S&P 500' };
 
 // ─── MARKET MOOD GAUGE ─────────────────────────────────────────────────────────
-function MarketMoodGauge({ theme }: { theme: Theme }) {
+function MarketMoodGauge({ theme, moodValue = 0.73, assetName = 'oro' }: { theme: Theme; moodValue?: number; assetName?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [animProgress, setAnimProgress] = useState(0);
-  const moodValue = 0.73;
   const colors = themeColors[theme];
 
   useEffect(() => {
@@ -223,45 +183,23 @@ function MarketMoodGauge({ theme }: { theme: Theme }) {
   );
 }
 
-const ASSET_HISTORICAL_DATA: Record<string, { yr: number; pnl: number }[]> = {
-  XAU: PNL_DATA.filter(d => d.yr >= 2016).map(d => ({ yr: d.yr, pnl: d.pnl })),
-  XAG: [
-    { yr: 2016, pnl: 4800 },
-    { yr: 2017, pnl: -1200 },
-    { yr: 2018, pnl: -3500 },
-    { yr: 2019, pnl: 2900 },
-    { yr: 2020, pnl: 14500 },
-    { yr: 2021, pnl: -2200 },
-    { yr: 2022, pnl: 800 },
-    { yr: 2023, pnl: 1500 },
-    { yr: 2024, pnl: 9200 },
-  ],
-  CL: [
-    { yr: 2016, pnl: 3200 },
-    { yr: 2017, pnl: 2800 },
-    { yr: 2018, pnl: -8200 },
-    { yr: 2019, pnl: 5500 },
-    { yr: 2020, pnl: -18000 },
-    { yr: 2021, pnl: 16500 },
-    { yr: 2022, pnl: 12000 },
-    { yr: 2023, pnl: -4500 },
-    { yr: 2024, pnl: 3100 },
-  ],
-  SPX: [
-    { yr: 2016, pnl: 9500 },
-    { yr: 2017, pnl: 19400 },
-    { yr: 2018, pnl: -6200 },
-    { yr: 2019, pnl: 28900 },
-    { yr: 2020, pnl: 16300 },
-    { yr: 2021, pnl: 26900 },
-    { yr: 2022, pnl: -18100 },
-    { yr: 2023, pnl: 24200 },
-    { yr: 2024, pnl: 21500 },
-  ],
-};
+interface AssetAnalytics {
+  monthlyReturns: { m: string; avg: number; pp: number }[];
+  calendarSignals: { m: string; signal: string; type: string }[];
+  pnlHistory: { yr: number; e: number; x: number; pnl: number }[];
+  heroData: { yr: number; pnl: number }[];
+  moodValue: number;
+  winRate: number;
+  avgPnl: number;
+  signalTitle: string;
+  signalDescription: string;
+  confidenceText: string;
+  bannerTitle: string;
+  bannerDescription: string;
+}
 
 // ─── ANIMATED HERO CHART (Canvas) ──────────────────────────────────────────────
-function HeroChart({ theme, asset = 'XAU' }: { theme: Theme; asset?: string }) {
+function HeroChart({ theme, asset = 'XAU', data: chartData }: { theme: Theme; asset?: string; data?: { yr: number; pnl: number }[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colors = themeColors[theme];
 
@@ -274,7 +212,8 @@ function HeroChart({ theme, asset = 'XAU' }: { theme: Theme; asset?: string }) {
     const dpr = window.devicePixelRatio || 1;
     let animFrame = 0;
     const animTotal = 80;
-    const data = ASSET_HISTORICAL_DATA[asset] || ASSET_HISTORICAL_DATA['XAU'];
+    const data = chartData || [];
+    if (data.length === 0) return;
     const max = Math.max(...data.map(d => Math.abs(d.pnl)));
 
     function resize() {
@@ -819,23 +758,26 @@ interface LevelProps {
   selectedAsset: string;
   setSelectedAsset: (ticker: string) => void;
   marketAssets: { name: string; ticker: string; price: number; change: number }[];
+  assetAnalytics: AssetAnalytics;
 }
 
-function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
+function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets, assetAnalytics }: LevelProps) {
   const colors = themeColors[theme];
+  const label = ASSET_LABELS[selectedAsset] || 'oro';
+  const assetName = ASSET_NAMES[selectedAsset] || 'Oro';
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="font-mono text-[10px] tracking-[0.25em] uppercase font-bold" style={{ color: colors.secondary }}>
-              Precio de {selectedAsset === 'XAU' ? 'Oro' : selectedAsset === 'XAG' ? 'Plata' : selectedAsset === 'CL' ? 'Petróleo' : 'S&P 500'} · Histórico Jun→Jul
+              Precio de {assetName} · Histórico Jun→Jul
             </span>
             <div className="flex-1 h-0.5" style={{ background: colors.border }} />
           </div>
-          <HeroChart theme={theme} asset={selectedAsset} />
+          <HeroChart theme={theme} asset={selectedAsset} data={assetAnalytics.heroData} />
           <p className="text-[11px] mt-2 font-medium" style={{ color: colors.textMuted }}>
-            Muestra el rendimiento por contrato de {selectedAsset === 'XAU' ? 'oro' : selectedAsset === 'XAG' ? 'plata' : selectedAsset === 'CL' ? 'petróleo' : 'S&P 500'} en el período Jun→Jul de cada año. Las barras representan las ganancias o pérdidas netas de la estacionalidad.
+            Muestra el rendimiento por contrato de {label} en el período Jun→Jul de cada año. Las barras representan las ganancias o pérdidas netas de la estacionalidad.
           </p>
         </div>
 
@@ -853,9 +795,9 @@ function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: Le
               Medidor de Humor del Mercado
             </span>
           </div>
-          <MarketMoodGauge theme={theme} />
+          <MarketMoodGauge theme={theme} moodValue={assetAnalytics.moodValue} assetName={label} />
           <p className="text-[11px] mt-3 text-center font-medium" style={{ color: colors.textMuted }}>
-            Análisis estacional de commodities. Históricamente, el precio del oro sube un 73% de las veces durante julio.
+            Análisis estacional de commodities. Históricamente, el precio del {label} sube un {Math.round(assetAnalytics.moodValue * 100)}% de las veces durante julio.
           </p>
         </div>
       </div>
@@ -930,14 +872,14 @@ function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: Le
             Ciclo de Commodities · Señal Estacional
           </div>
           <div className="text-[15px] font-bold mt-1" style={{ color: colors.text }}>
-            El oro tiende a subir en julio — Período de alta probabilidad alcista
+            {assetAnalytics.bannerTitle}
           </div>
           <div className="text-[11px] mt-1 font-medium" style={{ color: colors.textMuted }}>
-            Basado en datos de 15 años de COMEX. No es asesoría financiera.
+            {assetAnalytics.bannerDescription}
           </div>
         </div>
         <div className="text-right">
-          <span className="font-mono text-3xl font-bold" style={{ color: colors.secondary }}>73%</span>
+          <span className="font-mono text-3xl font-bold" style={{ color: colors.secondary }}>{Math.round(assetAnalytics.moodValue * 100)}%</span>
           <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: colors.textMuted }}>
             Probabilidad<br/>Histórica
           </div>
@@ -948,8 +890,10 @@ function BasicLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: Le
 }
 
 // ─── INTERMEDIATE LEVEL COMPONENT ──────────────────────────────────────────────
-function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
+function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAssets, assetAnalytics }: LevelProps) {
   const colors = themeColors[theme];
+  const assetName = ASSET_NAMES[selectedAsset] || 'Oro';
+  const { monthlyReturns, calendarSignals, pnlHistory } = assetAnalytics;
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* GJR-GARCH Interactive Simulator (Fused Layer) */}
@@ -971,7 +915,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
               Rendimiento Estacional Jun→Jul · 15 Años ({selectedAsset})
             </span>
           </div>
-          <HeroChart theme={theme} asset={selectedAsset} />
+          <HeroChart theme={theme} asset={selectedAsset} data={assetAnalytics.heroData} />
         </div>
 
         {/* Monthly Bar Chart */}
@@ -989,9 +933,9 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
             </span>
           </div>
           <div className="space-y-2">
-            {MONTHLY_RETURNS.map((m) => {
-              const maxVal = Math.max(...MONTHLY_RETURNS.map(r => Math.abs(r.avg)));
-              const pctVal = (Math.abs(m.avg) / maxVal) * 100;
+            {monthlyReturns.map((m) => {
+              const maxVal = Math.max(...monthlyReturns.map(r => Math.abs(r.avg)));
+              const pctVal = maxVal > 0 ? (Math.abs(m.avg) / maxVal) * 100 : 0;
               const isPos = m.avg >= 0;
               const isJul = m.m === 'Jul';
               return (
@@ -1037,12 +981,12 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
       >
         <div className="flex items-center gap-2 mb-4">
           <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold" style={{ color: colors.secondary }}>
-            Ciclo Anual del Oro · Señales por Mes
+            Ciclo Anual del {assetName} · Señales por Mes
           </span>
           <div className="flex-1 h-0.5" style={{ background: colors.border }} />
         </div>
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-1 border-t border-l" style={{ borderColor: colors.border }}>
-          {CALENDAR_SIGNALS.map((cal) => {
+          {calendarSignals.map((cal) => {
             const bgVal = cal.type === 'active' ? colors.primary : cal.type === 'bullish' ? colors.cardSecondary : 'transparent';
             return (
               <div
@@ -1095,7 +1039,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
             </tr>
           </thead>
           <tbody>
-            {PNL_DATA.map((row) => {
+            {pnlHistory.map((row) => {
               const chg = ((row.x - row.e) / row.e * 100);
               const win = row.pnl > 0;
               return (
@@ -1133,11 +1077,11 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
         </table>
         <div className="flex justify-between mt-3 pt-3" style={{ borderTop: `1px solid ${colors.border}` }}>
           <span className="font-mono text-[10px] font-bold" style={{ color: colors.textMuted }}>GANADORES</span>
-          <span className="font-mono text-[12px] font-bold" style={{ color: colors.text }}>10 / 15 · 67%</span>
+          <span className="font-mono text-[12px] font-bold" style={{ color: colors.text }}>{assetAnalytics.winRate}%</span>
         </div>
         <div className="flex justify-between mt-1.5">
           <span className="font-mono text-[10px] font-bold" style={{ color: colors.textMuted }}>P&L PROMEDIO</span>
-          <span className="font-mono text-[12px] font-bold" style={{ color: colors.secondary }}>+$2,967 / contrato</span>
+          <span className="font-mono text-[12px] font-bold" style={{ color: colors.secondary }}>+${assetAnalytics.avgPnl.toLocaleString()} / contrato</span>
         </div>
       </div>
 
@@ -1159,16 +1103,16 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
             Señal Activa · Rally Estacional
           </div>
           <div className="text-[15px] font-bold" style={{ color: colors.text }}>
-            LONG Oro — Inicio de Flujo Fuerte
+            {assetAnalytics.signalTitle}
           </div>
           <div className="text-[11px] mt-0.5 font-medium" style={{ color: colors.textMuted }}>
-            Convergencia de fuentes cuantitativas independientes. Historial positivo de 11 de los últimos 15 años.
+            {assetAnalytics.signalDescription}
           </div>
         </div>
         <div className="text-right">
-          <span className="font-mono text-4xl font-bold" style={{ color: colors.secondary }}>73%</span>
+          <span className="font-mono text-4xl font-bold" style={{ color: colors.secondary }}>{Math.round(assetAnalytics.moodValue * 100)}%</span>
           <div className="text-[9px] uppercase tracking-wider font-bold" style={{ color: colors.textMuted }}>
-            Confianza<br/>Estacional
+            {assetAnalytics.confidenceText}
           </div>
         </div>
       </div>
@@ -1177,7 +1121,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
 }
 
 // ─── ADVANCED LEVEL COMPONENT ──────────────────────────────────────────────────
-function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
+function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets, assetAnalytics }: LevelProps) {
   const [subTab, setSubTab] = useState<'cuantitativa' | 'estacional'>('cuantitativa');
   const colors = themeColors[theme];
 
@@ -1278,7 +1222,7 @@ function AdvancedLevel({ theme, selectedAsset, setSelectedAsset, marketAssets }:
 }
 
 // ─── CTA BANNER ────────────────────────────────────────────────────────────────
-function CtaBanner({ theme, selectedAsset, setSelectedAsset, marketAssets }: LevelProps) {
+function CtaBanner({ theme, selectedAsset, setSelectedAsset, marketAssets, assetAnalytics }: LevelProps) {
   const colors = themeColors[theme];
   return (
     <div
@@ -1368,11 +1312,27 @@ const LEVELS: { key: Level; label: string; icon: React.ReactNode; description: s
   },
 ];
 
+const DEFAULT_ANALYTICS: AssetAnalytics = {
+  monthlyReturns: [{ m: 'Ene', avg: 0, pp: 0 }, { m: 'Feb', avg: 0, pp: 0 }, { m: 'Mar', avg: 0, pp: 0 }, { m: 'Abr', avg: 0, pp: 0 }, { m: 'May', avg: 0, pp: 0 }, { m: 'Jun', avg: 0, pp: 0 }, { m: 'Jul', avg: 0, pp: 0 }, { m: 'Ago', avg: 0, pp: 0 }, { m: 'Sep', avg: 0, pp: 0 }, { m: 'Oct', avg: 0, pp: 0 }, { m: 'Nov', avg: 0, pp: 0 }, { m: 'Dic', avg: 0, pp: 0 }],
+  calendarSignals: [],
+  pnlHistory: [],
+  heroData: [],
+  moodValue: 0.5,
+  winRate: 50,
+  avgPnl: 0,
+  signalTitle: '',
+  signalDescription: '',
+  confidenceText: 'Confianza Estacional',
+  bannerTitle: '',
+  bannerDescription: '',
+};
+
 export default function MarketLanding() {
   const [activeLevel, setActiveLevel] = useState<Level>('basico');
   const [selectedAsset, setSelectedAsset] = useState<string>('XAU');
   const [livePrice, setLivePrice] = useState(4078);
   const [marketAssets, setMarketAssets] = useState(DEFAULT_ASSETS);
+  const [allAssetData, setAllAssetData] = useState<any[]>([]);
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
@@ -1390,7 +1350,7 @@ export default function MarketLanding() {
     } catch (_) {}
   }, [theme, colors.bg]);
 
-  // Fetch real market data from backend
+  // Fetch real market data from backend (prices + analytics)
   useEffect(() => {
     let mounted = true;
 
@@ -1400,6 +1360,7 @@ export default function MarketLanding() {
         if (!mounted) return;
         if (data.assets && data.assets.length > 0) {
           setMarketAssets(data.assets);
+          setAllAssetData(data.assets);
           const selected = data.assets.find((a: any) => a.ticker === selectedAsset);
           if (selected) setLivePrice(selected.price);
         }
@@ -1414,7 +1375,29 @@ export default function MarketLanding() {
     return () => { mounted = false; clearInterval(interval); };
   }, []);
 
-  // Update livePrice when selectedAsset changes and we have real data
+  // Compute selectedAsset analytics whenever the asset or data changes
+  const assetAnalytics: AssetAnalytics = React.useMemo(() => {
+    const found = allAssetData.find((a: any) => a.ticker === selectedAsset);
+    if (found && found.monthlyReturns) {
+      return {
+        monthlyReturns: found.monthlyReturns,
+        calendarSignals: found.calendarSignals,
+        pnlHistory: found.pnlHistory,
+        heroData: found.heroData,
+        moodValue: found.moodValue,
+        winRate: found.winRate,
+        avgPnl: found.avgPnl,
+        signalTitle: found.signalTitle,
+        signalDescription: found.signalDescription,
+        confidenceText: found.confidenceText || 'Confianza Estacional',
+        bannerTitle: found.bannerTitle,
+        bannerDescription: found.bannerDescription,
+      };
+    }
+    return DEFAULT_ANALYTICS;
+  }, [selectedAsset, allAssetData]);
+
+  // Update livePrice when selectedAsset changes
   useEffect(() => {
     const selected = marketAssets.find(a => a.ticker === selectedAsset);
     if (selected) setLivePrice(selected.price);
@@ -1578,12 +1561,12 @@ export default function MarketLanding() {
         </div>
 
         {/* Active Level Content */}
-        {activeLevel === 'basico' && <BasicLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
-        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
-        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
+        {activeLevel === 'basico' && <BasicLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} assetAnalytics={assetAnalytics} />}
+        {activeLevel === 'intermedio' && <IntermediateLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} assetAnalytics={assetAnalytics} />}
+        {activeLevel === 'avanzado' && <AdvancedLevel theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} assetAnalytics={assetAnalytics} />}
 
         {/* CTA — Only for basic and intermediate */}
-        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} />}
+        {activeLevel !== 'avanzado' && <CtaBanner theme={theme} selectedAsset={selectedAsset} setSelectedAsset={setSelectedAsset} marketAssets={marketAssets} assetAnalytics={assetAnalytics} />}
       </main>
 
       {/* FOOTER */}
