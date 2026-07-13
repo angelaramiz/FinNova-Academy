@@ -1620,6 +1620,10 @@ async function runAll(){
       apiData=generateFallback(assetKey,nDays);
     }
 
+    // Notify parent about data source
+    var srcType = (apiData.source||'').indexOf('fallback')===-1 && (apiData.source||'').indexOf('embebido')===-1 ? 'real' : 'fallback';
+    try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:'motor-source',source:srcType,timestamp:Date.now()},'*');}catch(e){}
+
     // Apply manual price override if user entered one
     const manualPrice = parseFloat(document.getElementById('price-override').value);
     if (manualPrice > 0 && isFinite(manualPrice)) {

@@ -1123,6 +1123,7 @@ function IntermediateLevel({ theme, selectedAsset, setSelectedAsset, marketAsset
 // ─── MOTOR LOG TERMINAL ────────────────────────────────────────────────────────
 function MotorLogTerminal({ theme }: { theme: Theme }) {
   const [lines, setLines] = useState<{ msg: string; cls: string }[]>([]);
+  const [source, setSource] = useState<{ type: 'real' | 'fallback'; timestamp: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const colors = themeColors[theme];
 
@@ -1130,6 +1131,9 @@ function MotorLogTerminal({ theme }: { theme: Theme }) {
     const handler = (e: MessageEvent) => {
       if (e.data && e.data.type === 'motor-log') {
         setLines(prev => [...prev, { msg: e.data.msg, cls: e.data.cls || '' }]);
+      }
+      if (e.data && e.data.type === 'motor-source') {
+        setSource({ type: e.data.source, timestamp: e.data.timestamp || Date.now() });
       }
     };
     window.addEventListener('message', handler);
@@ -1153,6 +1157,31 @@ function MotorLogTerminal({ theme }: { theme: Theme }) {
       className="w-full rounded overflow-hidden border"
       style={{ borderColor: colors.border, marginTop: 12 }}
     >
+      {/* Source notification banner */}
+      {source && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-bold animate-fadeIn"
+          style={{
+            background: source.type === 'real' ? 'rgba(45,212,160,0.12)' : 'rgba(245,95,95,0.12)',
+            borderBottom: `1px solid ${colors.border}`,
+            color: source.type === 'real' ? '#2dd4a0' : '#f55f5f',
+          }}
+        >
+          <span className="text-base">{source.type === 'real' ? '✅' : '⚠️'}</span>
+          <span>
+            {source.type === 'real'
+              ? 'Datos en tiempo real — Claude API + web_search'
+              : 'Datos de respaldo (fallback) — el precio mostrado puede no reflejar el mercado actual'}
+          </span>
+          <button
+            onClick={() => setSource(null)}
+            className="ml-auto text-[9px] uppercase tracking-wider opacity-60 hover:opacity-100 cursor-pointer"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
       <div
         className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider"
         style={{ background: colors.cardSecondary, color: colors.textMuted, borderBottom: `1px solid ${colors.border}` }}
