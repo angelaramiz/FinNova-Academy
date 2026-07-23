@@ -46,15 +46,22 @@ function AppContent() {
 
   async function fetchProfile(token: string) {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const res = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!res.ok) { handleLogout(); return; }
       const userProfile = await res.json();
       if (userProfile.role !== 'student') { handleLogout(); return; }
       setProfile({ ...userProfile, institution: 'Simulador Laboral' });
       setLoading(false);
-    } catch { handleLogout(); }
+    } catch (e) {
+      console.error('fetchProfile error:', e);
+      setLoading(false);
+    }
   }
 
   function handleLogout() {
@@ -113,6 +120,7 @@ function AppContent() {
             <div className="bg-slate-900/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3">
               <RefreshCw className="w-7 h-7 text-amber-400 animate-spin" />
               <p className="text-xs text-slate-400 font-mono">Iniciando simulador...</p>
+              <p className="text-[9px] text-slate-600 max-w-xs text-center">(El primer load puede tardar 30s por cold start de Render)</p>
             </div>
           </div>
         )}
