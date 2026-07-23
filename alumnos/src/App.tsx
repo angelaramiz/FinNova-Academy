@@ -5,6 +5,7 @@ import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
 import RegisterRequest from './components/RegisterRequest';
 import { themeColors } from './lib/theme';
+import { apiFetch } from './lib/api';
 
 export default function App() {
   return (
@@ -30,7 +31,7 @@ function AppContent() {
     }
     const token = localStorage.getItem('supabase_auth_token');
     if (token) {
-      fetchProfile(token);
+      fetchProfile();
     } else {
       prewarmBackend();
       setLoading(false);
@@ -38,28 +39,19 @@ function AppContent() {
   }, []);
 
   async function prewarmBackend() {
-    try {
-      await fetch('/api/health', { signal: AbortSignal.timeout(5000) });
-    } catch { /* ignore */ }
+    try { await apiFetch('/api/health'); } catch { /* ignore */ }
     setBackendWarming(false);
   }
 
-  async function fetchProfile(token: string) {
+  async function fetchProfile() {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) { handleLogout(); return; }
-      const userProfile = await res.json();
+      const userProfile = await apiFetch<any>('/api/auth/me');
       if (userProfile.role !== 'student') { handleLogout(); return; }
       setProfile({ ...userProfile, institution: 'Simulador Laboral' });
       setLoading(false);
     } catch (e) {
       console.error('fetchProfile error:', e);
+      handleLogout();
       setLoading(false);
     }
   }

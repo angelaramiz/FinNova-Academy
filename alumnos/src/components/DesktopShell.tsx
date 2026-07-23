@@ -4,19 +4,17 @@ import EmailClient from './EmailClient';
 import AccountingForm from './AccountingForm';
 import SpreadsheetWidget from './SpreadsheetWidget';
 import BankingPortal from './BankingPortal';
+import { apiFetch } from '../lib/api';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
 
 function getToken() { return localStorage.getItem('supabase_auth_token') || ''; }
 
 async function apiPost(path: string, body?: any) {
-  const res = await fetch(path, {
+  return apiFetch(path, {
     method: body ? 'POST' : 'GET',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-    body: body ? JSON.stringify(body) : undefined,
+    ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
 }
 
 interface DesktopShellProps {

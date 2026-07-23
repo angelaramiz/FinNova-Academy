@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import { apiFetch } from '../lib/api';
 
 export interface Notification {
   id: string;
@@ -26,10 +27,7 @@ export function useNotifications() {
 
   async function checkEvents() {
     try {
-      const res = await fetch('/api/sim/events/random', {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
+      const data = await apiFetch<any>('/api/sim/events/random');
       if (data.event) {
         addNotification({
           id: `evt-${Date.now()}`,

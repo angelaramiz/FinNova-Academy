@@ -6,11 +6,12 @@ interface OnboardingProps {
   onComplete: () => void;
 }
 
-const token = () => localStorage.getItem('supabase_auth_token') || '';
-const api = (path: string, body: any) => fetch(path, {
+import { apiFetch } from '../lib/api';
+
+const api = (path: string, body: any) => apiFetch(path, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
   body: JSON.stringify(body),
+  headers: { 'Content-Type': 'application/json' },
 });
 
 const COMPANIES = [

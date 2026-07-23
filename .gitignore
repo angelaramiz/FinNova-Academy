@@ -31,6 +31,8 @@ finmicro_edtech_pro_specs/
 *.log
 npm-debug.log*
 staff/
+app/
+supabase/migration_*.sql
 
 # Temp files in supabase
 supabase/.temp/

@@ -3,6 +3,7 @@ import { OrbitControls, Html } from '@react-three/drei';
 import { Suspense, useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { themeColors, Theme } from '../lib/theme';
+import { apiFetch } from '../lib/api';
 import Onboarding from './Onboarding';
 import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
@@ -13,13 +14,14 @@ function getToken(): string {
 }
 
 async function apiGet(path: string): Promise<any> {
-  const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return apiFetch(path);
 }
 
 async function apiGetHtml(path: string): Promise<string> {
-  const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
+  const isRender = window.location.hostname.includes('onrender.com');
+  const baseUrl = import.meta.env.VITE_API_URL || (isRender ? 'https://finnova-back.onrender.com' : '');
+  const url = `${baseUrl}${path}`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.text();
 }

@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import { apiFetch } from '../lib/api';
 
 interface DashboardProps { theme: Theme; onClose: () => void; }
 
-function getToken() { return localStorage.getItem('supabase_auth_token') || ''; }
 async function apiGet(path: string) {
-  const res = await fetch(path, { headers: { Authorization: `Bearer ${getToken()}` } });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return apiFetch(path);
 }
-
-type Level = 'Junior' | 'Semi-Senior' | 'Senior';
 
 export default function Dashboard({ theme, onClose }: DashboardProps) {
   const colors = themeColors[theme];
@@ -21,11 +17,12 @@ export default function Dashboard({ theme, onClose }: DashboardProps) {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    try { const s = await apiGet('/api/sim/my-stats'); setStats(s); } catch {}
-    try { const p = await apiGet('/api/sim/my-profile'); setProfile(p); } catch {}
+    try { const s = await apiFetch('/api/sim/my-stats'); setStats(s); } catch {}
+    try { const p = await apiFetch('/api/sim/my-profile'); setProfile(p); } catch {}
   }
 
   const s = stats || { tasksCompleted: 0, totalScore: 0, totalTime: 0, level: 'Junior' };
+  type Level = 'Junior' | 'Semi-Senior' | 'Senior';
   const levelColors: Record<Level, string> = { Junior: '#22c55e', 'Semi-Senior': '#f59e0b', Senior: '#ef4444' };
   const level = (s.level || 'Junior') as Level;
   const avgScore = s.tasksCompleted > 0 ? Math.round(s.totalScore / s.tasksCompleted) : 0;
