@@ -14,8 +14,8 @@ const api = (path: string, body: any) => fetch(path, {
 });
 
 const COMPANIES = [
-  { id: '00000001-0000-0000-0000-000000000001', name: 'Operadora Logística del Norte', desc: 'PYME familiar · 45 empleados · Sector logística', icon: '🏢', color: '#FFB162' },
-  { id: '00000001-0000-0000-0000-000000000002', name: 'Grupo Financiero Corporativo', desc: 'Gran corporativo · 2,500+ empleados · Sector financiero', icon: '🏛️', color: '#A35139' },
+  { id: '00000001-0000-0000-0000-000000000001', name: 'Operadora Logística del Norte', type: 'pyme', desc: 'PYME familiar · 45 empleados · Sector logística', icon: '🏢', color: '#FFB162' },
+  { id: '00000001-0000-0000-0000-000000000002', name: 'Grupo Financiero Corporativo', type: 'corporate', desc: 'Gran corporativo · 2,500+ empleados · Sector financiero', icon: '🏛️', color: '#A35139' },
 ];
 
 const JOBS = [
@@ -83,11 +83,11 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
       <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>¿Qué tipo de empresa te interesa?</h2>
       <p className="text-xs text-center" style={{ color: colors.textMuted }}>Esto definirá el contexto de tus tareas diarias</p>
       {COMPANIES.map(c => (
-        <button key={c.id} onClick={() => { setSimProfile(c.id.includes('001') ? 'pyme' : 'corporate'); setSelectedCompany(c); }}
+        <button key={c.id} onClick={() => { setSimProfile(c.type); setSelectedCompany(c); }}
           className="w-full text-left p-5 rounded-xl border-2 transition cursor-pointer hover:scale-[1.01]"
           style={{
-            borderColor: simProfile === (c.id.includes('001') ? 'pyme' : 'corporate') ? colors.primary : colors.border,
-            background: simProfile === (c.id.includes('001') ? 'pyme' : 'corporate') ? colors.primary + '15' : colors.cardBg,
+            borderColor: simProfile === c.type ? colors.primary : colors.border,
+            background: simProfile === c.type ? colors.primary + '15' : colors.cardBg,
             boxShadow: `4px 4px 0px 0px ${colors.border}`,
           }}
         >
