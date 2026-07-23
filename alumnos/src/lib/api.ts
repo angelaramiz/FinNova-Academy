@@ -34,7 +34,10 @@ interface RequestOptions extends RequestInit {
  */
 export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { retries = 2, retryDelayMs = 1000, ...fetchConfig } = options;
-  const baseUrl = import.meta.env.VITE_API_URL || '';
+  // Fallback para Render: si VITE_API_URL no está disponible, usar la URL conocida
+  const isRender = window.location.hostname.includes('onrender.com');
+  const BACKEND_URL = 'https://finnova-back.onrender.com';
+  const baseUrl = import.meta.env.VITE_API_URL || (isRender ? BACKEND_URL : '');
   const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${cleanBaseUrl}${cleanEndpoint}`;
