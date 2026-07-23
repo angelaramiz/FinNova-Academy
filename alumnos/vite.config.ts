@@ -12,23 +12,22 @@ export default defineConfig(() => {
     plugins: [
       react(), 
       tailwindcss(),
-      ...(!isProduction ? [{
-        name: 'express-api-plugin',
-        configureServer(server) {
-          server.middlewares.use(async (req, res, next) => {
-            if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/webhooks'))) {
-              try {
-                const { app } = await import('../backend/src/server.ts');
-                app(req as any, res as any, next);
-              } catch (e) {
-                next();
-              }
-            } else {
-              next();
-            }
+      ...(!isProduction ? [(() => {
+    const backendPath = '../backend/src/server.ts';
+    return {
+      name: 'express-api-plugin',
+      async configureServer(server) {
+        try {
+          const mod = await import(backendPath);
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.startsWith('/api') || req.url?.startsWith('/webhooks')) {
+              mod.app(req, res, next);
+            } else next();
           });
-        }
-      }] : []),
+        } catch { /* backend no disponible */ }
+      }
+    };
+  })()] : []),
     ],
     resolve: {
       alias: {
