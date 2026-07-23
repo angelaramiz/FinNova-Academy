@@ -1,0 +1,19 @@
+{
+  "project": "simulador-laboral-3d",
+  "description": "Tests para los motores del simulador laboral contable",
+  "version": "0.1.0",
+  "testPatterns": [
+    "backend/src/routes/simEngine.ts",
+    "backend/src/services/documentGenerator.ts",
+    "backend/src/lib/memoryDb.ts",
+    "backend/src/routes/payments.ts",
+    "alumnos/src/components/SimuladorLaboral.tsx",
+    "alumnos/src/components/Onboarding.tsx"
+  ],
+  "testTypes": ["integration", "unit"],
+  "framework": "vitest",
+  "coverage": {
+    "threshold": 80,
+    "include": ["backend/src/routes/sim*.ts", "backend/src/services/*.ts"]
+  }
+}

@@ -9,6 +9,9 @@
     "start": "npx tsx backend/src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:testsprite": "testsprite test run --plan-from testsprite.config.json",
+    "test:testsprite:watch": "vitest",
+    "testsprite:doctor": "testsprite doctor",
     "clean": "rm -rf dist server.js alumnos/dist staff/dist backend/dist"
   },
   "devDependencies": {
@@ -43,6 +46,7 @@
     "react-dom": "^19.0.1",
     "react-router-dom": "^7.17.0",
     "vite": "^6.2.3",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   }
 }

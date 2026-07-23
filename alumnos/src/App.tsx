@@ -1,38 +1,10 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useEffect, useState } from 'react';
-import { 
-  BrowserRouter, 
-  Routes, 
-  Route, 
-  Navigate, 
-  Link, 
-  useNavigate, 
-  useLocation 
-} from 'react-router-dom';
-import { 
-  Award, 
-  TrendingUp, 
-  Cpu, 
-  User, 
-  Database,
-  BookOpen,
-  Sliders, 
-  RefreshCw, 
-  CheckCircle2,
-  LogOut
-} from 'lucide-react';
-import { api } from './lib/api';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { RefreshCw, LogOut } from 'lucide-react';
 import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
 import RegisterRequest from './components/RegisterRequest';
-import MarketLanding from './components/MarketLanding';
-import CoursesCatalogLanding from './components/CoursesCatalogLanding';
-import { supabase } from './lib/supabaseClient';
-
+import { themeColors } from './lib/theme';
 
 export default function App() {
   return (
@@ -45,645 +17,116 @@ export default function App() {
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Dynamic theme syncing for global layout wrapper
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('theme');
-    return (saved === 'light' || saved === 'dark') ? saved : 'dark';
-  });
-
-  useEffect(() => {
-    const handleThemeChange = () => {
-      const saved = localStorage.getItem('theme');
-      if (saved === 'light' || saved === 'dark') {
-        setTheme(saved);
-      }
-    };
-    window.addEventListener('storage', handleThemeChange);
-    window.addEventListener('themechange', handleThemeChange);
-    return () => {
-      window.removeEventListener('storage', handleThemeChange);
-      window.removeEventListener('themechange', handleThemeChange);
-    };
-  }, []);
-
-  const isLight = theme === 'light';
-  const bgColor = isLight ? '#E2DCD0' : '#0a0f1d';
-  const textColor = isLight ? '#1B2632' : '#cbd5e1';
-
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // App profile state
+  const [theme] = useState<'light' | 'dark'>('dark');
   const [profile, setProfile] = useState<any>(null);
-
-  // Global Courses
-  const [courses, setCourses] = useState<any[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
-  const [selectedCourseProgress, setSelectedCourseProgress] = useState<any>(null);
-
-  // Instructor pipeline states
-  const [pipelines, setPipelines] = useState<any[]>([]);
-  const [newPipelinePrompt, setNewPipelinePrompt] = useState('');
-  const [newPipelineTitle, setNewPipelineTitle] = useState('');
-  const [voiceModel, setVoiceModel] = useState('Charon');
-  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
-
-  // Sync utilities
   const [loading, setLoading] = useState(true);
   const [backendWarming, setBackendWarming] = useState(true);
+  const colors = themeColors[theme];
 
-  // Service Worker Update States
-  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [swUpdateAvailable, setSwUpdateAvailable] = useState(false);
-  
-  // Local active view role (matches URL path)
-  const [currentViewMode, setCurrentViewMode] = useState<'student' | 'instructor' | 'admin'>('student');
-
-  // Projects Lab states
-  const [submittedProjectId, setSubmittedProjectId] = useState<string | null>(null);
-  const [projectFileUrl, setProjectFileUrl] = useState('');
-  const [exportingCV, setExportingCV] = useState(false);
-
-  // Pre-warm backend API (mitigates cold start latency on Render free tier)
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || '';
-    if (!apiUrl) {
-      setBackendWarming(false);
-      return;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      // theme state handled by user preference
     }
-
-    const cleanApiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-    let active = true;
-
-    async function checkHealth() {
-      try {
-        const response = await fetch(`${cleanApiUrl}/api/health`);
-        if (response.ok && active) {
-          console.log('[API] Backend connection warmed up successfully');
-          setBackendWarming(false);
-          return;
-        }
-      } catch (err) {
-        console.warn('[API] Backend ping failed, service might be asleep. Retrying...', err);
-      }
-      
-      if (active) {
-        setTimeout(checkHealth, 4000); // Retry every 4 seconds
-      }
-    }
-
-    checkHealth();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Synchronize view mode state based on browser URL
-  useEffect(() => {
-    if (location.pathname.startsWith('/admin')) {
-      setCurrentViewMode('admin');
-    } else if (location.pathname.startsWith('/instructor')) {
-      setCurrentViewMode('instructor');
-    } else {
-      setCurrentViewMode('student');
-    }
-  }, [location.pathname]);
-
-  // Load platform data upon mount, authentication or role updates
-  useEffect(() => {
     const token = localStorage.getItem('supabase_auth_token');
     if (token) {
-      setIsAuthenticated(true);
-      loadPlatformData();
+      fetchProfile(token);
     } else {
-      setIsAuthenticated(false);
+      prewarmBackend();
       setLoading(false);
-    }
-  }, [currentViewMode, isAuthenticated]);
-
-  // Listen for native Supabase OAuth session redirects and changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        localStorage.setItem('supabase_auth_token', session.access_token);
-        localStorage.setItem('sandbox_mock_user_id', session.user.id);
-        localStorage.setItem('sandbox_view_mode', session.user.user_metadata?.role || 'student');
-        setIsAuthenticated(true);
-        loadPlatformData();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Listen for Service Worker updates and versioning
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-      });
-
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        if (!reg) return;
-        setSwRegistration(reg);
-
-        if (reg.waiting) {
-          setSwUpdateAvailable(true);
-        }
-
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setSwUpdateAvailable(true);
-              }
-            });
-          }
-        });
-      });
     }
   }, []);
 
-  const handleApplyUpdate = () => {
-    if (swRegistration && swRegistration.waiting) {
-      swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-  };
-
-  const handleLogout = async () => {
+  async function prewarmBackend() {
     try {
-      await supabase.auth.signOut();
-    } catch (_) {
-      // Ignore if placeholder config fails
-    }
-    localStorage.removeItem('supabase_auth_token');
-    localStorage.removeItem('sandbox_mock_user_id');
-    localStorage.removeItem('sandbox_view_mode');
-    setProfile(null);
-    setIsAuthenticated(false);
-  };
-
-  const loadPlatformData = async () => {
-    const token = localStorage.getItem('supabase_auth_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const userProfile = await api.getProfile();
-      if (userProfile.role !== 'student') {
-        handleLogout();
-        return;
-      }
-
-      setProfile({
-        ...userProfile,
-        certLevel: 'Analista Certificado Nivel I',
-        institution: 'ITAM - Especialización en Finanzas Corporativas',
-        verifiedIdentity: true
-      });
-
-      const courseList = await api.getCourses();
-      setCourses(courseList);
-
-      if (userProfile.role === 'instructor') {
-        const pipelineData = await api.getPipelineReviews();
-        setPipelines(pipelineData);
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error('Error hydrating platform entities:', err);
-      handleLogout();
-      setLoading(false);
-    }
-  };
-
-  const handleSelectCourse = async (course: any) => {
-    try {
-      setLoading(true);
-      const detailed = await api.getCourseDetails(course.id);
-      setSelectedCourse(detailed);
-      
-      const prog = await api.getProgress(course.id);
-      setSelectedCourseProgress(prog);
-      
-      navigate('/student/clips');
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed opening course layout:', err);
-      setLoading(false);
-    }
-  };
-
-  const handleRefreshProgress = async () => {
-    if (!selectedCourse) return;
-    try {
-      const prog = await api.getProgress(selectedCourse.id);
-      setSelectedCourseProgress(prog);
-      const userProfile = await api.getProfile();
-      setProfile((prev: any) => ({ ...prev, pointsEarned: userProfile.pointsEarned }));
-    } catch (err) {
-      console.error('Failed refreshing progress records:', err);
-    }
-  };
-
-  const handleCreatePipelineDraft = async (e: any) => {
-    e.preventDefault();
-    if (!newPipelinePrompt.trim() || !newPipelineTitle.trim() || isCreatingDraft) return;
-
-    setIsCreatingDraft(true);
-    try {
-      const response = await api.triggerDraftPipeline({
-        inputPrompt: `Guión explicativo de: "${newPipelineTitle}". Detalles clave: ${newPipelinePrompt}`,
-        voiceModel: `elevenlabs-${voiceModel.toLowerCase()}-finance-v2`,
-        videoPrompt: `Professional visual grid displaying market candles representing: ${newPipelineTitle}. Dark backdrop.`,
-      });
-
-      setPipelines(prev => [response, ...prev]);
-      setNewPipelinePrompt('');
-      setNewPipelineTitle('');
-      setIsCreatingDraft(false);
-      
-      const updated = await api.getPipelineReviews();
-      setPipelines(updated);
-    } catch (err) {
-      console.error('Pipeline drafting failed:', err);
-      setIsCreatingDraft(false);
-    }
-  };
-
-  const handleApprovePipelineItem = async (pipelineId: string) => {
-    try {
-      await api.patchPipelineStatus(pipelineId, 'approved', 'Revisión aprobada por Instructor. Publicado.');
-      
-      const updated = await api.getPipelineReviews();
-      setPipelines(updated);
-
-      const courseList = await api.getCourses();
-      setCourses(courseList);
-      
-      if (selectedCourse) {
-        const detailed = await api.getCourseDetails(selectedCourse.id);
-        setSelectedCourse(detailed);
-      }
-    } catch (err) {
-      console.error('Approval failed:', err);
-    }
-  };
-
-  const handleRejectPipelineItem = async (pipelineId: string) => {
-    try {
-      await api.patchPipelineStatus(pipelineId, 'rejected', 'Devuelto para optimización de voces.');
-      const updated = await api.getPipelineReviews();
-      setPipelines(updated);
-    } catch (err) {
-      console.error('Rejection failed:', err);
-    }
-  };
-
-  const handleDownloadCV = () => {
-    setExportingCV(true);
-    setTimeout(() => {
-      setExportingCV(false);
-      
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        alert("Por favor, permite las ventanas emergentes para descargar tu CV.");
-        return;
-      }
-
-      printWindow.document.write(`
-        <html>
-        <head>
-          <title>CV Financiero - ${profile?.fullName || 'Alumno'}</title>
-          <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; line-height: 1.5; }
-            .header { border-bottom: 2px solid #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
-            .name { font-size: 28px; font-weight: bold; color: #0f766e; }
-            .title { font-size: 16px; color: #64748b; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
-            .section-title { font-size: 18px; font-weight: bold; color: #0f766e; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-            .badge-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-            .badge { background: #f0fdfa; border: 1px solid #ccfbf1; color: #0f766e; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-            .skill-bar { background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
-            .skill-fill { background: #0f766e; height: 100%; }
-            .footer { margin-top: 50px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="name">${profile?.fullName || 'Alumno'}</div>
-            <div class="title">Certificación Práctica en Finanzas Corporativas</div>
-            <div style="margin-top: 10px; font-size: 12px; color: #475569;">Nivel: ${profile?.certLevel || 'Inversor Novato'} | Puntos de Experiencia: ${profile?.pointsEarned || 0} XP</div>
-          </div>
-
-          <div class="section-title">Habilidades y Competencias Validadas por IA (Gemini)</div>
-          <div style="margin-bottom: 20px;">
-            <strong>Valuación de Activos DCF:</strong> 85%
-            <div class="skill-bar"><div class="skill-fill" style="width: 85%;"></div></div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <strong>Cálculo de WACC y Costo de Deuda:</strong> 75%
-            <div class="skill-bar"><div class="skill-fill" style="width: 75%;"></div></div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <strong>Análisis Comparativo de Razones P/E:</strong> 95%
-            <div class="skill-bar"><div class="skill-fill" style="width: 95%;"></div></div>
-          </div>
-          <div style="margin-bottom: 20px;">
-            <strong>Estructura y Cobertura de Apalancamientos:</strong> 60%
-            <div class="skill-bar"><div class="skill-fill" style="width: 60%;"></div></div>
-          </div>
-
-          <div class="section-title">Cursos y Módulos Aprobados</div>
-          <ul>
-            <li><strong>Mentalidad y Fundamentos de Inversión</strong> - Certificado de Aprobación Práctica</li>
-            <li><strong>Análisis de Empresas y Ratios Financieros</strong> - Certificado de Aprobación Práctica</li>
-          </ul>
-
-          <div class="section-title">Insignias Desbloqueadas</div>
-          <div class="badge-container">
-            <span class="badge">Maestro del P/E Ratio</span>
-            <span class="badge">Interés Compuesto Exponencial</span>
-          </div>
-
-          <div class="footer">
-            Documento digital certificado por la plataforma AuraFi / FinNova Academy mediante auditoría de rúbricas LLM en tiempo real.
-          </div>
-
-          <script>
-            window.onload = function() {
-              window.print();
-              window.close();
-            }
-          </script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }, 1200);
-  };
-
-  const handleProjectSubmit = (projectId: string, e: React.FormEvent) => {
-    e.preventDefault();
-    if (!projectFileUrl.trim()) return;
-    setSubmittedProjectId(projectId);
-    setProjectFileUrl('');
-  };
-
-  // Switch role and redirect layout
-  const handleSandboxRoleSwitch = (role: 'student' | 'instructor' | 'admin') => {
-    setCurrentViewMode(role);
-    navigate(`/${role}`);
-  };
-
-  // Public routes that don't require authentication
-  const publicPaths = ['/', '/cursos', '/register'];
-  const isPublicRoute = publicPaths.includes(location.pathname);
-
-  if ((!isAuthenticated || !profile) && !isPublicRoute) {
-    return (
-      <Login
-        backendWarming={backendWarming}
-        onLoginSuccess={async (token, userProfile) => {
-          if (userProfile.role !== 'student') {
-            alert('Acceso restringido a alumnos de la academia.');
-            try {
-              await supabase.auth.signOut();
-            } catch (_) {}
-            localStorage.removeItem('supabase_auth_token');
-            localStorage.removeItem('sandbox_mock_user_id');
-            localStorage.removeItem('sandbox_view_mode');
-            setProfile(null);
-            setIsAuthenticated(false);
-            return;
-          }
-          localStorage.setItem('supabase_auth_token', token);
-          localStorage.setItem('sandbox_mock_user_id', userProfile.id);
-          localStorage.setItem('sandbox_view_mode', userProfile.role);
-          setProfile(userProfile);
-          setIsAuthenticated(true);
-        }}
-      />
-    );
+      await fetch('/api/health', { signal: AbortSignal.timeout(5000) });
+    } catch { /* ignore */ }
+    setBackendWarming(false);
   }
 
+  async function fetchProfile(token: string) {
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { handleLogout(); return; }
+      const userProfile = await res.json();
+      if (userProfile.role !== 'student') { handleLogout(); return; }
+      setProfile({ ...userProfile, institution: 'Simulador Laboral' });
+      setLoading(false);
+    } catch { handleLogout(); }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('supabase_auth_token');
+    localStorage.removeItem('sandbox_mock_user_id');
+    setProfile(null);
+    navigate('/');
+  }
+
+  const isLight = theme === 'light';
+
   return (
-    <div
-      id="finance-platform-core"
-      className="min-h-screen flex flex-col font-sans selection:bg-teal-450 selection:text-neutral-900 transition-colors duration-200"
-      style={{
-        backgroundColor: bgColor,
-        color: textColor,
-      }}
-    >
-      
-      {/* -------------------------------------------------------------
-          NAVBAR HEADER
-          ------------------------------------------------------------- */}
-      <header
-        id="platform-navbar-header"
-        className={`sticky top-0 z-50 backdrop-blur-md px-4 py-3 shadow-md transition-colors duration-200 ${location.pathname.startsWith('/student') ? 'hidden md:block' : ''}`}
-        style={{
-          backgroundColor: isLight ? 'rgba(226, 220, 208, 0.85)' : 'rgba(10, 15, 29, 0.85)',
-          borderBottom: `2.5px solid ${isLight ? '#1B2632' : 'rgba(51, 65, 85, 0.5)'}`,
-        }}
-      >
-        <div className={`mx-auto flex items-center justify-between w-full ${location.pathname.startsWith('/student') ? 'px-4 md:px-6' : 'max-w-7xl'}`}>
-          
-          {/* Logo Brand */}
-          <div className="flex items-center gap-2.5">
-            <div
-              className="p-2 rounded-xl shadow-sm transition-colors"
-              style={{
-                backgroundColor: isLight ? '#C9C1B1' : '#0f172a',
-                border: `2px solid ${isLight ? '#1B2632' : '#1e293b'}`,
-                color: isLight ? '#1B2632' : '#2dd4bf',
-              }}
-            >
-              <TrendingUp className="w-4.5 h-4.5" />
+    <div className="min-h-screen flex flex-col" style={{ background: colors.bg, color: colors.text }}>
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b-2 backdrop-blur-md" style={{ borderColor: colors.border, background: colors.cardBg }}>
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: colors.primary, color: '#1B2632' }}>
+              SL
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="font-extrabold text-sm tracking-wide block"
-                  style={{ color: isLight ? '#1B2632' : '#e2e8f0' }}
-                >
-                  FINNOVA ACADEMY
-                </span>
-                <span
-                  className="text-[8px] px-1.5 py-0.5 rounded-md font-mono font-bold leading-none"
-                  style={{
-                    backgroundColor: isLight ? 'rgba(163, 81, 57, 0.12)' : 'rgba(45, 212, 160, 0.1)',
-                    border: `1.5px solid ${isLight ? '#A35139' : 'rgba(45, 212, 160, 0.3)'}`,
-                    color: isLight ? '#A35139' : '#2dd4bf',
-                  }}
-                >
-                  v1.0.0
-                </span>
-              </div>
-              <span
-                className="text-[9px] font-mono font-semibold tracking-wider uppercase block"
-                style={{ color: isLight ? '#A35139' : 'rgba(45, 212, 160, 0.8)' }}
-              >
-                Enterprise LMS & AI Certification
-              </span>
-            </div>
+            <span className="text-sm font-bold font-mono tracking-tight" style={{ color: colors.text }}>
+              SIMULADOR LABORAL
+            </span>
           </div>
 
-          {/* Nav links based on permission and routes */}
           {profile && (
-            <>
-              <nav
-                className="hidden md:flex items-center gap-1.5 p-1 rounded-xl"
-                style={{
-                  backgroundColor: isLight ? '#C9C1B1' : 'rgba(15, 23, 42, 0.4)',
-                  border: `2px solid ${isLight ? '#1B2632' : 'rgba(30, 41, 59, 0.6)'}`,
-                }}
-              >
-                <Link
-                  to="/student"
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer border`}
-                  style={{
-                    backgroundColor: currentViewMode === 'student' ? (isLight ? '#EEE9DF' : '#0f172a') : 'transparent',
-                    borderColor: currentViewMode === 'student' ? (isLight ? '#1B2632' : '#1e293b') : 'transparent',
-                    color: currentViewMode === 'student' ? (isLight ? '#1B2632' : '#2dd4bf') : (isLight ? '#2C3B4D' : '#94a3b8'),
-                  }}
-                >
-                  <BookOpen className="w-3.5 h-3.5" /> Portal Alumno
-                </Link>
-              </nav>
-
-              {/* XP Badge and User Profile tag */}
-              <div className="flex items-center gap-3">
-                <div
-                  className="px-3 py-1 rounded-full flex items-center gap-1.5 shadow-inner"
-                  style={{
-                    backgroundColor: isLight ? '#C9C1B1' : 'rgba(2, 6, 23, 0.6)',
-                    border: `1.5px solid ${isLight ? '#1B2632' : '#1e293b'}`,
-                  }}
-                >
-                  <Award className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
-                  <span
-                    className="text-xs font-semibold font-mono tracking-tight"
-                    style={{ color: isLight ? '#1B2632' : '#a5b4fc' }}
-                  >
-                    {profile.pointsEarned} XP
-                  </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <img
+                  src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'}
+                  alt="Avatar"
+                  className="w-7 h-7 rounded-full object-cover"
+                  style={{ border: `1.5px solid ${colors.border}` }}
+                />
+                <div className="hidden lg:block text-left">
+                  <p className="text-xs font-semibold truncate max-w-[100px]" style={{ color: colors.text }}>
+                    {profile.fullName}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <img 
-                    src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'} 
-                    alt="Profile Avatar" 
-                    className="w-7.5 h-7.5 rounded-full object-cover"
-                    style={{ border: `1.5px solid ${isLight ? '#1B2632' : '#334155'}` }}
-                  />
-                  <div className="hidden lg:block text-left">
-                    <p
-                      className="text-xs font-semibold truncate max-w-[100px] leading-tight"
-                      style={{ color: isLight ? '#1B2632' : '#cbd5e1' }}
-                    >
-                      {profile.fullName}
-                    </p>
-                    <p
-                      className="text-[8px] font-medium tracking-wider font-mono uppercase leading-none mt-0.5"
-                      style={{ color: isLight ? '#A35139' : '#2dd4bf' }}
-                    >
-                      {profile.certLevel}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-xl transition cursor-pointer"
-                  style={{
-                    backgroundColor: isLight ? '#C9C1B1' : 'rgba(15, 23, 42, 0.6)',
-                    border: `2px solid ${isLight ? '#1B2632' : 'rgba(30, 41, 59, 0.8)'}`,
-                    color: isLight ? '#1B2632' : '#94a3b8',
-                  }}
-                  title="Cerrar Sesión"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
               </div>
-            </>
+              <button onClick={handleLogout}
+                className="p-2 rounded-xl transition cursor-pointer"
+                style={{ backgroundColor: isLight ? '#C9C1B1' : 'rgba(15,23,42,0.6)', border: `2px solid ${isLight ? '#1B2632' : 'rgba(30,41,59,0.8)'}`, color: isLight ? '#1B2632' : '#94a3b8' }}
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </header>
 
-      {/* -------------------------------------------------------------
-          MAIN ROUTER WORKSPACE
-          ------------------------------------------------------------- */}
-      <main className={`flex-1 w-full mx-auto pb-20 ${location.pathname.startsWith('/student') ? '' : 'max-w-7xl p-4 md:p-6'}`}>
-        
+      <main className="flex-1 w-full mx-auto">
         {loading && (
-          <div id="loading-indicator-cover" className="fixed inset-0 bg-[#0a0f1d]/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+          <div className="fixed inset-0 bg-[#0a0f1d]/80 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-slate-900/90 border border-slate-800/80 p-6 rounded-2xl shadow-xl flex flex-col items-center gap-3">
-              <RefreshCw className="w-7 h-7 text-teal-400 animate-spin" />
-              <p className="text-xs text-slate-400 font-mono">
-                Estableciendo conexiones con Supabase...
-              </p>
+              <RefreshCw className="w-7 h-7 text-amber-400 animate-spin" />
+              <p className="text-xs text-slate-400 font-mono">Iniciando simulador...</p>
             </div>
           </div>
         )}
 
         <Routes>
-          {/* PUBLIC LANDING PAGES */}
-          <Route path="/" element={<MarketLanding />} />
-          <Route path="/cursos" element={<CoursesCatalogLanding />} />
-
-          {/* PUBLIC REGISTRATION ROUTE */}
           <Route path="/register" element={<RegisterRequest />} />
-
           <Route path="/student/*" element={
-            <StudentPanel 
-              theme={theme}
-              profile={profile}
-              courses={courses}
-              selectedCourse={selectedCourse}
-              selectedCourseProgress={selectedCourseProgress}
-              handleSelectCourse={handleSelectCourse}
-              handleRefreshProgress={handleRefreshProgress}
-              handleDownloadCV={handleDownloadCV}
-              submittedProjectId={submittedProjectId}
-              projectFileUrl={projectFileUrl}
-              setProjectFileUrl={setProjectFileUrl}
-              handleProjectSubmit={handleProjectSubmit}
-              exportingCV={exportingCV}
-            />
+            profile ? <StudentPanel theme={theme} profile={profile} /> : <Login onLoginSuccess={(token, p) => { localStorage.setItem('supabase_auth_token', token); setProfile(p); }} backendWarming={backendWarming} />
           } />
-
-          {/* FALLBACK */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/*" element={
+            profile ? <Navigate to="/student" replace /> : <Login onLoginSuccess={(token, p) => { localStorage.setItem('supabase_auth_token', token); setProfile(p); }} backendWarming={backendWarming} />
+          } />
         </Routes>
       </main>
-
-
-      {swUpdateAvailable && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <div className="bg-slate-900/95 border border-teal-500/50 backdrop-blur-md px-5 py-4 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center gap-3.5 max-w-sm animate-fade-in-up">
-            <div className="bg-teal-500/10 border border-teal-500/20 p-2 rounded-xl text-teal-400">
-              <RefreshCw className="w-5 h-5 animate-spin" style={{ animationDuration: '3s' }} />
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="text-xs font-bold text-slate-200">¡Nueva versión disponible!</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Se han detectado actualizaciones en el portal de alumnos.</p>
-            </div>
-            <button
-              onClick={handleApplyUpdate}
-              className="mt-2 sm:mt-0 px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-[10px] rounded-lg shadow-md hover:shadow-teal-500/25 transition cursor-pointer"
-            >
-              Actualizar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

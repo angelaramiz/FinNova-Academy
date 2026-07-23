@@ -156,3 +156,229 @@ CREATE TABLE IF NOT EXISTS student_questions (
     created_at TIMESTAMPTZ DEFAULT now(),
     replied_at TIMESTAMPTZ
 );
+
+-- ============================================================
+-- SIMULADOR LABORAL 3D - TABLAS NUEVAS (Fase 0)
+-- ============================================================
+
+-- 8. Planes de suscripción
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    price NUMERIC(10,2) NOT NULL,
+    currency TEXT DEFAULT 'MXN',
+    interval TEXT CHECK (interval IN ('month', 'quarter', 'one_time')),
+    interval_count INT DEFAULT 1,
+    features JSONB,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 9. Suscripciones de usuarios
+CREATE TABLE IF NOT EXISTS user_subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    plan_id UUID REFERENCES subscription_plans(id),
+    stripe_subscription_id TEXT,
+    stripe_customer_id TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'past_due', 'cancelled', 'expired', 'trialing')),
+    current_period_start TIMESTAMPTZ,
+    current_period_end TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 10. Empresas ficticias del simulador
+CREATE TABLE IF NOT EXISTS sim_companies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    tax_id TEXT NOT NULL,
+    industry TEXT,
+    address TEXT,
+    phone TEXT,
+    fiscal_regime TEXT,
+    complexity INT DEFAULT 1 CHECK (complexity BETWEEN 1 AND 5),
+    logo_url TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 11. Clientes de esas empresas (para facturación/cobranza)
+CREATE TABLE IF NOT EXISTS sim_clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID REFERENCES sim_companies(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    tax_id TEXT,
+    credit_limit NUMERIC(15,2),
+    payment_terms TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'inactive')),
+    email TEXT,
+    phone TEXT,
+    metadata JSONB
+);
+
+-- 12. Productos/Servicios
+CREATE TABLE IF NOT EXISTS sim_products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID REFERENCES sim_companies(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    unit_price NUMERIC(15,2) NOT NULL CHECK (unit_price > 0),
+    unit_type TEXT,
+    tax_rate NUMERIC(5,4) DEFAULT 0.16,
+    category TEXT,
+    sku TEXT,
+    CONSTRAINT positive_price CHECK (unit_price > 0)
+);
+
+-- 13. Puestos simulados (catálogo de carrera)
+CREATE TABLE IF NOT EXISTS sim_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    difficulty INT DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 5),
+    required_completion INT DEFAULT 0,
+    unlocks_job_id UUID REFERENCES sim_jobs(id),
+    category TEXT,
+    min_score_to_pass NUMERIC(5,2) DEFAULT 60.00,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 14. Tareas asignables a un puesto
+CREATE TABLE IF NOT EXISTS sim_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    job_id UUID REFERENCES sim_jobs(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    task_type TEXT NOT NULL,
+    difficulty INT DEFAULT 1 CHECK (difficulty BETWEEN 1 AND 5),
+    estimated_minutes INT,
+    required_fields JSONB,
+    validation_rules JSONB,
+    document_template TEXT,
+    sequence_order INT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 15. Asignación de tareas a usuarios
+CREATE TABLE IF NOT EXISTS user_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    task_id UUID REFERENCES sim_tasks(id),
+    job_id UUID REFERENCES sim_jobs(id),
+    company_id UUID REFERENCES sim_companies(id),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'late', 'failed')),
+    assigned_at TIMESTAMPTZ DEFAULT now(),
+    started_at TIMESTAMPTZ,
+    deadline TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    score NUMERIC(5,2) CHECK (score BETWEEN 0 AND 100),
+    quality_score NUMERIC(5,2) CHECK (quality_score BETWEEN 0 AND 100),
+    is_passed BOOLEAN,
+    feedback_text TEXT,
+    attempt_count INT DEFAULT 0,
+    metadata JSONB
+);
+
+-- 16. Eventos del simulador
+CREATE TABLE IF NOT EXISTS sim_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    trigger_type TEXT CHECK (trigger_type IN ('scheduled', 'random', 'conditional')),
+    trigger_at TIMESTAMPTZ,
+    executed_at TIMESTAMPTZ,
+    affects_task_id UUID REFERENCES sim_tasks(id),
+    personaje TEXT,
+    message_template TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'executed', 'expired'))
+);
+
+-- 17. Facturas emitidas (simuladas)
+CREATE TABLE IF NOT EXISTS sim_invoices (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_id UUID REFERENCES sim_companies(id),
+    client_id UUID REFERENCES sim_clients(id),
+    user_task_id UUID REFERENCES user_tasks(id),
+    invoice_number TEXT NOT NULL,
+    issued_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    subtotal NUMERIC(15,2),
+    tax NUMERIC(15,2),
+    total NUMERIC(15,2),
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
+    paid_date DATE,
+    payment_method TEXT,
+    metadata JSONB,
+    UNIQUE(company_id, invoice_number)
+);
+
+-- 18. Registro de actividad en pantalla
+CREATE TABLE IF NOT EXISTS user_activity_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    session_id UUID,
+    activity_type TEXT NOT NULL,
+    task_id UUID REFERENCES user_tasks(id),
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 19. Sesiones de usuario
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    started_at TIMESTAMPTZ DEFAULT now(),
+    ended_at TIMESTAMPTZ,
+    last_heartbeat TIMESTAMPTZ DEFAULT now(),
+    active_minutes INT DEFAULT 0,
+    inactive_minutes INT DEFAULT 0,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'ended', 'timeout'))
+);
+
+-- 20. Alertas de desempeño
+CREATE TABLE IF NOT EXISTS user_alerts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    alert_type TEXT NOT NULL CHECK (alert_type IN ('abandonment', 'systematic_delay', 'stagnation', 'low_score')),
+    severity TEXT DEFAULT 'warning' CHECK (severity IN ('info', 'warning', 'critical')),
+    title TEXT,
+    description TEXT,
+    triggered_at TIMESTAMPTZ DEFAULT now(),
+    acknowledged_at TIMESTAMPTZ,
+    resolved_at TIMESTAMPTZ
+);
+
+-- 21. Certificados
+CREATE TABLE IF NOT EXISTS certificates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    folio TEXT UNIQUE NOT NULL,
+    job_id UUID REFERENCES sim_jobs(id),
+    title TEXT NOT NULL,
+    total_hours NUMERIC(8,2),
+    tasks_completed INT,
+    avg_quality_score NUMERIC(5,2),
+    max_difficulty INT,
+    issued_at TIMESTAMPTZ DEFAULT now(),
+    expires_at TIMESTAMPTZ,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'revoked', 'expired')),
+    metadata JSONB
+);
+
+-- 22. Evidencias del portafolio
+CREATE TABLE IF NOT EXISTS portfolio_evidences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    task_id UUID REFERENCES user_tasks(id),
+    document_type TEXT,
+    document_url TEXT,
+    title TEXT,
+    description TEXT,
+    score NUMERIC(5,2) CHECK (score BETWEEN 0 AND 100),
+    added_at TIMESTAMPTZ DEFAULT now()
+);
