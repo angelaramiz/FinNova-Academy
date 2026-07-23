@@ -4,22 +4,23 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  // En producción (Render), el backend se despliega como servicio separado
+  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER;
+
   return {
     envPrefix: ['VITE_', 'SUPABASE_'],
     plugins: [
       react(), 
       tailwindcss(),
-      {
+      ...(!isProduction ? [{
         name: 'express-api-plugin',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/webhooks'))) {
               try {
-                // Solo cargar dinámicamente en desarrollo local
                 const { app } = await import('../backend/src/server.ts');
                 app(req as any, res as any, next);
               } catch (e) {
-                // Fallback si no está presente (por ejemplo, en compilación en Render)
                 next();
               }
             } else {
@@ -27,7 +28,7 @@ export default defineConfig(() => {
             }
           });
         }
-      }
+      }] : []),
     ],
     resolve: {
       alias: {
