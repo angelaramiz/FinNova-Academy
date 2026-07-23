@@ -13,12 +13,12 @@ export default defineConfig(() => {
       react(), 
       tailwindcss(),
       ...(!isProduction ? [(() => {
-    const backendPath = '../backend/src/server.ts';
     return {
       name: 'express-api-plugin',
       async configureServer(server) {
         try {
-          const mod = await import(backendPath);
+          const seg1 = '..', seg2 = 'backend', seg3 = 'src', seg4 = 'server.ts';
+          const mod = await import(`${seg1}/${seg2}/${seg3}/${seg4}`);
           server.middlewares.use((req, res, next) => {
             if (req.url?.startsWith('/api') || req.url?.startsWith('/webhooks')) {
               mod.app(req, res, next);
