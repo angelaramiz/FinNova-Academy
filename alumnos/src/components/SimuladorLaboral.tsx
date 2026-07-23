@@ -268,6 +268,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   const [evalResult, setEvalResult] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const { notifications, toast, inboxOpen, setInboxOpen, unreadCount, addNotification, markAllRead, checkEvents } = useNotifications();
 
@@ -310,8 +311,14 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   }, []);
 
   async function fetchJobs() {
-    try { const data = await apiGet('/api/sim/jobs'); setJobs(data); }
-    catch (e) { console.error(e); }
+    try {
+      setApiError(null);
+      const data = await apiGet('/api/sim/jobs');
+      setJobs(data);
+    } catch (e: any) {
+      setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
+      console.error(e);
+    }
   }
 
   async function loadStats() {
@@ -371,6 +378,10 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   }
 
   function handleMonitorClick() {
+    if (apiError) {
+      addNotification({ id: `err-${Date.now()}`, from: 'Sistema', subject: '⚠️ Error de conexión', body: apiError, time: new Date().toISOString(), read: false, type: 'alert' });
+      return;
+    }
     if (viewMode === 'office' && jobs.length > 0) {
       // Welcome notification on first entry
       const welcomeShown = localStorage.getItem('sim_welcome_shown');
