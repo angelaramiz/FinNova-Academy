@@ -45,9 +45,8 @@ export default function EmailClient({ email, onContinue, theme }: EmailProps) {
       {/* Email body */}
       <div className="flex-1 overflow-auto p-4">
         <div className="text-xs leading-relaxed whitespace-pre-line" style={{ color: colors.text }}>
-          {email.body.split('\n').map((line, i) => {
-            // Handle bold markdown
-            const parts = line.split(/(\*\*.*?\*\*)/g);
+          {(email?.body || '').split('\n').map((line, i) => {
+            const parts = (line || '').split(/(\*\*.*?\*\*)/g);
             return (
               <p key={i} className="mb-1">
                 {parts.map((part, j) => {
