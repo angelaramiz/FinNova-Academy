@@ -59,10 +59,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       // Go to result step (last step)
       setStepIdx(workflow.steps.length - 1);
       // Save stats
-      await fetch(`/api/sim/tasks/${currentTask.id}/complete`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      });
+      await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
       if (onTaskComplete) onTaskComplete();
     } catch (e) { console.error('Validation error:', e); }
     setLoading(false);
@@ -148,7 +145,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
                       }}>{t.difficulty === 1 ? '🌱' : '📈'}</div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold truncate" style={{ color: colors.text }}>{t.title}</p>
-                        <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{t.time} min · {t.type.replace(/_/g, ' ')}</p>
+                        <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{t.time} min · {(t.type || '').replace(/_/g, ' ')}</p>
                       </div>
                     </div>
                     <span className="text-[8px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: colors.primary, color: '#1B2632' }}>
@@ -293,7 +290,7 @@ function ResultView({ data, validation, taskTitle, onFinish, theme }: {
         <div className="p-4 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
           <p className="text-[10px] font-bold mb-2" style={{ color: colors.text }}>📄 Documento generado</p>
           <div className="grid grid-cols-2 gap-2 text-[9px]">
-            {Object.entries(data).filter(([k]) => !['cfdiUse', 'paymentMethod'].includes(k)).map(([key, val]) => (
+            {data && Object.entries(data).filter(([k]) => !['cfdiUse', 'paymentMethod'].includes(k)).map(([key, val]) => (
               <div key={key}>
                 <span className="font-mono" style={{ color: colors.textMuted }}>{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
                 <span className="font-bold" style={{ color: colors.text }}>{typeof val === 'number' ? `$${val.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : String(val)}</span>

@@ -291,10 +291,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
   async function checkOnboarding() {
     try {
-      const res = await fetch('/api/sim/my-profile', {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      const profile = await res.json();
+      const profile = await apiFetch<any>('/api/sim/my-profile');
       if (!profile.onboardingCompleted) {
         setNeedsOnboarding(true);
       } else {
@@ -331,11 +328,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
   async function handleCompleteTask(taskId: string) {
     try {
-      const res = await fetch(`/api/sim/tasks/${taskId}/complete`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
+      const data = await apiFetch<any>(`/api/sim/tasks/${taskId}/complete`, { method: 'POST' });
       setEvalResult(data);
       loadStats();
 
