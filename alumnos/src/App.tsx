@@ -5,6 +5,8 @@ import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
 import RegisterRequest from './components/RegisterRequest';
 import { themeColors } from './lib/theme';
+import { VERSION, BUILD_HASH } from './version';
+import VersionUpdatePopup from './components/VersionUpdatePopup';
 import { apiFetch } from './lib/api';
 
 export default function App() {
@@ -77,6 +79,9 @@ function AppContent() {
             <span className="text-sm font-bold font-mono tracking-tight" style={{ color: colors.text }}>
               SIMULADOR LABORAL
             </span>
+            <span className="text-[7px] font-mono px-1.5 py-0.5 rounded-lg border" style={{ borderColor: colors.border, color: colors.textMuted }}>
+              v{VERSION}
+            </span>
           </div>
 
           {profile && (
@@ -127,6 +132,8 @@ function AppContent() {
           } />
         </Routes>
       </main>
+
+      <VersionUpdatePopup theme={theme} />
     </div>
   );
 }

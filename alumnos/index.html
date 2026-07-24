@@ -12,31 +12,11 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
-      // ─── Check for updates: clean cache on new version ───
-      (async function() {
-        try {
-          const res = await fetch('https://finnova-back.onrender.com/api/health');
-          const data = await res.json();
-          if (data.version) {
-            const stored = localStorage.getItem('app_version');
-            if (stored && stored !== data.version) {
-              console.log('[App] New version detected:', data.version, '(was:', stored + ')');
-              // Clear all caches
-              localStorage.clear();
-              if ('caches' in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(k => caches.delete(k)));
-              }
-              // Store new version and reload
-              localStorage.setItem('app_version', data.version);
-              window.location.reload(true);
-            } else if (!stored) {
-              localStorage.setItem('app_version', data.version);
-              console.log('[App] Version:', data.version);
-            }
-          }
-        } catch(e) { console.log('[App] Version check unavailable'); }
-      })();
+      // Store current backend version for popup comparison
+      fetch('https://finnova-back.onrender.com/api/health', { signal: AbortSignal.timeout(5000) })
+        .then(r => r.json())
+        .then(d => { if (d.version) localStorage.setItem('app_version', d.version); })
+        .catch(() => {});
     </script>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen">
