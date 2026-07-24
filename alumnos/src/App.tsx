@@ -7,6 +7,7 @@ import RegisterRequest from './components/RegisterRequest';
 import { themeColors } from './lib/theme';
 import { VERSION, BUILD_HASH } from './version';
 import VersionUpdatePopup from './components/VersionUpdatePopup';
+import UpdateNotification from './components/UpdateNotification';
 import { apiFetch } from './lib/api';
 
 export default function App() {
@@ -134,6 +135,7 @@ function AppContent() {
       </main>
 
       <VersionUpdatePopup theme={theme} />
+      <UpdateNotification />
     </div>
   );
 }
