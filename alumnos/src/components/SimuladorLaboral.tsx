@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { themeColors, Theme } from '../lib/theme';
 import { apiFetch } from '../lib/api';
+import { VERSION, BUILD_HASH } from '../version';
 import Onboarding from './Onboarding';
 import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
@@ -551,6 +552,9 @@ export default function SimuladorLaboral({ theme }: SimProps) {
               className="mt-1.5 w-full text-[8px] font-bold py-1 rounded-lg border cursor-pointer hover:opacity-80 transition"
               style={{ borderColor: colors.primary, color: colors.primary, background: 'transparent' }}
             >📊 Ver dashboard</button>
+            <div className="mt-1 pt-1 border-t text-center" style={{ borderColor: colors.border + '40', color: colors.textMuted }}>
+              <span className="text-[7px] font-mono">v{VERSION} ({BUILD_HASH})</span>
+            </div>
           </div>
         </div>
       )}
