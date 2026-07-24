@@ -12,7 +12,7 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: npx tsx src/server.ts
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
