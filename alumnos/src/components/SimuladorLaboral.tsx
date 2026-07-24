@@ -509,7 +509,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         <div className="absolute inset-0 z-30">
           <DesktopShell
             theme={theme}
-            tasks={tasks.map(t => ({ id: t.id, title: t.title, type: t.taskType, difficulty: t.difficulty, time: t.estimatedMinutes }))}
+            tasks={tasks.map(t => ({ id: t.id, title: t.title, type: (t as any).taskType || (t as any).task_type, difficulty: t.difficulty, time: t.estimatedMinutes }))}
             onClose={() => {
               setViewMode('office');
               setTasks([]);
