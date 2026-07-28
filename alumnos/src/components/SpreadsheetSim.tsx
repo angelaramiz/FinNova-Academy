@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
 interface SpreadsheetSimProps { theme: Theme; onBack: () => void; }
@@ -59,6 +59,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
   }
 
   function saveEdit() {
+    if (!editing) return;
     const updated = { ...cells };
     if (editValue.trim()) updated[selected] = editValue.trim();
     else delete updated[selected];
@@ -66,7 +67,49 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     setEditing(false);
   }
 
-  function handleKey(e: React.KeyboardEvent) {
+  // Keyboard input: capture typing directly into selected cell
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (!editing) return;
+      if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+      else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); setEditValue(cells[selected] || ''); }
+      else if (e.key === 'Tab') { e.preventDefault(); saveEdit(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); saveEdit(); moveCell(0, 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); saveEdit(); moveCell(0, -1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); saveEdit(); moveCell(1, 0); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); saveEdit(); moveCell(-1, 0); }
+      else if (e.key === 'Backspace') { e.preventDefault(); setEditValue(prev => prev.slice(0, -1)); }
+      else if (e.key === 'Delete') { e.preventDefault(); setEditValue(''); }
+      else if (e.key.length === 1) { e.preventDefault(); setEditValue(prev => prev + e.key); }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [editing, editValue, selected, cells]);
+
+  function moveCell(dc: number, dr: number) {
+    const col = COLS.indexOf(selected[0]);
+    const row = parseInt(selected.slice(1)) - 1;
+    const nc = Math.max(0, Math.min(col + dc, COLS.length - 1));
+    const nr = Math.max(0, Math.min(row + dr, ROWS - 1));
+    const ref = getCellRef(nr, nc);
+    setSelected(ref);
+    setEditValue(cells[ref] || '');
+    setEditing(true);
+  }
+
+  // Auto-focus editing when clicking a cell
+  function clickCell(ref: string) {
+    saveEdit(); // Guardar el valor de la celda anterior antes de moverse
+    setSelected(ref);
+    setEditValue(cells[ref] || '');
+    setEditing(true);
+  }
+
+  function handleFormulaChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setEditValue(e.target.value);
+  }
+
+  function handleFormulaKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter') saveEdit();
     if (e.key === 'Escape') setEditing(false);
   }
@@ -91,9 +134,9 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         <span className="text-[10px] font-mono" style={{ color: colors.textMuted }}>fx</span>
         <input
           value={editing ? editValue : (cells[selected] || '')}
-          onFocus={() => startEdit(selected)}
-          onChange={e => setEditValue(e.target.value)}
-          onKeyDown={handleKey}
+          onFocus={() => clickCell(selected)}
+          onChange={handleFormulaChange}
+          onKeyDown={handleFormulaKeyDown}
           onBlur={saveEdit}
           className="flex-1 px-3 py-1.5 rounded-lg border-2 text-[10px] font-mono outline-none"
           style={{ borderColor: editing ? colors.primary : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text }}
@@ -119,10 +162,10 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                 {COLS.map(c => {
                   const ref = getCellRef(r, COLS.indexOf(c));
                   const isSel = selected === ref;
-                  const val = evalCell(ref);
+                  const display = isSel && editing ? editValue : evalCell(ref);
                   const raw = cells[ref] || '';
                   return (
-                    <td key={c} onClick={() => { setSelected(ref); if (!editing) setEditValue(raw); }}
+                    <td key={c} onClick={() => clickCell(ref)}
                       className="p-1.5 text-[9px] font-mono border-r border-b cursor-pointer hover:opacity-80 transition text-right"
                       style={{
                         borderColor: colors.border,
@@ -131,7 +174,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                         color: raw.startsWith('=') ? colors.textMuted : colors.text,
                         fontWeight: raw.startsWith('=') ? 'normal' : 'normal',
                       }}>
-                      {val}
+                      {display}
                     </td>
                   );
                 })}
