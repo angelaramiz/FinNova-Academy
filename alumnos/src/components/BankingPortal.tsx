@@ -79,6 +79,7 @@ export default function BankingPortal({ theme, onClose }: BankingPortalProps) {
             </div>
           </div>
           <span className="text-[8px] px-2 py-1 rounded-lg" style={{ background: '#22c55e', color: '#fff' }}>Sesión activa</span>
+          <button onClick={onClose} className="text-[10px] px-2 py-1 rounded border cursor-pointer hover:opacity-70 ml-2" style={{ borderColor: '#90cdf4', color: '#90cdf4' }}>← Escritorio</button>
         </div>
       </div>
 
