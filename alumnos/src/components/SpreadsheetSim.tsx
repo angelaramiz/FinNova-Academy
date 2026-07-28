@@ -20,16 +20,13 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     if (val.startsWith('=')) {
       try {
         const rawExpr = val.slice(1);
-        // Reemplazar referencias de celda individuales
-        let expr = rawExpr.replace(/\b[A-H]\d+\b/gi, m => evalCell(m) || '0');
-        // Reemplazar SUMA/SUM/PROMEDIO/AVG con manejo flexible (rangos y celdas individuales)
-        expr = expr.replace(/\b(?:SUM|SUMA|AVG|PROMEDIO)\(([^)]+)\)/gi, (match, args) => {
+        // 1) Primero procesar SUM/AVG (las referencias A1 aún existen)
+        let expr = rawExpr.replace(/\b(?:SUM|SUMA|AVG|PROMEDIO)\(([^)]+)\)/gi, (match, args) => {
           const isAvg = /AVG|PROMEDIO/i.test(match);
           const values: number[] = [];
           args.split(',').forEach((arg: string) => {
             arg = arg.trim();
             if (arg.includes(':')) {
-              // Rango: A1:A5
               const [from, to] = arg.split(':');
               const fc = COLS.indexOf(from[0].toUpperCase()), fr = parseInt(from.slice(1)) - 1;
               const tc = COLS.indexOf(to[0].toUpperCase()), tr = parseInt(to.slice(1)) - 1;
@@ -38,9 +35,13 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                   const v = parseFloat(evalCell(getCellRef(r, c)));
                   if (!isNaN(v)) values.push(v);
                 }
-            } else {
+            } else if (/^[A-H]\d+$/i.test(arg)) {
               // Celda individual: A1
               const v = parseFloat(evalCell(arg));
+              if (!isNaN(v)) values.push(v);
+            } else {
+              // Valor numérico directo: 100
+              const v = parseFloat(arg);
               if (!isNaN(v)) values.push(v);
             }
           });
@@ -48,6 +49,9 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
           const sum = values.reduce((a, b) => a + b, 0);
           return String(isAvg ? Math.round((sum / values.length) * 100) / 100 : sum);
         });
+        // 2) Reemplazar referencias de celda restantes
+        expr = expr.replace(/\b[A-H]\d+\b/gi, m => evalCell(m) || '0');
+        // 3) Evaluar expresión aritmética final
         const result = Function(`"use strict"; return (${expr})`)();
         return String(Math.round(Number(result) * 100) / 100);
       } catch { return '#ERR'; }
