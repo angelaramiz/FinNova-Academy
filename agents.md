@@ -1,68 +1,40 @@
-# CONFIGURACION CENTRAL DE AGENTES - AuraFi Academy
+# SIMULADOR LABORAL 3D — Centro de Control
 
 ## Stack Tecnológico del Proyecto
-*   **Backend**: Node.js, Express, TypeScript, tsx, base de datos simulada en memoria (`memoryDb.ts`) + Supabase (PostgreSQL).
-*   **Frontend Alumnos**: React, Vite, TailwindCSS, puerto 3000.
+*   **Backend**: Node.js, Express, TypeScript, tsx, MemoryDatabase (`memoryDb.ts`) + Supabase (PostgreSQL).
+*   **Frontend Alumnos**: React 19, Vite, TailwindCSS, **React Three Fiber** (motor 3D web), puerto 3000.
 *   **Frontend Staff**: React, Vite, TailwindCSS, puerto **3001**.
 *   **Base de Datos**: Supabase (PostgreSQL), migraciones en `supabase/`.
 *   **Infra**: Render (3 servicios: backend, alumnos, staff).
+*   **Motor de simulación**: 7 workflows contables, WorkflowEngine, ValidationEngine, EventEngine, ProgressionEngine.
 
 ## Comandos Disponibles
 *   `/sugerencias`: Analiza código reciente, tareas y genera reportes en `agent_memory/suggestions/`.
 *   `/reunion`: Inicia/finaliza una reunión estructurada usando las plantillas de `agent_memory/meetings/`.
 *   `/protocol`: Audita el código frente a los lineamientos de desarrollo y seguridad en `agent_memory/protocol/`.
 
-## Cambios Recientes (2026-07-13)
+## Cambios Recientes (2026-07-28)
 
-### Motor Predictivo v3 — Rediseño Completo
-- Eliminada dependencia de Claude API (fallaba con HTML en vez de JSON)
-- **Nuevo**: `loadEmbeddedData()` — datos reales de Yahoo Finance cacheados en el HTML al build
-- Sin llamadas de red, sin CORS, sin API keys
-- Terminal React (`MotorLogTerminal`) que captura logs del motor via `postMessage`
-- Notificación por source: `📦 Datos cacheados de Yahoo Finance` en banner azul
-- Logs limpios: CAPA 1·Yahoo Finance directo → CAPA 2·GJR-GARCH MLE → CAPA 3·Backtesting
+### Nuevas Herramientas de Escritorio
+- **Nuevo**: 📈 Hoja de Cálculo (SpreadsheetSim) — motor con fórmulas SUM/SUMA/AVG/PROMEDIO, edición directa en celdas, navegación por flechas
+- **Nuevo**: 🧮 Calculadora — expresión completa visible, preview de resultado, operaciones + - × ÷
+- **Nuevo**: 📅 Calendario — celdas clickeables con dots de colores por tipo de evento, panel de tareas del día
+- **Nuevo**: 📁 Archivo — listado de documentos pendientes con botón "Abrir"
+- **Mejora**: 📧 Correo — bandeja de entrada completa con todos los correos por tarea
+- **Mejora**: 🏦 Banco — botón "← Escritorio" en header izquierdo
+- **Mejora**: 🎨 Fondos sólidos dinámicos en todas las ventanas (oscuro/claro)
 
-### MarketLanding — Dashboard de Mercado
-- 3 niveles de análisis: Básico (cards), Intermedio (simulador GJR-GARCH), Avanzado (motor predictivo v3)
-- Datos dinámicos vía `/api/market/prices` desde Finnova-back
-- `?? 0` guards en todos los `.toFixed()` para evitar crashes con datos incompletos
-- `setSimResults(null)` al cambiar horizonte en el simulador Intermedio
-- Tab Avanzado ahora incluye terminal del motor en vivo debajo del iframe
+### Navegación
+- Todos los botones de regreso están en el **header izquierdo** (←)
+- Back buttons consistentes en Correo, Calendario, Calculadora, Archivo, Excel, Banco
+- Flujo de tareas salta el paso de email cuando se accede desde la lista
 
-### Infra
-- `.agent/` completo en `.gitignore` y removido del tracking de git
-
-### Seguridad
-- Claves expuestas rotadas (Supabase service role, anon key, Gemini API key)
-- `.env.local` en `.gitignore` (raíz, `alumnos/`, `staff/`)
-- `SUPABASE_JWT_SECRET` ya no tiene fallback inseguro: sin configurar, lanza error
-- `ENABLE_DOCKER_MOCKS` solo se activa con `'true'` explícito, no por ausencia
-- `Math.random()` reemplazado por `crypto.randomBytes()` y `crypto.randomInt()` en generación de passwords y OTPs
-- Helmet agregado como middleware de seguridad HTTP
-- CORS endurecido: `includes()` exacto en vez de `startsWith()`
-- Rate limiter con limpieza periódica cada 5 minutos
-
-### Base de Datos
-- Tablas `profiles`, `allowed_emails`, `account_requests`, `email_queue` añadidas a `schema.sql`
-- 5 migraciones SQL sueltas fusionadas en `schema.sql`
-- `seed.sql` corregido a snake_case (consistente con `schema.sql`)
-- Proyecto Supabase unificado: `nhcgclqiihvioyqwqjlf.supabase.co`
-
-### Testing
-- Vitest configurado (`vitest.config.ts`)
-- Tests de MemoryDatabase
-- Supertest para tests de API REST
-- **9 tests pasando**
-
-### Dependencias
-- `ffmpeg-static`, `multer`, `helmet` agregados a `package.json`
-- `vitest`, `supertest`, `@types/supertest` como devDependencies
-
-### Infraestructura
-- `.gitignore` ya no excluye `backend/`, `staff/`, `supabase/`, `app/`
-- `staff/` usa puerto 3001 (no compite con `alumnos/` 3000)
-- Archivo LICENSE (Apache-2.0) agregado
-- `.agent/` completo ignorado por git y removido del tracking
+### Spreadsheet Engine
+- Edición directa: click en celda + teclear = contenido visible inmediatamente
+- Fórmulas: =SUM(A1:A5), =SUMA(A1,B1,C2), =AVG(B1:B5), =PROMEDIO(A1,B1)
+- Operaciones aritméticas: +, -, *, /
+- Navegación por teclado: Enter, Escape, Tab, Flechas
+- Español/Inglés: SUMA/SUM, PROMEDIO/AVG
 
 ## Reglas Básicas de Operación
 1.  **No asumir**: Siempre verificar el estado local antes de proceder.
