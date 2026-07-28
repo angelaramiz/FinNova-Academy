@@ -19,10 +19,35 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     const val = cells[ref] || '';
     if (val.startsWith('=')) {
       try {
-        const expr = val.slice(1)
-          .replace(/\b[A-H]\d+\b/gi, m => evalCell(m) || '0')
-          .replace(/SUM\(([A-H]\d+):([A-H]\d+)\)/gi, (_, from, to) => sumRange(from, to))
-          .replace(/AVG\(([A-H]\d+):([A-H]\d+)\)/gi, (_, from, to) => avgRange(from, to));
+        const rawExpr = val.slice(1);
+        // Reemplazar referencias de celda individuales
+        let expr = rawExpr.replace(/\b[A-H]\d+\b/gi, m => evalCell(m) || '0');
+        // Reemplazar SUMA/SUM/PROMEDIO/AVG con manejo flexible (rangos y celdas individuales)
+        expr = expr.replace(/\b(?:SUM|SUMA|AVG|PROMEDIO)\(([^)]+)\)/gi, (match, args) => {
+          const isAvg = /AVG|PROMEDIO/i.test(match);
+          const values: number[] = [];
+          args.split(',').forEach((arg: string) => {
+            arg = arg.trim();
+            if (arg.includes(':')) {
+              // Rango: A1:A5
+              const [from, to] = arg.split(':');
+              const fc = COLS.indexOf(from[0].toUpperCase()), fr = parseInt(from.slice(1)) - 1;
+              const tc = COLS.indexOf(to[0].toUpperCase()), tr = parseInt(to.slice(1)) - 1;
+              for (let r = fr; r <= tr; r++)
+                for (let c = fc; c <= tc; c++) {
+                  const v = parseFloat(evalCell(getCellRef(r, c)));
+                  if (!isNaN(v)) values.push(v);
+                }
+            } else {
+              // Celda individual: A1
+              const v = parseFloat(evalCell(arg));
+              if (!isNaN(v)) values.push(v);
+            }
+          });
+          if (values.length === 0) return '0';
+          const sum = values.reduce((a, b) => a + b, 0);
+          return String(isAvg ? Math.round((sum / values.length) * 100) / 100 : sum);
+        });
         const result = Function(`"use strict"; return (${expr})`)();
         return String(Math.round(Number(result) * 100) / 100);
       } catch { return '#ERR'; }
@@ -190,10 +215,11 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         <span className="text-[6px] bg-white/10 px-1 py-0.5 rounded font-bold" style={{ color: colors.primary }}>Fórmulas:</span>
         <span style={{ color: colors.primary }}>=A1+B1</span>
         <span style={{ color: colors.primary }}>=SUM(A1:A5)</span>
+        <span style={{ color: colors.primary }}>=SUMA(A1,A2,A3)</span>
         <span style={{ color: colors.primary }}>=AVG(B1:B5)</span>
+        <span style={{ color: colors.primary }}>=PROMEDIO(B1:B5)</span>
         <span style={{ color: colors.primary }}>=B2*0.16</span>
         <span style={{ color: colors.primary }}>=C1-C2</span>
-        <span style={{ color: colors.primary }}>=D1/D2</span>
         <span className="ml-auto" style={{ color: colors.textMuted }}>{selected}</span>
       </div>
     </div>
