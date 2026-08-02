@@ -320,20 +320,29 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       const week = Math.ceil(now.getDate() / 7) || 1;
       const day = now.getDay() || 1; // 1=Lun
 
-      const planData = await apiGet(`/api/sim/task-plan/${month}/${year}`);
-      const todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}`);
+      let todayTasks: any[] = [];
+      try {
+        todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}`);
+      } catch (e) {
+        console.warn('TaskPlanner no disponible, usando tareas por defecto');
+        // Fallback: crear tareas de ejemplo si el TaskPlanner falla
+        todayTasks = [
+          { id: 'task-1', title: 'Factura a Comercial del Norte', type: 'invoice_emission', difficulty: 1, time: 10, category: 'facturacion', description: 'Emitir factura CFDI', priority: 'alta' },
+          { id: 'task-2', title: 'Pago de Transportes Rápidos', type: 'payment_registration', difficulty: 1, time: 8, category: 'cobranza', description: 'Registrar pago', priority: 'media' },
+          { id: 'task-3', title: 'CFDI de Papelería del Norte', type: 'supplier_invoice', difficulty: 1, time: 8, category: 'compras', description: 'Registrar factura proveedor', priority: 'media' },
+        ];
+      }
 
       // Convertir tareas del plan al formato esperado por DesktopShell
-      const formattedTasks = (todayTasks || []).map((t: any) => ({
+      const formattedTasks: SimTask[] = (todayTasks || []).map((t: any) => ({
         id: t.id,
+        jobId: `job-${t.category || 'general'}`,
         title: t.title,
-        type: t.type,
+        description: t.description || '',
+        taskType: t.type,
         difficulty: t.difficulty,
-        time: t.time,
-        category: t.category,
-        description: t.description,
-        isTrap: t.isTrap,
-        priority: t.priority,
+        estimatedMinutes: t.time || 10,
+        sequenceOrder: 0,
       }));
 
       // Crear "jobs" virtuales basados en categorías del plan
@@ -346,7 +355,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         category: cat,
       }));
 
-      setJobs(virtualJobs);
+      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
       setTasks(formattedTasks);
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
