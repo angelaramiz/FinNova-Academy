@@ -468,50 +468,39 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
   return (
     <div ref={containerRef} className="w-full h-[calc(100vh-120px)] relative overflow-hidden rounded-2xl border-2" style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0' }}>
-      {/* Top bar - solo en modo oficina (fuera del escritorio virtual) */}
+      {/* Top bar - SOLO en modo oficina 3D */}
       {viewMode === 'office' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
-        <div className="flex items-center gap-2.5 backdrop-blur-xl px-3 py-1.5 rounded-xl border-2 pointer-events-auto" style={{
-          borderColor: colors.border,
-          background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
-        }}>
-          {viewMode !== 'office' && (
-            <button onClick={goBack}
-              className="w-6 h-6 rounded-md border-2 flex items-center justify-center text-[10px] font-bold cursor-pointer hover:opacity-70"
-              style={{ borderColor: colors.border, color: colors.text, background: colors.bg }}
-            >←</button>
-          )}
-          <div>
-            <p className="text-[10px] font-bold font-mono" style={{ color: colors.text }}>
-              {viewMode === 'office' ? '🏢 OFICINA VIRTUAL' : viewMode === 'workspace' ? '💼 ESCRITORIO DE TRABAJO' : '📄 DOCUMENTO'}
-            </p>
-            {selectedJob && viewMode !== 'office' && (
-              <p className="text-[7px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
-                {selectedJob.title}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <button onClick={() => setInboxOpen(true)}
-              className="relative px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105"
-              style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
-              📬 {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center" style={{ background: colors.primary, color: '#1B2632' }}>{unreadCount}</span>
-              )}
-            </button>
-            <button onClick={toggleFullscreen}
-          className="px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105 pointer-events-auto"
-          style={{
+          <div className="flex items-center gap-2.5 backdrop-blur-xl px-3 py-1.5 rounded-xl border-2 pointer-events-auto" style={{
             borderColor: colors.border,
-            color: colors.text,
             background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
-          }}
-        >{isFullscreen ? '⛶ Salir' : '⛶ Pantalla completa'}</button>
+          }}>
+            <div>
+              <p className="text-[10px] font-bold font-mono" style={{ color: colors.text }}>🏢 OFICINA VIRTUAL</p>
+              {selectedJob && (
+                <p className="text-[7px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
+                  {selectedJob.title}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <button onClick={() => setInboxOpen(true)}
+                className="relative px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105"
+                style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
+                📬 {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center" style={{ background: colors.primary, color: '#1B2632' }}>{unreadCount}</span>
+                )}
+              </button>
+              <button onClick={toggleFullscreen}
+                className="px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105 pointer-events-auto"
+                style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
+                {isFullscreen ? '⛶ Salir' : '⛶ Pantalla completa'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      )} {/* end viewMode === 'office' */}
+      )}
 
       <Canvas camera={{ position: [0, 1.15, 1.4], fov: 45, near: 0.01, far: 100 }}
         gl={{ antialias: true, alpha: false }}
