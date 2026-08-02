@@ -1,12 +1,54 @@
 # SIMULADOR LABORAL 3D — Centro de Control
 
-## Stack Tecnológico del Proyecto
+## Rol del Usuario: Contador General Junior
+
+### Contexto de la Empresa
+- **Empresa**: Logística del Norte S.A. de C.V. (LNO)
+- **RFC**: LNO-080515-TYU
+- **Giro**: Transporte y logística de carga en el norte de México
+- **Ubicación**: Av. Industrial 1250, Parque Industrial Santa Teresa, C.P. 32575, Ciudad Juárez, Chihuahua
+- **Tamaño**: ~50 empleados, 4 sucursales
+- **Sistema contable**: ERP similar a Odoo (módulo Contabilidad)
+- **Moneda**: MXN
+
+### Perfil del Estudiante
+- **Rol**: Contador General Junior (recién egresado o con 1-2 años de experiencia)
+- **Jefe directo**: Lic. Gómez (Contador General)
+- **Horario**: Lunes a viernes, 9:00 - 18:00
+- **Nivel**: Básico-Intermedio en contabilidad mexicana (NIF, CFDI, SAT)
+
+### Responsabilidades Diarias del Rol
+1. **Facturación (CFDI)**: Emitir facturas electrónicas a clientes por servicios de transporte/logística
+2. **Cobranza**: Registrar pagos de clientes y aplicarlos a facturas
+3. **CFDI de proveedores**: Registrar facturas recibidas de proveedores (transportistas, papelería, servicios, combustibles)
+4. **Conciliación bancaria**: Verificar movimientos bancarios contra registros internos
+5. **Nómina**: Calcular nómina mensual (sueldo bruto, ISR, IMSS, PTU, neto)
+6. **Corte de caja**: En oficina principal, corte diario de efectivo
+7. **Pólizas de diario**: Registrar ajustes contables (depreciación, provisiones)
+8. **Notas de crédito**: Emitir notas por devoluciones o correcciones
+9. **Pagos a proveedores**: Programar dispersión de pagos
+10. **Reportes**: Preparar balance general, estado de resultados, balanza de comprobación
+
+### Flujo de Trabajo Típico (1 día)
+```
+09:00 - Revisar correo → tareas pendientes del Lic. Gómez
+09:30 - Emitir facturas pendientes del día
+11:00 - Registrar pagos recibidos de clientes
+12:00 - Registrar CFDI de proveedores
+14:00 - Conciliación bancaria (si hay extracto)
+15:00 - Calcular nómina (fin de mes) o pólizas de ajuste
+16:00 - Preparar reportes si se solicita
+17:00 - Corte de caja (si aplica)
+18:00 - Cerrar turnos, pendientes para mañana
+```
+
+### Stack Tecnológico del Proyecto
 *   **Backend**: Node.js, Express, TypeScript, tsx, MemoryDatabase (`memoryDb.ts`) + Supabase (PostgreSQL).
 *   **Frontend Alumnos**: React 19, Vite, TailwindCSS, **React Three Fiber** (motor 3D web), puerto 3000.
 *   **Frontend Staff**: React, Vite, TailwindCSS, puerto **3001**.
 *   **Base de Datos**: Supabase (PostgreSQL), migraciones en `supabase/`.
 *   **Infra**: Render (3 servicios: backend, alumnos, staff).
-*   **Motor de simulación**: 7 workflows contables, WorkflowEngine, ValidationEngine, EventEngine, ProgressionEngine.
+*   **Motor de simulación**: 12 workflows contables (invoice, payment, tax, bank_reconciliation, journal, payroll, supplier, payment_scheduling, ap_reconciliation, cfdi_reception, credit_note, cash_cut).
 
 ## Comandos Disponibles
 *   `/sugerencias`: Analiza código reciente, tareas y genera reportes en `agent_memory/suggestions/`.
