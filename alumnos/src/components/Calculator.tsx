@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
 export default function Calculator({ theme, onBack }: { theme: Theme; onBack: () => void }) {
@@ -54,8 +54,32 @@ export default function Calculator({ theme, onBack }: { theme: Theme; onBack: ()
   function backspace() { setDisplay(prev => prev.length > 1 ? prev.slice(0, -1) : '0'); }
 
   const isDark = theme === 'dark';
-  const btns = [['C','⌫','%','÷'],['7','8','9','×'],['4','5','6','-'],['1','2','3','+']];
+  // Teclado físico
   const opMap: Record<string, string> = { '+': '+', '-': '-', '×': '*', '÷': '/', '%': '%' };
+  const btns = [['C','⌫','%','÷'],['7','8','9','×'],['4','5','6','-'],['1','2','3','+']];
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const keyMap: Record<string, string> = {
+        '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+        '.':'.','+':'+','-':'-','*':'×','/':'÷',
+        'Enter':'=','=':'=','Escape':'C','Delete':'C','Backspace':'⌫',
+        '%':'%',
+      };
+      const mapped = keyMap[e.key];
+      if (mapped) {
+        e.preventDefault();
+        if ('0123456789.'.includes(mapped)) input(mapped);
+        else if ('+-×÷'.includes(mapped)) operate(mapped);
+        else if (mapped === '=') calculate();
+        else if (mapped === 'C') clear();
+        else if (mapped === '⌫') backspace();
+        else if (mapped === '%') setDisplay(String(parseFloat(display) / 100));
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [display, expression, firstNumber, pendingOp]);
 
   return (
     <div className="flex flex-col h-full min-h-0" style={{ background: colors.bg }}>
