@@ -313,8 +313,41 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   async function fetchJobs() {
     try {
       setApiError(null);
-      const data = await apiGet('/api/sim/jobs');
-      setJobs(data);
+      // Usar TaskPlanner para obtener tareas del mes actual
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+      const week = Math.ceil(now.getDate() / 7) || 1;
+      const day = now.getDay() || 1; // 1=Lun
+
+      const planData = await apiGet(`/api/sim/task-plan/${month}/${year}`);
+      const todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}`);
+
+      // Convertir tareas del plan al formato esperado por DesktopShell
+      const formattedTasks = (todayTasks || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        type: t.type,
+        difficulty: t.difficulty,
+        time: t.time,
+        category: t.category,
+        description: t.description,
+        isTrap: t.isTrap,
+        priority: t.priority,
+      }));
+
+      // Crear "jobs" virtuales basados en categorías del plan
+      const categories = [...new Set(formattedTasks.map((t: any) => t.category))] as string[];
+      const virtualJobs = categories.map((cat: string) => ({
+        id: `job-${cat}`,
+        title: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' '),
+        description: `Tareas de ${cat}`,
+        difficulty: 1,
+        category: cat,
+      }));
+
+      setJobs(virtualJobs);
+      setTasks(formattedTasks);
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
       console.error(e);
@@ -350,8 +383,12 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   async function selectJob(job: SimJob) {
     setSelectedJob(job); setLoading(true);
     try {
-      const data = await apiGet(`/api/sim/tasks/${job.id}`);
-      setTasks(data); setViewMode('workspace');
+      // Usar tareas ya cargadas del TaskPlanner, filtradas por categoría
+      const filteredTasks = tasks.filter((t: any) => t.category === job.category);
+      if (filteredTasks.length > 0) {
+        setTasks(filteredTasks);
+      }
+      setViewMode('workspace');
     } catch (e) { console.error(e); }
     setLoading(false);
   }
