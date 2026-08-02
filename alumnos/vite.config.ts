@@ -22,22 +22,17 @@ export default defineConfig(async () => {
       react(),
       tailwindcss(),
       // Backend middleware: solo en desarrollo local
-      !isProduction && {
-        name: 'express-api',
-        configureServer(server: any) {
-          server.middlewares.use(async (req: any, res: any, next: any) => {
-            if (req.url?.startsWith('/api') || req.url?.startsWith('/webhooks')) {
-              try {
-                const mod = await import('../backend/src/server.ts');
-                mod.app(req, res, next);
-              } catch(e) { console.error('[api] Backend no disponible'); next(); }
-            } else next();
-          });
-        }
-      },
+      // NOTA: En desarrollo, usar proxy en su lugar para evitar imports circulares
       ...pwaPlugin,
     ].filter(Boolean),
     resolve: { alias: { '@': path.resolve(__dirname, '.') } },
-    server: { hmr: process.env.DISABLE_HMR !== 'true', watch: process.env.DISABLE_HMR === 'true' ? null : {} },
+    server: {
+      hmr: process.env.DISABLE_HMR !== 'true',
+      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      proxy: isProduction ? undefined : {
+        '/api': 'http://localhost:3000',
+        '/webhooks': 'http://localhost:3000',
+      },
+    },
   };
 });
