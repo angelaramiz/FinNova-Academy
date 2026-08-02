@@ -89,17 +89,43 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const [editEntry, setEditEntry] = useState<any>(null);
   const [filter, setFilter] = useState('');
   const [form, setForm] = useState({ date: '', ref: '', desc: '', account: '', debit: '', credit: '' });
+  const [realAccounts, setRealAccounts] = useState<any[]>([]);
+  const [balanceGeneral, setBalanceGeneral] = useState<any>(null);
+  const [estadoResultados, setEstadoResultados] = useState<any>(null);
+  const [balanza, setBalanza] = useState<any>(null);
+  const [reportTab, setReportTab] = useState<'bg' | 'er' | 'bal'>('bg');
   const journal = genJournal();
   const allEntries = [...dynamicEntries, ...journal];
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiGet('/api/sim/journal');
-        if (Array.isArray(data)) setDynamicEntries(data);
+        const [journalData, accountsData] = await Promise.all([
+          apiGet('/api/sim/journal'),
+          apiGet('/api/sim/chart-of-accounts'),
+        ]);
+        if (Array.isArray(journalData)) setDynamicEntries(journalData);
+        if (Array.isArray(accountsData)) setRealAccounts(accountsData);
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    if (mod === 'reportes') {
+      (async () => {
+        try {
+          const [bg, er, bal] = await Promise.all([
+            apiGet('/api/sim/reports/balance-general'),
+            apiGet('/api/sim/reports/estado-resultados'),
+            apiGet('/api/sim/reports/balanza-comprobacion'),
+          ]);
+          setBalanceGeneral(bg);
+          setEstadoResultados(er);
+          setBalanza(bal);
+        } catch {}
+      })();
+    }
+  }, [mod]);
 
   function openNewEntry() {
     setForm({ date: new Date().toLocaleDateString('es-MX').replace(/\//g, '/'), ref: '', desc: '', account: '', debit: '', credit: '' });
@@ -252,19 +278,23 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                     <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Código</th>
                     <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Cuenta</th>
                     <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
+                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Nivel</th>
+                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Naturaleza</th>
                     <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: colors.text }}>Saldo</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ACCOUNTS.map(a => (
-                    <tr key={a.code} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30` }}>
-                      <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary }}>{a.code}</td>
-                      <td className="px-4 py-2 text-[9px]" style={{ color: colors.text }}>{a.name}</td>
+                  {realAccounts.map(a => (
+                    <tr key={a.code} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30`, paddingLeft: a.level > 1 ? `${(a.level - 1) * 16}px` : undefined }}>
+                      <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary, paddingLeft: a.level > 1 ? `${16 + (a.level - 1) * 16}px` : undefined }}>{a.code}</td>
+                      <td className="px-4 py-2 text-[9px] font-bold" style={{ color: a.level === 1 ? colors.text : colors.textMuted }}>{a.name}</td>
                       <td className="px-4 py-2">
-                        <span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: a.type === 'Activo' ? '#22c55e20' : a.type === 'Pasivo' ? '#ef444420' : a.type === 'Capital' ? '#8b5cf620' : '#f59e0b20', color: a.type === 'Activo' ? '#22c55e' : a.type === 'Pasivo' ? '#ef4444' : a.type === 'Capital' ? '#8b5cf6' : '#f59e0b' }}>
+                        <span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: a.type === 'Activo' ? '#22c55e20' : a.type === 'Pasivo' ? '#ef444420' : a.type === 'Capital' ? '#8b5cf620' : a.type === 'Ingreso' ? '#3b82f620' : '#f59e0b20', color: a.type === 'Activo' ? '#22c55e' : a.type === 'Pasivo' ? '#ef4444' : a.type === 'Capital' ? '#8b5cf6' : a.type === 'Ingreso' ? '#3b82f6' : '#f59e0b' }}>
                           {a.type}
                         </span>
                       </td>
+                      <td className="px-4 py-2 text-[8px] font-mono" style={{ color: colors.textMuted }}>{a.level}</td>
+                      <td className="px-4 py-2 text-[8px] font-mono" style={{ color: a.nature === 'D' ? '#22c55e' : '#ef4444' }}>{a.nature === 'D' ? 'D (Deudora)' : 'H (Acreedora)'}</td>
                       <td className="px-4 py-2 text-[9px] font-mono text-right font-bold" style={{ color: a.balance >= 0 ? '#22c55e' : '#ef4444' }}>{a.balance >= 0 ? `$${fmt(a.balance)}` : `-$${fmt(Math.abs(a.balance))}`}</td>
                     </tr>
                   ))}
@@ -314,37 +344,144 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
           )}
 
           {mod === 'reportes' && (
-            <div className="p-6 max-w-2xl mx-auto space-y-6">
-              <h2 className="text-sm font-bold text-center" style={{ color: colors.text }}>📊 Reportes Financieros</h2>
-              <div className="p-5 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                <p className="text-[10px] font-bold mb-3" style={{ color: colors.text }}>Balanza de Comprobación — Julio 2026</p>
-                <table className="w-full text-[9px]">
-                  <thead><tr className="border-b" style={{ borderColor: colors.border }}><th style={{ color: colors.textMuted }} className="text-left py-1">Tipo</th><th style={{ color: colors.textMuted }} className="text-right py-1">Saldo</th></tr></thead>
-                  <tbody>
-                    {['Activo','Pasivo','Capital','Ingreso','Gasto'].map(type => {
-                      const total = ACCOUNTS.filter(a => a.type === type).reduce((s, a) => s + Math.abs(a.balance), 0);
-                      return (
-                        <tr key={type} className="border-b" style={{ borderColor: colors.border + '30' }}>
-                          <td className="py-1.5 font-bold" style={{ color: colors.text }}>{type}</td>
-                          <td className="py-1.5 text-right font-mono" style={{ color: colors.text }}>${fmt(total)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <div className="p-6 max-w-3xl mx-auto space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => setReportTab('bg')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bg' ? colors.primary : colors.cardBg, color: reportTab === 'bg' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balance General</button>
+                <button onClick={() => setReportTab('er')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'er' ? colors.primary : colors.cardBg, color: reportTab === 'er' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Estado de Resultados</button>
+                <button onClick={() => setReportTab('bal')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bal' ? colors.primary : colors.cardBg, color: reportTab === 'bal' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balanza Comprobación</button>
               </div>
-              <div className="p-5 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                <p className="text-[10px] font-bold mb-3" style={{ color: colors.text }}>📈 Estado de Resultados — Julio 2026</p>
-                <div className="space-y-1 text-[9px]">
-                  <div className="flex justify-between"><span style={{ color: colors.textMuted }}>Ventas totales</span><span className="font-mono font-bold" style={{ color: '#22c55e' }}>$380,000.00</span></div>
-                  <div className="flex justify-between"><span style={{ color: colors.textMuted }}>(-) Compras</span><span className="font-mono" style={{ color: '#ef4444' }}>$180,000.00</span></div>
-                  <div className="flex justify-between"><span style={{ color: colors.textMuted }}>(-) Gastos operativos</span><span className="font-mono" style={{ color: '#ef4444' }}>$105,500.00</span></div>
-                  <div className="flex justify-between border-t pt-1 mt-1" style={{ borderColor: colors.border }}>
-                    <span className="font-bold" style={{ color: colors.text }}>Utilidad neta</span>
-                    <span className="font-mono font-bold text-base" style={{ color: colors.primary }}>$94,500.00</span>
+
+              {reportTab === 'bg' && balanceGeneral && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📊 Balance General</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                      <p className="text-[9px] font-bold mb-2" style={{ color: '#22c55e' }}>ACTIVOS</p>
+                      {balanceGeneral.activos.map((a: any) => (
+                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                          <span style={{ color: colors.textMuted }}>{a.name}</span>
+                          <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#22c55e' }}>
+                        <span className="text-[9px] font-bold" style={{ color: '#22c55e' }}>Total Activos</span>
+                        <span className="text-[9px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(balanceGeneral.totalActivos)}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                        <p className="text-[9px] font-bold mb-2" style={{ color: '#ef4444' }}>PASIVOS</p>
+                        {balanceGeneral.pasivos.map((a: any) => (
+                          <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                            <span style={{ color: colors.textMuted }}>{a.name}</span>
+                            <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#ef4444' }}>
+                          <span className="text-[9px] font-bold" style={{ color: '#ef4444' }}>Total Pasivos</span>
+                          <span className="text-[9px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(balanceGeneral.totalPasivos)}</span>
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                        <p className="text-[9px] font-bold mb-2" style={{ color: '#8b5cf6' }}>CAPITAL</p>
+                        {balanceGeneral.capital.map((a: any) => (
+                          <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                            <span style={{ color: colors.textMuted }}>{a.name}</span>
+                            <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#8b5cf6' }}>
+                          <span className="text-[9px] font-bold" style={{ color: '#8b5cf6' }}>Total Capital</span>
+                          <span className="text-[9px] font-mono font-bold" style={{ color: '#8b5cf6' }}>${fmt(balanceGeneral.totalCapital)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center text-[9px] font-mono py-2 rounded-lg" style={{ background: balanceGeneral.balanced ? '#22c55e20' : '#ef444420', color: balanceGeneral.balanced ? '#22c55e' : '#ef4444' }}>
+                    {balanceGeneral.balanced ? '✓ Balance cuadrado: Activos = Pasivos + Capital' : '⚠ Balance descuadrado'}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {reportTab === 'er' && estadoResultados && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📈 Estado de Resultados — Julio 2026</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                      <p className="text-[9px] font-bold mb-2" style={{ color: '#22c55e' }}>INGRESOS</p>
+                      {estadoResultados.ingresos.map((a: any) => (
+                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                          <span style={{ color: colors.textMuted }}>{a.name}</span>
+                          <span className="font-mono" style={{ color: '#22c55e' }}>${fmt(a.amount)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#22c55e' }}>
+                        <span className="text-[9px] font-bold" style={{ color: '#22c55e' }}>Total Ingresos</span>
+                        <span className="text-[9px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(estadoResultados.totalIngresos)}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                      <p className="text-[9px] font-bold mb-2" style={{ color: '#ef4444' }}>GASTOS</p>
+                      {estadoResultados.gastos.map((a: any) => (
+                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                          <span style={{ color: colors.textMuted }}>{a.name}</span>
+                          <span className="font-mono" style={{ color: '#ef4444' }}>${fmt(a.amount)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#ef4444' }}>
+                        <span className="text-[9px] font-bold" style={{ color: '#ef4444' }}>Total Gastos</span>
+                        <span className="text-[9px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(estadoResultados.totalGastos)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border-2" style={{ borderColor: colors.primary, background: colors.cardBg }}>
+                    <div className="flex justify-between">
+                      <span className="text-[10px] font-bold" style={{ color: colors.text }}>UTILIDAD NETA</span>
+                      <span className="text-sm font-mono font-bold" style={{ color: colors.primary }}>${fmt(estadoResultados.utilidadNeta)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {reportTab === 'bal' && balanza && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📋 Balanza de Comprobación — Julio 2026</h3>
+                  <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                    <table className="w-full text-[8px]">
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: colors.border }}>
+                          <th className="text-left py-1" style={{ color: colors.textMuted }}>Código</th>
+                          <th className="text-left py-1" style={{ color: colors.textMuted }}>Cuenta</th>
+                          <th className="text-left py-1" style={{ color: colors.textMuted }}>Tipo</th>
+                          <th className="text-right py-1" style={{ color: '#22c55e' }}>DEBE</th>
+                          <th className="text-right py-1" style={{ color: '#ef4444' }}>HABER</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {balanza.accounts.map((a: any) => (
+                          <tr key={a.code} className="border-b" style={{ borderColor: colors.border + '30' }}>
+                            <td className="py-1 font-mono" style={{ color: colors.primary }}>{a.code}</td>
+                            <td className="py-1" style={{ color: colors.text }}>{a.name}</td>
+                            <td className="py-1" style={{ color: colors.textMuted }}>{a.type}</td>
+                            <td className="py-1 text-right font-mono" style={{ color: a.debit > 0 ? '#22c55e' : colors.textMuted }}>{a.debit > 0 ? `$${fmt(a.debit)}` : ''}</td>
+                            <td className="py-1 text-right font-mono" style={{ color: a.credit > 0 ? '#ef4444' : colors.textMuted }}>{a.credit > 0 ? `$${fmt(a.credit)}` : ''}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2" style={{ borderColor: colors.primary }}>
+                          <td colSpan={3} className="py-2 text-right font-bold" style={{ color: colors.text }}>TOTALES:</td>
+                          <td className="py-2 text-right font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(balanza.totalDebitos)}</td>
+                          <td className="py-2 text-right font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(balanza.totalCreditos)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  <div className="text-center text-[9px] font-mono py-2 rounded-lg" style={{ background: balanza.balanced ? '#22c55e20' : '#ef444420', color: balanza.balanced ? '#22c55e' : '#ef4444' }}>
+                    {balanza.balanced ? '✓ Balanza cuadrada: DEBE = HABER' : '⚠ Balanza descuadrada'}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
