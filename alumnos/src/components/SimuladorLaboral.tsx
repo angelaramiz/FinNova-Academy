@@ -431,8 +431,9 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
   return (
     <div ref={containerRef} className="w-full h-[calc(100vh-120px)] relative overflow-hidden rounded-2xl border-2" style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0' }}>
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
+      {/* Top bar - solo en modo oficina (fuera del escritorio virtual) */}
+      {viewMode === 'office' && (
+        <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
         <div className="flex items-center gap-2.5 backdrop-blur-xl px-3 py-1.5 rounded-xl border-2 pointer-events-auto" style={{
           borderColor: colors.border,
           background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
@@ -473,6 +474,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
           </div>
         </div>
       </div>
+      )} {/* end viewMode === 'office' */}
 
       <Canvas camera={{ position: [0, 1.15, 1.4], fov: 45, near: 0.01, far: 100 }}
         gl={{ antialias: true, alpha: false }}
