@@ -9,6 +9,7 @@ import CalendarWidget from './CalendarWidget';
 import Calculator from './Calculator';
 import SpreadsheetSim from './SpreadsheetSim';
 import AccountingSystem from './AccountingSystem';
+import PaymentMatcher from './PaymentMatcher';
 import { apiFetch } from '../lib/api';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
@@ -27,6 +28,8 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   const [loading, setLoading] = useState(false);
   const [validationResult, setValidationResult] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(true);
+  const [showMatcher, setShowMatcher] = useState(false);
+  const [matcherData, setMatcherData] = useState<{ clientName: string; amount: number } | null>(null);
 
   async function startTask(task: TaskInfo, skipEmailStep = false) {
     setCurrentTask(task); setLoading(true);
@@ -50,6 +53,13 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
       // Auto-generar asientos contables según el tipo de tarea
       generateEntriesForTask(currentTask.type, answers);
+      // Si es tarea de pago, mostrar matcher
+      if (currentTask.type === 'payment_registration' && answers.clientName && answers.amountReceived) {
+        setMatcherData({ clientName: answers.clientName, amount: Number(answers.amountReceived) });
+        setShowMatcher(true);
+        setLoading(false);
+        return;
+      }
       if (onTaskComplete) onTaskComplete();
     } catch (e) { console.error(e); }
     setLoading(false);
@@ -186,6 +196,15 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
               {workflow.steps[stepIdx].type === 'form' && <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />}
               {workflow.steps[stepIdx].type === 'spreadsheet' && <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
+              {showMatcher && matcherData && (
+                <PaymentMatcher
+                  theme={theme}
+                  clientName={matcherData.clientName}
+                  amount={matcherData.amount}
+                  onMatchConfirmed={() => { setShowMatcher(false); setMatcherData(null); if (onTaskComplete) onTaskComplete(); }}
+                  onSkip={() => { setShowMatcher(false); setMatcherData(null); if (onTaskComplete) onTaskComplete(); }}
+                />
+              )}
             </>)}
           </div>
         )}
