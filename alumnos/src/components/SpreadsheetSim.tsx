@@ -1,422 +1,1090 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
-interface SpreadsheetSimProps { theme: Theme; onBack: () => void; }
+type CellFormat = {
+  type?: 'number' | 'currency' | 'percent' | 'date' | 'text';
+  decimals?: number;
+  bold?: boolean;
+  italic?: boolean;
+  bgColor?: string;
+  textColor?: string;
+  align?: 'left' | 'center' | 'right';
+};
 
-const COLS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const ROWS = 50;
+type CellData = {
+  value: string;
+  format?: CellFormat;
+};
+
+type ClipboardData = {
+  cells: Map<string, CellData>;
+  startRow: number;
+  startCol: number;
+  endRow: number;
+  endCol: number;
+  isCut: boolean;
+};
+
+type HistoryEntry = {
+  cells: Map<string, CellData>;
+};
+
+const COLUMNS = 26;
+const ROWS = 100;
+const MAX_HISTORY = 20;
+
+function colToLetter(col: number): string {
+  return String.fromCharCode(65 + col);
+}
+
+function letterToCol(letter: string): number {
+  return letter.toUpperCase().charCodeAt(0) - 65;
+}
+
+function cellId(row: number, col: number): string {
+  return `${colToLetter(col)}${row + 1}`;
+}
+
+function parseCellRef(ref: string): { row: number; col: number } | null {
+  const match = ref.match(/^([A-Z])(\d+)$/i);
+  if (!match) return null;
+  const col = letterToCol(match[1]);
+  const row = parseInt(match[2], 10) - 1;
+  if (col < 0 || col >= COLUMNS || row < 0 || row >= ROWS) return null;
+  return { row, col };
+}
+
+function parseRange(range: string): { startRow: number; startCol: number; endRow: number; endCol: number } | null {
+  const parts = range.split(':');
+  if (parts.length !== 2) return null;
+  const start = parseCellRef(parts[0].trim());
+  const end = parseCellRef(parts[1].trim());
+  if (!start || !end) return null;
+  return {
+    startRow: Math.min(start.row, end.row),
+    startCol: Math.min(start.col, end.col),
+    endRow: Math.max(start.row, end.row),
+    endCol: Math.max(start.col, end.col),
+  };
+}
+
+function getCellValue(cells: Map<string, CellData>, row: number, col: number): string {
+  const id = cellId(row, col);
+  const cell = cells.get(id);
+  return cell?.value || '';
+}
+
+function getNumericValue(cells: Map<string, CellData>, row: number, col: number): number {
+  const val = getCellValue(cells, row, col);
+  const num = parseFloat(val);
+  return isNaN(num) ? 0 : num;
+}
+
+function evaluateFormula(
+  formula: string,
+  cells: Map<string, CellData>,
+  getVal: (cells: Map<string, CellData>, row: number, col: number) => string,
+  getNum: (cells: Map<string, CellData>, row: number, col: number) => number
+): string {
+  const f = formula.trim();
+  if (!f.startsWith('=')) return formula;
+  const expr = f.substring(1).trim();
+
+  function extractArgs(argsStr: string): string[] {
+    const args: string[] = [];
+    let depth = 0;
+    let current = '';
+    for (let i = 0; i < argsStr.length; i++) {
+      const ch = argsStr[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      else if (ch === ',' && depth === 0) {
+        args.push(current.trim());
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    if (current.trim()) args.push(current.trim());
+    return args;
+  }
+
+  function getNumericValues(argsStr: string): number[] {
+    const nums: number[] = [];
+    const args = extractArgs(argsStr);
+    for (const arg of args) {
+      const range = parseRange(arg);
+      if (range) {
+        for (let r = range.startRow; r <= range.endRow; r++) {
+          for (let c = range.startCol; c <= range.endCol; c++) {
+            const v = parseFloat(getVal(cells, r, c));
+            if (!isNaN(v)) nums.push(v);
+          }
+        }
+      } else {
+        const ref = parseCellRef(arg);
+        if (ref) {
+          const v = parseFloat(getVal(cells, ref.row, ref.col));
+          if (!isNaN(v)) nums.push(v);
+        } else {
+          const v = parseFloat(arg);
+          if (!isNaN(v)) nums.push(v);
+        }
+      }
+    }
+    return nums;
+  }
+
+  function evalExpr(expr: string): string {
+    const trimmed = expr.trim();
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      return trimmed.slice(1, -1);
+    }
+    const num = parseFloat(trimmed);
+    if (!isNaN(num)) return trimmed;
+    const ref = parseCellRef(trimmed);
+    if (ref) return getVal(cells, ref.row, ref.col);
+    const funcMatch = trimmed.match(/^(\w+)\((.*)\)$/s);
+    if (funcMatch) {
+      const funcName = funcMatch[1].toUpperCase();
+      const argsStr = funcMatch[2];
+      return evalFunction(funcName, argsStr);
+    }
+    const ops = ['+', '-', '*', '/'];
+    for (const op of ops) {
+      let depth = 0;
+      for (let i = trimmed.length - 1; i >= 1; i--) {
+        if (trimmed[i] === ')') depth++;
+        else if (trimmed[i] === '(') depth--;
+        else if (trimmed[i] === op && depth === 0) {
+          const left = evalExpr(trimmed.substring(0, i));
+          const right = evalExpr(trimmed.substring(i + 1));
+          const l = parseFloat(left);
+          const r = parseFloat(right);
+          if (!isNaN(l) && !isNaN(r)) {
+            if (op === '+') return String(l + r);
+            if (op === '-') return String(l - r);
+            if (op === '*') return String(l * r);
+            if (op === '/') return r !== 0 ? String(l / r) : '#DIV/0!';
+          }
+          break;
+        }
+      }
+    }
+    if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+      return evalExpr(trimmed.slice(1, -1));
+    }
+    return trimmed;
+  }
+
+  function evalFunction(name: string, argsStr: string): string {
+    const args = extractArgs(argsStr);
+    const nums = getNumericValues(argsStr);
+
+    if (name === 'SUM' || name === 'SUMA') {
+      return String(nums.reduce((a, b) => a + b, 0));
+    }
+    if (name === 'AVG' || name === 'PROMEDIO') {
+      return nums.length > 0 ? String(nums.reduce((a, b) => a + b, 0) / nums.length) : '0';
+    }
+    if (name === 'COUNT' || name === 'CONTAR') {
+      return String(nums.length);
+    }
+    if (name === 'MAX') {
+      return nums.length > 0 ? String(Math.max(...nums)) : '0';
+    }
+    if (name === 'MIN') {
+      return nums.length > 0 ? String(Math.min(...nums)) : '0';
+    }
+    if (name === 'ABS') {
+      const v = nums[0] ?? 0;
+      return String(Math.abs(v));
+    }
+    if (name === 'ROUND' || name === 'REDONDEAR') {
+      const v = nums[0] ?? 0;
+      const d = nums[1] ?? 0;
+      return String(Number(v.toFixed(d)));
+    }
+    if (name === 'POWER' || name === 'POTENCIA') {
+      return String(Math.pow(nums[0] ?? 0, nums[1] ?? 2));
+    }
+    if (name === 'SQRT' || name === 'RAIZ') {
+      const v = nums[0] ?? 0;
+      return v >= 0 ? String(Math.sqrt(v)) : '#NUM!';
+    }
+    if (name === 'MOD') {
+      const divisor = nums[1] ?? 1;
+      return divisor !== 0 ? String((nums[0] ?? 0) % divisor) : '#DIV/0!';
+    }
+    if (name === 'INT' || name === 'ENTERO') {
+      return String(Math.floor(nums[0] ?? 0));
+    }
+    if (name === 'RAND') {
+      return String(Math.random());
+    }
+    if (name === 'RANDBETWEEN' || name === 'ALEATORIO.ENTRE') {
+      const low = nums[0] ?? 1;
+      const high = nums[1] ?? 100;
+      return String(Math.floor(Math.random() * (high - low + 1)) + low);
+    }
+
+    if (name === 'IF' || name === 'SI') {
+      const condition = evalExpr(args[0]);
+      const isTruthy = condition !== '0' && condition !== '' && condition.toUpperCase() !== 'FALSE' && condition !== '#REF!';
+      return isTruthy ? evalExpr(args[1] ?? 'TRUE') : evalExpr(args[2] ?? 'FALSE');
+    }
+    if (name === 'AND' || name === 'Y') {
+      const vals = args.map(a => {
+        const v = evalExpr(a);
+        return v !== '0' && v !== '' && v.toUpperCase() !== 'FALSE';
+      });
+      return vals.every(Boolean) ? 'TRUE' : 'FALSE';
+    }
+    if (name === 'OR' || name === 'O') {
+      const vals = args.map(a => {
+        const v = evalExpr(a);
+        return v !== '0' && v !== '' && v.toUpperCase() !== 'FALSE';
+      });
+      return vals.some(Boolean) ? 'TRUE' : 'FALSE';
+    }
+    if (name === 'NOT') {
+      const v = evalExpr(args[0]);
+      const isTruthy = v !== '0' && v !== '' && v.toUpperCase() !== 'FALSE';
+      return isTruthy ? 'FALSE' : 'TRUE';
+    }
+
+    if (name === 'UPPER' || name === 'MINUSC') {
+      const v = evalExpr(args[0] ?? '""');
+      return v.toUpperCase();
+    }
+    if (name === 'LOWER' || name === 'MAXUSC') {
+      const v = evalExpr(args[0] ?? '""');
+      return v.toLowerCase();
+    }
+    if (name === 'PROPER' || name === 'NOMPROPIO') {
+      const v = evalExpr(args[0] ?? '""');
+      return v.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+    }
+    if (name === 'LEN' || name === 'LARGO') {
+      const v = evalExpr(args[0] ?? '""');
+      return String(v.length);
+    }
+    if (name === 'LEFT' || name === 'IZQUIERDA') {
+      const v = evalExpr(args[0] ?? '""');
+      const count = nums[0] ?? 1;
+      return v.substring(0, count);
+    }
+    if (name === 'RIGHT' || name === 'DERECHA') {
+      const v = evalExpr(args[0] ?? '""');
+      const count = nums[0] ?? 1;
+      return v.substring(v.length - count);
+    }
+    if (name === 'MID' || name === 'EXTRAE') {
+      const v = evalExpr(args[0] ?? '""');
+      const start = (nums[0] ?? 1) - 1;
+      const count = nums[1] ?? 1;
+      return v.substring(start, start + count);
+    }
+    if (name === 'TRIM' || name === 'ESPACIOS') {
+      const v = evalExpr(args[0] ?? '""');
+      return v.trim();
+    }
+    if (name === 'VALUE' || name === 'VALOR') {
+      const v = evalExpr(args[0] ?? '0');
+      const numVal = parseFloat(v);
+      return isNaN(numVal) ? '#VALUE!' : String(numVal);
+    }
+    if (name === 'CONCAT' || name === 'CONCATENAR') {
+      return args.map(a => evalExpr(a)).join('');
+    }
+
+    if (name === 'NOW' || name === 'AHORA') {
+      return new Date().toLocaleString('es-MX');
+    }
+    if (name === 'TODAY' || name === 'HOY') {
+      return new Date().toLocaleDateString('es-MX');
+    }
+    if (name === 'DATE' || name === 'FECHA') {
+      const year = nums[0] ?? new Date().getFullYear();
+      const month = (nums[1] ?? new Date().getMonth() + 1) - 1;
+      const day = nums[2] ?? new Date().getDate();
+      return new Date(year, month, day).toLocaleDateString('es-MX');
+    }
+    if (name === 'YEAR' || name === 'ANO') {
+      const v = evalExpr(args[0] ?? '""');
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? '#VALUE!' : String(d.getFullYear());
+    }
+    if (name === 'MONTH' || name === 'MES') {
+      const v = evalExpr(args[0] ?? '""');
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? '#VALUE!' : String(d.getMonth() + 1);
+    }
+    if (name === 'DAY' || name === 'DIA') {
+      const v = evalExpr(args[0] ?? '""');
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? '#VALUE!' : String(d.getDate());
+    }
+
+    return '#NAME?';
+  }
+
+  try {
+    return evalExpr(expr);
+  } catch {
+    return '#ERROR!';
+  }
+}
+
+function formatValue(value: string, format?: CellFormat): string {
+  if (!format?.type || !value) return value;
+  if (format.type === 'text') return value;
+  const num = parseFloat(value);
+  if (isNaN(num)) return value;
+  const decimals = format.decimals ?? 2;
+  if (format.type === 'currency') return `$${num.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+  if (format.type === 'percent') return `${(num * 100).toFixed(decimals)}%`;
+  if (format.type === 'number') return num.toFixed(decimals);
+  return value;
+}
+
+function detectSeries(values: (string | null)[]): string[] {
+  if (values.length < 2) return values.map(v => v ?? '');
+  const nums = values.map(v => parseFloat(v ?? ''));
+  const allNumbers = nums.every(n => !isNaN(n));
+  if (allNumbers && values.length >= 2) {
+    const diff = nums[1] - nums[0];
+    const isArithmetic = nums.every((n, i) => i === 0 || Math.abs(n - nums[i - 1] - diff) < 0.0001);
+    if (isArithmetic) {
+      return values.map((_, i) => String(nums[0] + diff * i));
+    }
+  }
+  const first = values[0];
+  if (values.every(v => v === first)) {
+    return values.map(() => first ?? '');
+  }
+  return values.map(v => v ?? '');
+}
+
+function btnStyle(colors: { bg: string; cardBg: string; cardSecondary: string; text: string; textMuted: string; primary: string; secondary: string; border: string }) {
+  return {
+    background: colors.cardSecondary,
+    border: `1px solid ${colors.border}`,
+    borderRadius: '4px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    color: colors.text,
+    fontSize: '12px',
+  };
+}
+
+interface SpreadsheetSimProps {
+  theme: Theme;
+  onBack: () => void;
+}
 
 export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
   const colors = themeColors[theme];
-  const [cells, setCells] = useState<Record<string, string>>({});
-  const [selected, setSelected] = useState<string>('A1');
-  const [editing, setEditing] = useState(false);
+  const [cells, setCells] = useState<Map<string, CellData>>(new Map());
+  const [selectedCell, setSelectedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
+  const [selection, setSelection] = useState<{ startRow: number; startCol: number; endRow: number; endCol: number }>({
+    startRow: 0, startCol: 0, endRow: 0, endCol: 0,
+  });
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [editValue, setEditValue] = useState('');
-  const [selecting, setSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<string | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<string | null>(null);
-  const [clipboard, setClipboard] = useState<Record<string, string>>({});
-  const [history, setHistory] = useState<Record<string, string>[]>([]);
-  const [historyIdx, setHistoryIdx] = useState(-1);
+  const [formulaBarValue, setFormulaBarValue] = useState('');
+  const [clipboard, setClipboard] = useState<ClipboardData | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([{ cells: new Map() }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [findReplaceOpen, setFindReplaceOpen] = useState(false);
+  const [findText, setFindText] = useState('');
+  const [replaceText, setReplaceText] = useState('');
+  const [highlightedCells, setHighlightedCells] = useState<Set<string>>(new Set());
+  const [autoFillStart, setAutoFillStart] = useState<{ row: number; col: number } | null>(null);
+  const [autoFillEnd, setAutoFillEnd] = useState<{ row: number; col: number } | null>(null);
+  const [activeFormat, setActiveFormat] = useState<CellFormat>({});
+  const gridRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  function getCellRef(r: number, c: number) { return `${COLS[c]}${r + 1}`; }
+  const pushHistory = useCallback((newCells: Map<string, CellData>) => {
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push({ cells: new Map(newCells) });
+      if (newHistory.length > MAX_HISTORY) newHistory.shift();
+      return newHistory;
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
+  }, [historyIndex]);
 
-  function parseRef(ref: string): { col: number; row: number } | null {
-    const match = ref.match(/^([A-Z]+)(\d+)$/i);
-    if (!match) return null;
-    const col = COLS.indexOf(match[1].toUpperCase());
-    const row = parseInt(match[2]) - 1;
-    if (col < 0 || col >= COLS.length || row < 0 || row >= ROWS) return null;
-    return { col, row };
-  }
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setCells(new Map(prev.cells));
+      setHistoryIndex(historyIndex - 1);
+    }
+  }, [history, historyIndex]);
 
-  function getSelectionRange(): { minR: number; maxR: number; minC: number; maxC: number } | null {
-    if (!selectionStart || !selectionEnd) return null;
-    const start = parseRef(selectionStart);
-    const end = parseRef(selectionEnd);
-    if (!start || !end) return null;
-    return {
-      minR: Math.min(start.row, end.row),
-      maxR: Math.max(start.row, end.row),
-      minC: Math.min(start.col, end.col),
-      maxC: Math.max(start.col, end.col),
-    };
-  }
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const next = history[historyIndex + 1];
+      setCells(new Map(next.cells));
+      setHistoryIndex(historyIndex + 1);
+    }
+  }, [history, historyIndex]);
 
-  function isInSelection(r: number, c: number): boolean {
-    const range = getSelectionRange();
-    if (!range) return selected === getCellRef(r, c);
-    return r >= range.minR && r <= range.maxR && c >= range.minC && c <= range.maxC;
-  }
+  const getDisplayValue = useCallback((row: number, col: number): string => {
+    const id = cellId(row, col);
+    const cell = cells.get(id);
+    if (!cell) return '';
+    if (cell.value.startsWith('=')) {
+      return evaluateFormula(cell.value, cells, getCellValue, getNumericValue);
+    }
+    return cell.value;
+  }, [cells]);
 
-  function evalCell(ref: string): string {
-    const val = cells[ref] || '';
-    if (val.startsWith('=')) {
-      try {
-        const rawExpr = val.slice(1);
-        let expr = rawExpr.replace(/\b(?:SUM|SUMA|AVG|PROMEDIO|COUNT|CONTAR|MAX|MIN|ABS|ROUND|REDONDEAR|IF|SI|CONCAT|CONCATENAR)\(([^)]+)\)/gi, (match, args) => {
-          const upperMatch = match.toUpperCase();
-          const isAvg = /AVG|PROMEDIO/i.test(match);
-          const isCount = /COUNT|CONTAR/i.test(match);
-          const isMax = /MAX/i.test(match);
-          const isMin = /MIN/i.test(match);
-          const isAbs = /ABS/i.test(match);
-          const isRound = /ROUND|REDONDEAR/i.test(match);
-          const isIf = /IF|SI/i.test(match);
-          const isConcat = /CONCAT|CONCATENAR/i.test(match);
-
-          if (isIf) {
-            const parts = args.split(',');
-            if (parts.length >= 3) {
-              const condition = parts[0].trim();
-              const trueVal = parts[1].trim();
-              const falseVal = parts[2].trim();
-              const condExpr = condition.replace(/\b[A-Z]\d+\b/gi, (m: string) => evalCell(m.toUpperCase()) || '0');
-              const result = Function(`"use strict"; return (${condExpr})`)();
-              return result ? (trueVal.startsWith('"') ? trueVal.replace(/"/g, '') : String(evalCell(trueVal.toUpperCase()) || trueVal)) : (falseVal.startsWith('"') ? falseVal.replace(/"/g, '') : String(evalCell(falseVal.toUpperCase()) || falseVal));
-            }
-            return '#ERR';
+  const selectionStats = useMemo(() => {
+    const { startRow, startCol, endRow, endCol } = selection;
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+    let sum = 0;
+    let count = 0;
+    let numCount = 0;
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        const v = getDisplayValue(r, c);
+        if (v !== '') {
+          count++;
+          const n = parseFloat(v);
+          if (!isNaN(n)) {
+            sum += n;
+            numCount++;
           }
-
-          const values: number[] = [];
-          args.split(',').forEach((arg: string) => {
-            arg = arg.trim();
-            if (arg.includes(':')) {
-              const [from, to] = arg.split(':');
-              const fc = COLS.indexOf(from[0].toUpperCase()), fr = parseInt(from.slice(1)) - 1;
-              const tc = COLS.indexOf(to[0].toUpperCase()), tr = parseInt(to.slice(1)) - 1;
-              for (let r = fr; r <= tr; r++)
-                for (let c = fc; c <= tc; c++) {
-                  const v = parseFloat(evalCell(getCellRef(r, c)));
-                  if (!isNaN(v)) values.push(v);
-                }
-            } else if (/^[A-Z]\d+$/i.test(arg)) {
-              const v = parseFloat(evalCell(arg.toUpperCase()));
-              if (!isNaN(v)) values.push(v);
-            } else {
-              const v = parseFloat(arg);
-              if (!isNaN(v)) values.push(v);
-            }
-          });
-
-          if (isConcat) {
-            return args.split(',').map((a: string) => {
-              a = a.trim();
-              if (a.startsWith('"')) return a.replace(/"/g, '');
-              return evalCell(a.toUpperCase()) || '';
-            }).join('');
-          }
-
-          if (values.length === 0) return '0';
-          if (isCount) return String(values.length);
-          if (isMax) return String(Math.max(...values));
-          if (isMin) return String(Math.min(...values));
-          if (isAbs) return String(Math.abs(values[0]));
-          if (isRound) return String(Math.round(values[0]));
-          const sum = values.reduce((a, b) => a + b, 0);
-          return String(isAvg ? Math.round((sum / values.length) * 100) / 100 : sum);
-        });
-
-        expr = expr.replace(/\b[A-Z]\d+\b/gi, (m: string) => evalCell(m.toUpperCase()) || '0');
-        const result = Function(`"use strict"; return (${expr})`)();
-        return String(Math.round(Number(result) * 100) / 100);
-      } catch { return '#ERR'; }
-    }
-    return val;
-  }
-
-  function saveState() {
-    setHistory(prev => [...prev.slice(0, historyIdx + 1), { ...cells }]);
-    setHistoryIdx(prev => prev + 1);
-  }
-
-  function undo() {
-    if (historyIdx > 0) {
-      setHistoryIdx(prev => prev - 1);
-      setCells({ ...history[historyIdx - 1] });
-    }
-  }
-
-  function redo() {
-    if (historyIdx < history.length - 1) {
-      setHistoryIdx(prev => prev + 1);
-      setCells({ ...history[historyIdx + 1] });
-    }
-  }
-
-  function startEdit(ref: string) {
-    setSelected(ref);
-    setEditValue(cells[ref] || '');
-    setEditing(true);
-  }
-
-  function saveEdit() {
-    if (!editing) return;
-    saveState();
-    const updated = { ...cells };
-    if (editValue.trim()) updated[selected] = editValue.trim();
-    else delete updated[selected];
-    setCells(updated);
-    setEditing(false);
-  }
-
-  function copySelection() {
-    const range = getSelectionRange();
-    if (!range) { setClipboard({ [selected]: cells[selected] || '' }); return; }
-    const clip: Record<string, string> = {};
-    for (let r = range.minR; r <= range.maxR; r++)
-      for (let c = range.minC; c <= range.maxC; c++)
-        clip[getCellRef(r, c)] = cells[getCellRef(r, c)] || '';
-    setClipboard(clip);
-  }
-
-  function cutSelection() {
-    copySelection();
-    saveState();
-    const range = getSelectionRange();
-    if (!range) { delete cells[selected]; setCells({ ...cells }); return; }
-    const updated = { ...cells };
-    for (let r = range.minR; r <= range.maxR; r++)
-      for (let c = range.minC; c <= range.maxC; c++)
-        delete updated[getCellRef(r, c)];
-    setCells(updated);
-  }
-
-  function pasteClipboard() {
-    if (Object.keys(clipboard).length === 0) return;
-    saveState();
-    const start = parseRef(selected);
-    if (!start) return;
-    const updated = { ...cells };
-    const clipRefs = Object.keys(clipboard);
-    if (clipRefs.length === 1) {
-      updated[selected] = clipboard[clipRefs[0]];
-    } else {
-      let minR = Infinity, minC = Infinity;
-      clipRefs.forEach(ref => {
-        const p = parseRef(ref);
-        if (p) { minR = Math.min(minR, p.row); minC = Math.min(minC, p.col); }
-      });
-      clipRefs.forEach(ref => {
-        const p = parseRef(ref);
-        if (p) {
-          const newR = start.row + (p.row - minR);
-          const newC = start.col + (p.col - minC);
-          if (newR < ROWS && newC < COLS.length) updated[getCellRef(newR, newC)] = clipboard[ref];
-        }
-      });
-    }
-    setCells(updated);
-  }
-
-  function deleteSelection() {
-    saveState();
-    const range = getSelectionRange();
-    if (!range) { delete cells[selected]; setCells({ ...cells }); return; }
-    const updated = { ...cells };
-    for (let r = range.minR; r <= range.maxR; r++)
-      for (let c = range.minC; c <= range.maxC; c++)
-        delete updated[getCellRef(r, c)];
-    setCells(updated);
-  }
-
-  function applyFormulaToSelection(formula: string) {
-    saveState();
-    const range = getSelectionRange();
-    if (!range) { cells[selected] = formula; setCells({ ...cells }); return; }
-    const updated = { ...cells };
-    for (let c = range.minC; c <= range.maxC; c++) {
-      const colLetter = COLS[c];
-      const startRow = range.minR + 1;
-      const endRow = range.maxR + 1;
-      updated[getCellRef(range.minR, c)] = `=${formula}(${colLetter}${startRow}:${colLetter}${endRow})`;
-    }
-    setCells(updated);
-  }
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'c') { e.preventDefault(); copySelection(); return; }
-        if (e.key === 'x') { e.preventDefault(); cutSelection(); return; }
-        if (e.key === 'v') { e.preventDefault(); pasteClipboard(); return; }
-        if (e.key === 'z') { e.preventDefault(); undo(); return; }
-        if (e.key === 'y') { e.preventDefault(); redo(); return; }
-      }
-      if (!editing) {
-        if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection(); return; }
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-          setSelected(prev => { setEditValue(''); setEditing(true); return prev; });
         }
       }
-      if (editing) {
-        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); moveCell(0, 1); }
-        else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); setEditValue(cells[selected] || ''); }
-        else if (e.key === 'Tab') { e.preventDefault(); saveEdit(); moveCell(1, 0); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); saveEdit(); moveCell(0, 1); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); saveEdit(); moveCell(0, -1); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); saveEdit(); moveCell(1, 0); }
-        else if (e.key === 'ArrowLeft') { e.preventDefault(); saveEdit(); moveCell(-1, 0); }
-        else if (e.key === 'Backspace') { e.preventDefault(); setEditValue(prev => prev.slice(0, -1)); }
-        else if (e.key === 'Delete') { e.preventDefault(); setEditValue(''); }
-        else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { e.preventDefault(); setEditValue(prev => prev + e.key); }
-      }
     }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [editing, editValue, selected, cells, clipboard, historyIdx]);
+    const avg = numCount > 0 ? sum / numCount : 0;
+    return { sum, avg, count, numCount };
+  }, [selection, cells, getDisplayValue]);
 
-  function moveCell(dc: number, dr: number) {
-    const parsed = parseRef(selected);
-    if (!parsed) return;
-    const nc = Math.max(0, Math.min(parsed.col + dc, COLS.length - 1));
-    const nr = Math.max(0, Math.min(parsed.row + dr, ROWS - 1));
-    const ref = getCellRef(nr, nc);
-    setSelected(ref);
-    setSelectionStart(ref);
-    setSelectionEnd(ref);
-    setEditValue(cells[ref] || '');
-    setEditing(true);
-  }
+  const selRect = useMemo(() => ({
+    minRow: Math.min(selection.startRow, selection.endRow),
+    maxRow: Math.max(selection.startRow, selection.endRow),
+    minCol: Math.min(selection.startCol, selection.endCol),
+    maxCol: Math.max(selection.startCol, selection.endCol),
+  }), [selection]);
 
-  function clickCell(ref: string, e: React.MouseEvent) {
-    saveEdit();
-    setSelected(ref);
-    setEditValue(cells[ref] || '');
-    setEditing(true);
-    if (e.shiftKey) {
-      setSelectionEnd(ref);
-    } else {
-      setSelectionStart(ref);
-      setSelectionEnd(ref);
-    }
-  }
+  const isCellSelected = useCallback((row: number, col: number): boolean => {
+    return row >= selRect.minRow && row <= selRect.maxRow && col >= selRect.minCol && col <= selRect.maxCol;
+  }, [selRect]);
 
-  function mouseDownCell(ref: string) {
-    setSelecting(true);
-    setSelectionStart(ref);
-    setSelectionEnd(ref);
-    setSelected(ref);
-    setEditValue(cells[ref] || '');
-    setEditing(true);
-  }
+  const isCellHighlighted = useCallback((row: number, col: number): boolean => {
+    return highlightedCells.has(cellId(row, col));
+  }, [highlightedCells]);
 
-  function mouseEnterCell(ref: string) {
-    if (selecting) setSelectionEnd(ref);
-  }
+  const commitEdit = useCallback(() => {
+    if (!editMode) return;
+    const id = cellId(selectedCell.row, selectedCell.col);
+    const newCells = new Map(cells);
+    const existing = newCells.get(id);
+    newCells.set(id, { value: editValue, format: existing?.format });
+    setCells(newCells);
+    pushHistory(newCells);
+    setEditMode(false);
+  }, [editMode, editValue, selectedCell, cells, pushHistory]);
 
-  function mouseUp() { setSelecting(false); }
-
-  useEffect(() => {
-    document.addEventListener('mouseup', mouseUp);
-    return () => document.removeEventListener('mouseup', mouseUp);
+  const cancelEdit = useCallback(() => {
+    setEditMode(false);
+    setEditValue('');
   }, []);
 
-  function handleFormulaChange(e: React.ChangeEvent<HTMLInputElement>) { setEditValue(e.target.value); }
-  function handleFormulaKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter') saveEdit();
-    if (e.key === 'Escape') setEditing(false);
-  }
+  const handleCellMouseDown = useCallback((row: number, col: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (editMode) {
+      commitEdit();
+    }
+    setSelectedCell({ row, col });
+    if (!e.shiftKey) {
+      setSelection({ startRow: row, startCol: col, endRow: row, endCol: col });
+      setAutoFillStart({ row, col });
+      setAutoFillEnd(null);
+    } else {
+      setSelection(prev => ({ ...prev, endRow: row, endCol: col }));
+    }
+    setIsSelecting(true);
+    const id = cellId(row, col);
+    const cell = cells.get(id);
+    setActiveFormat(cell?.format ?? {});
+  }, [editMode, cells, commitEdit]);
 
-  function getSelectionLabel(): string {
-    if (!selectionStart || !selectionEnd || selectionStart === selectionEnd) return selected;
-    return `${selectionStart}:${selectionEnd}`;
-  }
+  const handleCellClick = useCallback((row: number, col: number, shiftKey: boolean) => {
+    if (shiftKey) {
+      setSelection(prev => ({ ...prev, endRow: row, endCol: col }));
+    }
+  }, []);
 
-  function getSelectionStats(): string {
-    const range = getSelectionRange();
-    if (!range) return '';
-    const values: number[] = [];
-    let count = 0;
-    for (let r = range.minR; r <= range.maxR; r++)
-      for (let c = range.minC; c <= range.maxC; c++) {
-        count++;
-        const v = parseFloat(evalCell(getCellRef(r, c)));
-        if (!isNaN(v)) values.push(v);
+  const handleCellMouseMove = useCallback((row: number, col: number) => {
+    if (isSelecting && !editMode) {
+      setSelection(prev => ({ ...prev, endRow: row, endCol: col }));
+    }
+    if (autoFillStart && isSelecting) {
+      setAutoFillEnd({ row, col });
+    }
+  }, [isSelecting, editMode, autoFillStart]);
+
+  const handleCellDoubleClick = useCallback((row: number, col: number) => {
+    setSelectedCell({ row, col });
+    setEditMode(true);
+    const id = cellId(row, col);
+    const cell = cells.get(id);
+    setEditValue(cell?.value ?? '');
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [cells]);
+
+  const copySelection = useCallback((isCut: boolean) => {
+    const { minRow, maxRow, minCol, maxCol } = selRect;
+    const clipCells = new Map<string, CellData>();
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        const id = cellId(r, c);
+        const cell = cells.get(id);
+        if (cell) clipCells.set(id, { ...cell });
       }
-    if (values.length === 0) return `${count} celdas`;
-    const sum = values.reduce((a, b) => a + b, 0);
-    const avg = sum / values.length;
-    return `Prom: ${avg.toFixed(2)} | Suma: ${sum.toLocaleString('es-MX')} | Cont: ${values.length}`;
-  }
+    }
+    setClipboard({
+      cells: clipCells,
+      startRow: minRow,
+      startCol: minCol,
+      endRow: maxRow,
+      endCol: maxCol,
+      isCut,
+    });
+    const textLines: string[] = [];
+    for (let r = minRow; r <= maxRow; r++) {
+      const rowVals: string[] = [];
+      for (let c = minCol; c <= maxCol; c++) {
+        rowVals.push(getDisplayValue(r, c));
+      }
+      textLines.push(rowVals.join('\t'));
+    }
+    navigator.clipboard?.writeText(textLines.join('\n')).catch(() => {});
+  }, [selRect, cells, getDisplayValue]);
 
-  const isDark = theme === 'dark';
+  const pasteClipboard = useCallback(() => {
+    if (!clipboard) return;
+    const newCells = new Map(cells);
+    const { startRow: srcStartRow, startCol: srcStartCol, endRow: srcEndRow, endCol: srcEndCol, cells: clipCells } = clipboard;
+    const rows = srcEndRow - srcStartRow;
+    const cols = srcEndCol - srcStartCol;
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c <= cols; c++) {
+        const srcRow = srcStartRow + r;
+        const srcCol = srcStartCol + c;
+        const srcId = cellId(srcRow, srcCol);
+        const targetRow = selectedCell.row + r;
+        const targetCol = selectedCell.col + c;
+        if (targetRow < ROWS && targetCol < COLUMNS) {
+          const targetId = cellId(targetRow, targetCol);
+          const srcCell = clipCells.get(srcId);
+          if (srcCell) {
+            newCells.set(targetId, { ...srcCell });
+          }
+        }
+      }
+    }
+    if (clipboard.isCut) {
+      for (let r = srcStartRow; r <= srcEndRow; r++) {
+        for (let c = srcStartCol; c <= srcEndCol; c++) {
+          newCells.delete(cellId(r, c));
+        }
+      }
+      setClipboard(null);
+    }
+    setCells(newCells);
+    pushHistory(newCells);
+  }, [clipboard, cells, selectedCell, pushHistory]);
+
+  const deleteSelection = useCallback(() => {
+    const { minRow, maxRow, minCol, maxCol } = selRect;
+    const newCells = new Map(cells);
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        newCells.delete(cellId(r, c));
+      }
+    }
+    setCells(newCells);
+    pushHistory(newCells);
+  }, [selRect, cells, pushHistory]);
+
+  const applyFormat = useCallback((format: Partial<CellFormat>) => {
+    const { minRow, maxRow, minCol, maxCol } = selRect;
+    const newCells = new Map(cells);
+    for (let r = minRow; r <= maxRow; r++) {
+      for (let c = minCol; c <= maxCol; c++) {
+        const id = cellId(r, c);
+        const existing = newCells.get(id) ?? { value: '' };
+        newCells.set(id, {
+          ...existing,
+          format: { ...existing.format, ...format },
+        });
+      }
+    }
+    setCells(newCells);
+    pushHistory(newCells);
+    setActiveFormat(prev => ({ ...prev, ...format }));
+  }, [selRect, cells, pushHistory]);
+
+  const findAndReplace = useCallback(() => {
+    if (!findText) return;
+    const newCells = new Map(cells);
+    let found = false;
+    for (const [id, cell] of newCells) {
+      if (cell.value.includes(findText)) {
+        newCells.set(id, { ...cell, value: cell.value.replace(findText, replaceText) });
+        found = true;
+      }
+    }
+    if (found) {
+      setCells(newCells);
+      pushHistory(newCells);
+    }
+  }, [findText, replaceText, cells, pushHistory]);
+
+  const findNext = useCallback(() => {
+    if (!findText) return;
+    const highlights = new Set<string>();
+    for (const [id, cell] of cells) {
+      if (cell.value.includes(findText)) {
+        highlights.add(id);
+      }
+    }
+    setHighlightedCells(highlights);
+  }, [findText, cells]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (findReplaceOpen) {
+        if (e.key === 'Escape') setFindReplaceOpen(false);
+        return;
+      }
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'c') { e.preventDefault(); copySelection(false); }
+        else if (e.key === 'x') { e.preventDefault(); copySelection(true); }
+        else if (e.key === 'v') { e.preventDefault(); pasteClipboard(); }
+        else if (e.key === 'z') { e.preventDefault(); undo(); }
+        else if (e.key === 'y') { e.preventDefault(); redo(); }
+        else if (e.key === 'f') { e.preventDefault(); setFindReplaceOpen(true); }
+        else if (e.key === 'b') { e.preventDefault(); applyFormat({ bold: !activeFormat.bold }); }
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (!editMode) {
+          e.preventDefault();
+          deleteSelection();
+        }
+      }
+      if (e.key === 'Escape' && editMode) {
+        cancelEdit();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [copySelection, pasteClipboard, undo, redo, deleteSelection, editMode, cancelEdit, findReplaceOpen, applyFormat, activeFormat]);
+
+  useEffect(() => {
+    if (gridRef.current) {
+      const cellEl = gridRef.current.querySelector(`[data-cell="${cellId(selectedCell.row, selectedCell.col)}"]`);
+      if (cellEl) {
+        cellEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
+    }
+  }, [selectedCell]);
+
+  useEffect(() => {
+    if (!editMode) {
+      const id = cellId(selectedCell.row, selectedCell.col);
+      const cell = cells.get(id);
+      setFormulaBarValue(cell?.value ?? '');
+    }
+  }, [selectedCell, cells, editMode]);
+
+  useEffect(() => {
+    const handleMouseUp = () => {
+      if (isSelecting && autoFillStart && autoFillEnd) {
+        if (autoFillEnd.row > autoFillStart.row) {
+          const sourceValues: (string | null)[] = [];
+          for (let c = autoFillStart.col; c <= Math.max(autoFillStart.col, autoFillEnd.col); c++) {
+            const v = getDisplayValue(autoFillStart.row, c);
+            sourceValues.push(v || null);
+          }
+          const filled = detectSeries(sourceValues);
+          const newCells = new Map(cells);
+          for (let r = autoFillStart.row + 1; r <= autoFillEnd.row; r++) {
+            for (let c = autoFillStart.col; c <= Math.max(autoFillStart.col, autoFillEnd.col); c++) {
+              const cIdx = c - autoFillStart.col;
+              const val = filled[cIdx % filled.length];
+              const id = cellId(r, c);
+              const existing = newCells.get(id);
+              newCells.set(id, { value: val ?? '', format: existing?.format });
+            }
+          }
+          setCells(newCells);
+          pushHistory(newCells);
+        }
+      }
+      setIsSelecting(false);
+      setAutoFillStart(null);
+      setAutoFillEnd(null);
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [isSelecting, autoFillStart, autoFillEnd, cells, getDisplayValue, pushHistory]);
+
+  const renderCellContent = (row: number, col: number) => {
+    const id = cellId(row, col);
+    const cell = cells.get(id);
+    const displayVal = getDisplayValue(row, col);
+    const formatted = formatValue(displayVal, cell?.format);
+    const isActive = selectedCell.row === row && selectedCell.col === col;
+
+    if (isActive && editMode) {
+      return (
+        <input
+          ref={inputRef}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              commitEdit();
+              setSelectedCell(prev => ({ ...prev, row: Math.min(prev.row + 1, ROWS - 1) }));
+            }
+            else if (e.key === 'Tab') {
+              e.preventDefault();
+              commitEdit();
+              setSelectedCell(prev => ({ ...prev, col: Math.min(prev.col + 1, COLUMNS - 1) }));
+            }
+            else if (e.key === 'Escape') cancelEdit();
+          }}
+          onBlur={commitEdit}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            outline: 'none',
+            background: colors.cardBg,
+            color: colors.text,
+            fontSize: '12px',
+            padding: '0 4px',
+            fontFamily: 'inherit',
+          }}
+        />
+      );
+    }
+
+    return (
+      <span style={{
+        fontWeight: cell?.format?.bold ? 'bold' : 'normal',
+        fontStyle: cell?.format?.italic ? 'italic' : 'normal',
+        color: cell?.format?.textColor || colors.text,
+      }}>
+        {formatted}
+      </span>
+    );
+  };
 
   return (
-    <div className="flex flex-col h-full" style={{ background: colors.bg }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      background: colors.bg,
+      color: colors.text,
+      fontFamily: 'Segoe UI, Arial, sans-serif',
+      fontSize: '13px',
+      userSelect: 'none',
+    }}>
       {/* Toolbar */}
-      <div className="px-3 py-1.5 border-b-2 shrink-0 flex items-center gap-2 flex-wrap" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
-        <button onClick={onBack} className="text-[9px] px-2 py-1 rounded border cursor-pointer hover:opacity-70 shrink-0" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
-        <span className="text-[9px] font-bold font-mono" style={{ color: colors.text }}>📊 Hoja de Cálculo</span>
-        <div className="h-4 w-px mx-1" style={{ background: colors.border }} />
-        <button onClick={copySelection} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted }}>📋 Copiar</button>
-        <button onClick={cutSelection} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted }}>✂️ Cortar</button>
-        <button onClick={pasteClipboard} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted }}>📄 Pegar</button>
-        <div className="h-4 w-px mx-1" style={{ background: colors.border }} />
-        <button onClick={() => applyFormulaToSelection('SUMA')} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.primary, color: colors.primary }}>Σ SUMA</button>
-        <button onClick={() => applyFormulaToSelection('PROMEDIO')} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.primary, color: colors.primary }}>Ø PROM</button>
-        <button onClick={() => applyFormulaToSelection('MAX')} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.primary, color: colors.primary }}>↑ MAX</button>
-        <button onClick={() => applyFormulaToSelection('MIN')} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.primary, color: colors.primary }}>↓ MIN</button>
-        <button onClick={() => applyFormulaToSelection('CONTAR')} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.primary, color: colors.primary }}># CNT</button>
-        <div className="h-4 w-px mx-1" style={{ background: colors.border }} />
-        <button onClick={undo} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted }}>↩ Deshacer</button>
-        <button onClick={redo} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted }}>↪ Rehacer</button>
-      </div>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2px',
+        padding: '4px 8px',
+        borderBottom: `1px solid ${colors.border}`,
+        background: colors.cardSecondary,
+        flexWrap: 'wrap',
+      }}>
+        <button onClick={onBack} style={{
+          background: colors.cardSecondary,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '4px',
+          padding: '4px 8px',
+          cursor: 'pointer',
+          color: colors.text,
+          fontSize: '14px',
+          marginRight: '8px',
+        }}>← Escritorio</button>
 
-      {/* Formula bar */}
-      <div className="px-3 py-1.5 border-b-2 flex items-center gap-2 shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.2)' : colors.bg }}>
-        <div className="w-16 text-center text-[9px] font-bold font-mono px-2 py-1 rounded border truncate" style={{ borderColor: colors.border, color: colors.primary, background: colors.cardBg }}>{getSelectionLabel()}</div>
-        <span className="text-[9px] font-mono" style={{ color: colors.textMuted }}>fx</span>
+        <button onClick={() => copySelection(false)} style={btnStyle(colors)} title="Copiar (Ctrl+C)">Copiar</button>
+        <button onClick={() => copySelection(true)} style={btnStyle(colors)} title="Cortar (Ctrl+X)">Cortar</button>
+        <button onClick={pasteClipboard} style={btnStyle(colors)} title="Pegar (Ctrl+V)">Pegar</button>
+        <button onClick={deleteSelection} style={btnStyle(colors)} title="Borrar (Del)">Borrar</button>
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <button onClick={undo} style={btnStyle(colors)} title="Deshacer (Ctrl+Z)">Deshacer</button>
+        <button onClick={redo} style={btnStyle(colors)} title="Rehacer (Ctrl+Y)">Rehacer</button>
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <button onClick={() => setFindReplaceOpen(true)} style={btnStyle(colors)} title="Buscar (Ctrl+F)">Buscar</button>
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <button onClick={() => applyFormat({ bold: !activeFormat.bold })} style={{
+          ...btnStyle(colors),
+          fontWeight: 'bold',
+          background: activeFormat.bold ? colors.primary : colors.cardSecondary,
+        }} title="Negrita (Ctrl+B)">B</button>
+        <button onClick={() => applyFormat({ italic: !activeFormat.italic })} style={{
+          ...btnStyle(colors),
+          fontStyle: 'italic',
+          background: activeFormat.italic ? colors.primary : colors.cardSecondary,
+        }} title="Cursiva">I</button>
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <button onClick={() => applyFormat({ type: activeFormat.type === 'currency' ? undefined : 'currency' })} style={{
+          ...btnStyle(colors),
+          background: activeFormat.type === 'currency' ? colors.primary : colors.cardSecondary,
+        }} title="Moneda">$</button>
+        <button onClick={() => applyFormat({ type: activeFormat.type === 'percent' ? undefined : 'percent' })} style={{
+          ...btnStyle(colors),
+          background: activeFormat.type === 'percent' ? colors.primary : colors.cardSecondary,
+        }} title="Porcentaje">%</button>
+        <button onClick={() => applyFormat({ decimals: Math.max(0, (activeFormat.decimals ?? 2) - 1) })} style={btnStyle(colors)} title="Decimales -">0.0→0</button>
+        <button onClick={() => applyFormat({ decimals: (activeFormat.decimals ?? 2) + 1 })} style={btnStyle(colors)} title="Decimales +">0→0.0</button>
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <label style={{ fontSize: '11px', color: colors.text }}>Color:</label>
         <input
-          value={editing ? editValue : (cells[selected] || '')}
-          onFocus={() => { setEditing(true); setEditValue(cells[selected] || ''); }}
-          onChange={handleFormulaChange}
-          onKeyDown={handleFormulaKeyDown}
-          onBlur={saveEdit}
-          className="flex-1 px-3 py-1 rounded border-2 text-[9px] font-mono outline-none"
-          style={{ borderColor: editing ? colors.primary : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text }}
-          placeholder={`Fórmula: =SUM(A1:A5), =SI(A1>100,"Sí","No")`}
+          type="color"
+          value={activeFormat.textColor || '#000000'}
+          onChange={(e) => applyFormat({ textColor: e.target.value })}
+          style={{ width: '24px', height: '24px', border: 'none', cursor: 'pointer', padding: 0 }}
+          title="Color de texto"
+        />
+        <label style={{ fontSize: '11px', color: colors.text, marginLeft: '4px' }}>Fondo:</label>
+        <input
+          type="color"
+          value={activeFormat.bgColor || '#ffffff'}
+          onChange={(e) => applyFormat({ bgColor: e.target.value })}
+          style={{ width: '24px', height: '24px', border: 'none', cursor: 'pointer', padding: 0 }}
+          title="Color de fondo"
         />
       </div>
 
+      {/* Formula Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '2px 8px',
+        borderBottom: `1px solid ${colors.border}`,
+        background: colors.cardSecondary,
+        gap: '8px',
+      }}>
+        <div style={{
+          background: colors.cardBg,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '3px',
+          padding: '2px 8px',
+          minWidth: '60px',
+          textAlign: 'center',
+          fontSize: '12px',
+          fontWeight: 'bold',
+        }}>
+          {cellId(selectedCell.row, selectedCell.col)}
+        </div>
+        <div style={{ color: colors.textMuted, fontSize: '12px' }}>=</div>
+        <input
+          value={formulaBarValue}
+          onChange={(e) => {
+            setFormulaBarValue(e.target.value);
+            setEditValue(e.target.value);
+            setEditMode(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { commitEdit(); setEditMode(false); }
+            else if (e.key === 'Escape') { cancelEdit(); setEditMode(false); }
+          }}
+          style={{
+            flex: 1,
+            background: colors.cardBg,
+            border: `1px solid ${colors.border}`,
+            borderRadius: '3px',
+            padding: '2px 8px',
+            color: colors.text,
+            fontSize: '12px',
+            fontFamily: 'Consolas, monospace',
+          }}
+        />
+      </div>
+
+      {/* Find & Replace Dialog */}
+      {findReplaceOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100px',
+          right: '20px',
+          background: colors.cardBg,
+          border: `1px solid ${colors.border}`,
+          borderRadius: '8px',
+          padding: '12px',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          minWidth: '280px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontWeight: 'bold' }}>Buscar y Reemplazar</span>
+            <button onClick={() => { setFindReplaceOpen(false); setHighlightedCells(new Set()); }} style={{ background: 'none', border: 'none', color: colors.text, cursor: 'pointer', fontSize: '16px' }}>×</button>
+          </div>
+          <div style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '11px', color: colors.textMuted }}>Buscar:</label>
+            <input
+              value={findText}
+              onChange={(e) => setFindText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') findNext(); }}
+              style={{
+                width: '100%',
+                background: colors.cardBg,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '3px',
+                padding: '4px 8px',
+                color: colors.text,
+                fontSize: '12px',
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: '8px' }}>
+            <label style={{ fontSize: '11px', color: colors.textMuted }}>Reemplazar:</label>
+            <input
+              value={replaceText}
+              onChange={(e) => setReplaceText(e.target.value)}
+              style={{
+                width: '100%',
+                background: colors.cardBg,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '3px',
+                padding: '4px 8px',
+                color: colors.text,
+                fontSize: '12px',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button onClick={findNext} style={{ ...btnStyle(colors), flex: 1 }}>Buscar</button>
+            <button onClick={findAndReplace} style={{ ...btnStyle(colors), flex: 1 }}>Reemplazar</button>
+          </div>
+        </div>
+      )}
+
       {/* Grid */}
-      <div className="flex-1 overflow-auto" onMouseUp={mouseUp}>
-        <table className="border-collapse" style={{ borderColor: colors.border }}>
+      <div ref={gridRef} style={{
+        flex: 1,
+        overflow: 'auto',
+        position: 'relative',
+      }}>
+        <table style={{
+          borderCollapse: 'collapse',
+          tableLayout: 'fixed',
+        }}>
           <thead>
             <tr>
-              <th className="sticky top-0 sticky left-0 z-20 w-8 p-1 text-[7px] font-mono border-r border-b" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#e5e7eb', color: colors.textMuted }}></th>
-              {COLS.map(c => (
-                <th key={c} className="sticky top-0 z-10 p-1 text-[7px] font-mono border-r border-b min-w-[70px]" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#e5e7eb', color: colors.primary }}>{c}</th>
+              <th style={{
+                position: 'sticky',
+                top: 0,
+                left: 0,
+                zIndex: 20,
+                background: colors.cardSecondary,
+                border: `1px solid ${colors.border}`,
+                width: '40px',
+                minWidth: '40px',
+              }} />
+              {Array.from({ length: COLUMNS }, (_, c) => (
+                <th key={c} style={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 10,
+                  background: colors.cardSecondary,
+                  border: `1px solid ${colors.border}`,
+                  width: '80px',
+                  minWidth: '80px',
+                  padding: '4px',
+                  textAlign: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                }}>
+                  {colToLetter(c)}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {Array.from({ length: ROWS }, (_, r) => (
               <tr key={r}>
-                <td className="sticky left-0 z-10 text-center p-1 text-[7px] font-mono border-r border-b" style={{ borderColor: colors.border, background: isDark ? '#111' : '#f3f4f6', color: colors.textMuted }}>{r + 1}</td>
-                {COLS.map(c => {
-                  const ref = getCellRef(r, COLS.indexOf(c));
-                  const isSel = selected === ref;
-                  const inRange = isInSelection(r, COLS.indexOf(c));
-                  const display = isSel && editing ? editValue : evalCell(ref);
-                  const raw = cells[ref] || '';
-                  const isFormula = raw.startsWith('=');
-                  const hasError = display === '#ERR';
+                <td style={{
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 5,
+                  background: colors.cardSecondary,
+                  border: `1px solid ${colors.border}`,
+                  width: '40px',
+                  minWidth: '40px',
+                  textAlign: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                }}>
+                  {r + 1}
+                </td>
+                {Array.from({ length: COLUMNS }, (_, c) => {
+                  const id = cellId(r, c);
+                  const cell = cells.get(id);
+                  const selected = isCellSelected(r, c);
+                  const active = selectedCell.row === r && selectedCell.col === c;
+                  const highlighted = isCellHighlighted(r, c);
+
                   return (
-                    <td key={c}
-                      onMouseDown={() => mouseDownCell(ref)}
-                      onMouseEnter={() => mouseEnterCell(ref)}
-                      onClick={(e) => clickCell(ref, e)}
-                      className="p-1 text-[8px] font-mono border-r border-b cursor-pointer select-none"
+                    <td
+                      key={c}
+                      data-cell={id}
+                      onMouseDown={(e) => handleCellMouseDown(r, c, e)}
+                      onMouseMove={() => handleCellMouseMove(r, c)}
+                      onClick={(e) => handleCellClick(r, c, e.shiftKey)}
+                      onDoubleClick={() => handleCellDoubleClick(r, c)}
                       style={{
-                        borderColor: colors.border,
-                        background: isSel ? (isDark ? 'rgba(255,177,98,0.2)' : 'rgba(255,177,98,0.3)') : inRange && !isSel ? (isDark ? 'rgba(255,177,98,0.08)' : 'rgba(255,177,98,0.12)') : 'transparent',
-                        outline: isSel ? `2px solid ${colors.primary}` : 'none',
-                        color: hasError ? '#ef4444' : isFormula ? colors.textMuted : colors.text,
-                        minWidth: 70,
-                        textAlign: 'right',
-                      }}>
-                      {display}
+                        border: `1px solid ${colors.border}`,
+                        padding: '0 4px',
+                        height: '22px',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        background: highlighted
+                          ? colors.primary
+                          : cell?.format?.bgColor
+                            ? cell.format.bgColor
+                            : active
+                              ? colors.primary
+                              : selected
+                                ? colors.cardSecondary
+                                : colors.cardBg,
+                        color: cell?.format?.textColor || colors.text,
+                        textAlign: cell?.format?.align || 'left',
+                        cursor: 'cell',
+                        position: 'relative',
+                      }}
+                    >
+                      {renderCellContent(r, c)}
                     </td>
                   );
                 })}
@@ -426,13 +1094,27 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         </table>
       </div>
 
-      {/* Status bar */}
-      <div className="px-3 py-1 border-t-2 flex items-center gap-3 text-[7px] font-mono shrink-0 flex-wrap" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
-        <span style={{ color: colors.textMuted }}>{ROWS}×{COLS.length}</span>
-        {getSelectionStats() && (
-          <span className="px-1.5 py-0.5 rounded" style={{ background: isDark ? 'rgba(255,177,98,0.1)' : 'rgba(255,177,98,0.15)', color: colors.primary }}>{getSelectionStats()}</span>
-        )}
-        <span className="ml-auto" style={{ color: colors.textMuted }}>Ctrl+C/V/X · Shift+Click · Drag</span>
+      {/* Status Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '4px 12px',
+        borderTop: `1px solid ${colors.border}`,
+        background: colors.cardSecondary,
+        fontSize: '11px',
+        color: colors.textMuted,
+        gap: '16px',
+      }}>
+        <div>
+          Celdas: {selectionStats.count}
+          {selectionStats.numCount > 0 && (
+            <> | Suma: {selectionStats.sum.toFixed(2)} | Promedio: {selectionStats.avg.toFixed(2)} | Num: {selectionStats.numCount}</>
+          )}
+        </div>
+        <div>
+          Hist: {historyIndex + 1}/{history.length}
+        </div>
       </div>
     </div>
   );
