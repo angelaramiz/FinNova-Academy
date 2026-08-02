@@ -94,18 +94,24 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const [estadoResultados, setEstadoResultados] = useState<any>(null);
   const [balanza, setBalanza] = useState<any>(null);
   const [reportTab, setReportTab] = useState<'bg' | 'er' | 'bal'>('bg');
+  const [persistentClients, setPersistentClients] = useState<any[]>([]);
+  const [persistentSuppliers, setPersistentSuppliers] = useState<any[]>([]);
   const journal = genJournal();
   const allEntries = [...dynamicEntries, ...journal];
 
   useEffect(() => {
     (async () => {
       try {
-        const [journalData, accountsData] = await Promise.all([
+        const [journalData, accountsData, clientsData, suppliersData] = await Promise.all([
           apiGet('/api/sim/journal'),
           apiGet('/api/sim/chart-of-accounts'),
+          apiGet('/api/sim/clients'),
+          apiGet('/api/sim/suppliers'),
         ]);
         if (Array.isArray(journalData)) setDynamicEntries(journalData);
         if (Array.isArray(accountsData)) setRealAccounts(accountsData);
+        if (Array.isArray(clientsData)) setPersistentClients(clientsData);
+        if (Array.isArray(suppliersData)) setPersistentSuppliers(suppliersData);
       } catch {}
     })();
   }, []);
@@ -305,18 +311,20 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
 
           {mod === 'clientes' && (
             <div className="p-4 space-y-2">
-              {CLIENTS.map(c => (
-                <div key={c.name} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
+              {persistentClients.map(c => (
+                <div key={c.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.primary, color: '#1B2632' }}>{c.name.charAt(0)}</div>
                     <div>
                       <p className="text-[10px] font-bold" style={{ color: colors.text }}>{c.name}</p>
-                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{c.rfc} · {c.invoices} facturas</p>
+                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{c.rfc} · {c.contact}</p>
+                      <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Límite crédito: ${fmt(c.creditLimit)} · {c.paymentTerms}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold" style={{ color: c.balance > 0 ? '#22c55e' : colors.textMuted }}>{c.balance > 0 ? `$${fmt(c.balance)}` : `$0`}</p>
+                    <p className="text-xs font-bold" style={{ color: c.outstandingBalance > 0 ? '#f59e0b' : '#22c55e' }}>{c.outstandingBalance > 0 ? `$${fmt(c.outstandingBalance)}` : '$0'}</p>
                     <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Saldo pendiente</p>
+                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>{c.invoicesCount} facturas · ${fmt(c.totalPurchases)}</p>
                   </div>
                 </div>
               ))}
@@ -325,18 +333,20 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
 
           {mod === 'proveedores' && (
             <div className="p-4 space-y-2">
-              {SUPPLIERS.map(s => (
-                <div key={s.name} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
+              {persistentSuppliers.map(s => (
+                <div key={s.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.secondary, color: '#fff' }}>{s.name.charAt(0)}</div>
                     <div>
                       <p className="text-[10px] font-bold" style={{ color: colors.text }}>{s.name}</p>
-                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{s.rfc} · {s.invoices} facturas recibidas</p>
+                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{s.rfc} · {s.contact}</p>
+                      <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Términos: {s.paymentTerms}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold" style={{ color: '#ef4444' }}>${fmt(s.balance)}</p>
+                    <p className="text-xs font-bold" style={{ color: s.outstandingBalance > 0 ? '#ef4444' : '#22c55e' }}>{s.outstandingBalance > 0 ? `$${fmt(s.outstandingBalance)}` : '$0'}</p>
                     <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Por pagar</p>
+                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>{s.invoicesCount} facturas · ${fmt(s.totalPurchases)}</p>
                   </div>
                 </div>
               ))}
