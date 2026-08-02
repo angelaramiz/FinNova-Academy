@@ -85,7 +85,12 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const isDark = theme === 'dark';
   const [mod, setMod] = useState<Module>('diario');
   const [dynamicEntries, setDynamicEntries] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editEntry, setEditEntry] = useState<any>(null);
+  const [filter, setFilter] = useState('');
+  const [form, setForm] = useState({ date: '', ref: '', desc: '', account: '', debit: '', credit: '' });
   const journal = genJournal();
+  const allEntries = [...dynamicEntries, ...journal];
 
   useEffect(() => {
     (async () => {
@@ -96,6 +101,48 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     })();
   }, []);
 
+  function openNewEntry() {
+    setForm({ date: new Date().toLocaleDateString('es-MX').replace(/\//g, '/'), ref: '', desc: '', account: '', debit: '', credit: '' });
+    setEditEntry(null);
+    setShowForm(true);
+  }
+
+  function openEditEntry(entry: any) {
+    setForm({ date: entry.date, ref: entry.ref, desc: entry.desc, account: entry.account, debit: String(entry.debit || ''), credit: String(entry.credit || '') });
+    setEditEntry(entry);
+    setShowForm(true);
+  }
+
+  function handleSave() {
+    const newEntry = {
+      date: form.date,
+      ref: form.ref || `POL-${Date.now()}`,
+      desc: form.desc,
+      account: form.account,
+      debit: Number(form.debit) || 0,
+      credit: Number(form.credit) || 0,
+      type: 'manual',
+    };
+    setDynamicEntries(prev => {
+      if (editEntry) {
+        return prev.map(e => e === editEntry ? newEntry : e);
+      }
+      return [...prev, newEntry];
+    });
+    setShowForm(false);
+    setEditEntry(null);
+  }
+
+  function handleDelete(entry: any) {
+    setDynamicEntries(prev => prev.filter(e => e !== entry));
+  }
+
+  const filteredEntries = allEntries.filter(e =>
+    !filter || e.account.toLowerCase().includes(filter.toLowerCase()) ||
+    e.desc.toLowerCase().includes(filter.toLowerCase()) ||
+    e.ref.toLowerCase().includes(filter.toLowerCase())
+  );
+
   const modules = [
     { id: 'diario' as Module, icon: '📋', label: 'Libro Diario' },
     { id: 'cuentas' as Module, icon: '📚', label: 'Catálogo de Cuentas' },
@@ -104,7 +151,6 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     { id: 'reportes' as Module, icon: '📊', label: 'Reportes' },
   ];
 
-  const allEntries = [...dynamicEntries, ...journal];
   const totalDebe = allEntries.reduce((s, e) => s + e.debit, 0);
   const totalHaber = allEntries.reduce((s, e) => s + e.credit, 0);
 
@@ -138,12 +184,19 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         <div className="px-4 py-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)' }}>
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold font-mono uppercase tracking-wider" style={{ color: colors.primary }}>{modules.find(m => m.id === mod)?.icon} {modules.find(m => m.id === mod)?.label}</span>
-            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? allEntries.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
+            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? filteredEntries.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
           </div>
-          <div className="flex items-center gap-2 text-[8px] font-mono" style={{ color: colors.textMuted }}>
-            <span>Crear</span>
-            <span>Importar</span>
-            <span>Exportar</span>
+          <div className="flex items-center gap-2">
+            {mod === 'diario' && (
+              <input type="text" value={filter} onChange={e => setFilter(e.target.value)}
+                placeholder="🔍 Buscar..."
+                className="text-[8px] font-mono px-2 py-1 rounded border"
+                style={{ borderColor: colors.border, background: colors.cardBg, color: colors.text, width: 120 }} />
+            )}
+            {mod === 'diario' && (
+              <button onClick={openNewEntry} className="text-[8px] font-bold px-2 py-1 rounded cursor-pointer hover:opacity-80"
+                style={{ background: colors.primary, color: '#1B2632' }}>+ Nuevo asiento</button>
+            )}
           </div>
         </div>
 
@@ -160,10 +213,11 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                   <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: '#22c55e' }}>Debe</th>
                   <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: '#ef4444' }}>Haber</th>
                   <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
+                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {allEntries.map((e, i) => (
+                {filteredEntries.map((e, i) => (
                   <tr key={i} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30` }}>
                     <td className="px-4 py-2 text-[9px] font-mono" style={{ color: colors.text }}>{e.date}</td>
                     <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary }}>{e.ref}</td>
@@ -171,7 +225,11 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                     <td className="px-4 py-2 text-[9px] font-mono" style={{ color: colors.textMuted }}>{e.account}</td>
                     <td className="px-4 py-2 text-[9px] font-mono text-right" style={{ color: e.debit > 0 ? '#22c55e' : colors.textMuted }}>{e.debit > 0 ? `$${fmt(e.debit)}` : ''}</td>
                     <td className="px-4 py-2 text-[9px] font-mono text-right" style={{ color: e.credit > 0 ? '#ef4444' : colors.textMuted }}>{e.credit > 0 ? `$${fmt(e.credit)}` : ''}</td>
-                    <td className="px-4 py-2"><span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: colors.primary + '20', color: colors.primary }}>{e.type}</span></td>
+                    <td className="px-4 py-2"><span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: e.type === 'manual' ? '#22c55e20' : colors.primary + '20', color: e.type === 'manual' ? '#22c55e' : colors.primary }}>{e.type}</span></td>
+                    <td className="px-4 py-2 flex gap-1">
+                      <button onClick={() => openEditEntry(e)} className="text-[8px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: colors.primary + '30', color: colors.primary }}>✏️</button>
+                      <button onClick={() => handleDelete(e)} className="text-[8px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: '#ef444430', color: '#ef4444' }}>🗑</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -297,6 +355,60 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
           <span style={{ color: colors.textMuted }}>Julio 2026</span>
         </div>
       </div>
+
+      {/* Entry Form Modal */}
+      {showForm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-xl shadow-2xl overflow-hidden" style={{ background: isDark ? '#1a1a2e' : '#fff', border: `1px solid ${colors.border}`, width: '100%', maxWidth: 420 }}>
+            <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${colors.border}` }}>
+              <span className="text-xs font-bold" style={{ color: colors.text }}>{editEntry ? '✏️ Editar asiento' : '📋 Nuevo asiento contable'}</span>
+              <button onClick={() => setShowForm(false)} className="text-lg cursor-pointer" style={{ color: colors.textMuted }}>×</button>
+            </div>
+            <div className="p-5 space-y-3">
+              {[
+                { key: 'date', label: 'Fecha', placeholder: '01/08/2026' },
+                { key: 'ref', label: 'Referencia', placeholder: 'POL-001' },
+                { key: 'desc', label: 'Descripción', placeholder: 'Descripción del asiento' },
+                { key: 'account', label: 'Cuenta', placeholder: '1-02 Bancos' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: colors.textMuted }}>{f.label}</label>
+                  <input type="text" value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text }}
+                    placeholder={f.placeholder} />
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: '#22c55e' }}>DEBE</label>
+                  <input type="number" step="0.01" min="0" value={form.debit} onChange={e => setForm(prev => ({ ...prev, debit: e.target.value, credit: e.target.value ? '' : prev.credit }))}
+                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    style={{ borderColor: form.debit ? '#22c55e40' : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: '#22c55e' }}
+                    placeholder="0.00" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: '#ef4444' }}>HABER</label>
+                  <input type="number" step="0.01" min="0" value={form.credit} onChange={e => setForm(prev => ({ ...prev, credit: e.target.value, debit: e.target.value ? '' : prev.debit }))}
+                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    style={{ borderColor: form.credit ? '#ef444440' : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: '#ef4444' }}
+                    placeholder="0.00" />
+                </div>
+              </div>
+              {form.debit && form.credit && (
+                <p className="text-[8px] font-mono" style={{ color: '#f59e0b' }}>⚠ No puede tener DEBE y HABER al mismo tiempo</p>
+              )}
+            </div>
+            <div className="px-5 py-3 flex gap-2" style={{ borderTop: `1px solid ${colors.border}` }}>
+              <button onClick={() => setShowForm(false)} className="flex-1 text-[10px] py-2 rounded-lg font-medium cursor-pointer"
+                style={{ background: colors.cardBg, color: colors.textMuted, border: `1px solid ${colors.border}` }}>Cancelar</button>
+              <button onClick={handleSave} disabled={!form.desc || !form.account || (!form.debit && !form.credit)}
+                className="flex-1 text-[10px] py-2 rounded-lg font-bold cursor-pointer disabled:opacity-50"
+                style={{ background: colors.primary, color: '#1B2632' }}>{editEntry ? 'Guardar' : 'Crear asiento'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
