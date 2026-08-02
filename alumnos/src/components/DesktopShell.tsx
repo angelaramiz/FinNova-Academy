@@ -48,9 +48,32 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       setValidationResult(result);
       setStepIdx(workflow.steps.length - 1);
       await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
+      // Auto-generar asientos contables según el tipo de tarea
+      generateEntriesForTask(currentTask.type, answers);
       if (onTaskComplete) onTaskComplete();
     } catch (e) { console.error(e); }
     setLoading(false);
+  }
+
+  function generateEntriesForTask(type: string, answers: Record<string, any>) {
+    try {
+      const data: any = { subtotal: Number(answers.subtotal || answers.amount || 0), iva: Number(answers.iva || 0), total: Number(answers.total || answers.amount || 0) };
+      if (answers.clientName) data.clientName = answers.clientName;
+      if (answers.supplierName) data.supplierName = answers.supplierName;
+      if (answers.invoiceNumber || answers.folio) data.invoiceNumber = answers.invoiceNumber || answers.folio;
+      if (answers.folio) data.folio = answers.folio;
+      if (answers.amountReceived) data.amount = answers.amountReceived;
+      if (type === 'payroll') {
+        data.totalGross = Number(answers.gross || 0);
+        data.totalIsr = Number(answers.isr || 0);
+        data.totalImss = Number(answers.imss || 0);
+        data.totalNeto = Number(answers.net || 0);
+        data.employees = 4;
+      }
+      let entryType = type;
+      if (type === 'supplier_invoice') entryType = 'supplier';
+      apiPost('/api/sim/generate-entries', { type: entryType, data });
+    } catch (e) { console.error(e); }
   }
 
   async function handleSpreadsheetSubmit(answers: Record<string, any>) { await handleFormSubmit(answers); }

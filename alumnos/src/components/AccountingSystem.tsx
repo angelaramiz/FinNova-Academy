@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import { apiFetch } from '../lib/api';
+
+function getToken() { return localStorage.getItem('supabase_auth_token') || ''; }
+async function apiGet(path: string) {
+  return apiFetch(path);
+}
 
 // ─── DATA ─────────────────────────────────────────────────────────
 const ACCOUNTS = [
@@ -78,7 +84,17 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [mod, setMod] = useState<Module>('diario');
+  const [dynamicEntries, setDynamicEntries] = useState<any[]>([]);
   const journal = genJournal();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await apiGet('/api/sim/journal');
+        if (Array.isArray(data)) setDynamicEntries(data);
+      } catch {}
+    })();
+  }, []);
 
   const modules = [
     { id: 'diario' as Module, icon: '📋', label: 'Libro Diario' },
@@ -88,8 +104,9 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     { id: 'reportes' as Module, icon: '📊', label: 'Reportes' },
   ];
 
-  const totalDebe = journal.reduce((s, e) => s + e.debit, 0);
-  const totalHaber = journal.reduce((s, e) => s + e.credit, 0);
+  const allEntries = [...dynamicEntries, ...journal];
+  const totalDebe = allEntries.reduce((s, e) => s + e.debit, 0);
+  const totalHaber = allEntries.reduce((s, e) => s + e.credit, 0);
 
   return (
     <div className="flex h-full" style={{ background: colors.bg }}>
@@ -121,7 +138,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         <div className="px-4 py-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)' }}>
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold font-mono uppercase tracking-wider" style={{ color: colors.primary }}>{modules.find(m => m.id === mod)?.icon} {modules.find(m => m.id === mod)?.label}</span>
-            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? journal.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
+            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? allEntries.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
           </div>
           <div className="flex items-center gap-2 text-[8px] font-mono" style={{ color: colors.textMuted }}>
             <span>Crear</span>
@@ -146,7 +163,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                 </tr>
               </thead>
               <tbody>
-                {journal.map((e, i) => (
+                {allEntries.map((e, i) => (
                   <tr key={i} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30` }}>
                     <td className="px-4 py-2 text-[9px] font-mono" style={{ color: colors.text }}>{e.date}</td>
                     <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary }}>{e.ref}</td>
