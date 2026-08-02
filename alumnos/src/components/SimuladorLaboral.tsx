@@ -523,7 +523,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       )}
 
       {/* Dashboard modal */}
-      {showDashboard && <Dashboard theme={theme} onClose={() => { setShowDashboard(false); loadStats(); }} />}
+      {showDashboard && <Dashboard theme={theme} onBack={() => { setShowDashboard(false); loadStats(); }} />}
 
       {/* Stats HUD */}
       {userStats && (

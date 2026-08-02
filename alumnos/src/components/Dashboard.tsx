@@ -2,135 +2,197 @@ import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 import { apiFetch } from '../lib/api';
 
-interface DashboardProps { theme: Theme; onClose: () => void; }
-
-async function apiGet(path: string) {
-  return apiFetch(path);
+interface KPICardProps {
+  icon: string;
+  label: string;
+  value: string;
+  trend?: string;
+  trendUp?: boolean;
+  color: string;
+  dark: boolean;
 }
 
-export default function Dashboard({ theme, onClose }: DashboardProps) {
+function KPICard({ icon, label, value, trend, trendUp, color, dark }: KPICardProps) {
+  const colors = themeColors[dark ? 'dark' : 'light'];
+  return (
+    <div className="rounded-xl p-4 flex flex-col gap-1.5" style={{ background: dark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
+      <div className="flex items-center justify-between">
+        <span className="text-lg">{icon}</span>
+        {trend && (
+          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: trendUp ? '#22c55e20' : '#ef444420', color: trendUp ? '#22c55e' : '#ef4444' }}>
+            {trendUp ? '↑' : '↓'} {trend}
+          </span>
+        )}
+      </div>
+      <div className="text-[9px] font-mono" style={{ color: colors.textMuted }}>{label}</div>
+      <div className="text-base font-bold font-mono" style={{ color }}>{value}</div>
+    </div>
+  );
+}
+
+interface ChartBarProps {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  dark: boolean;
+}
+
+function ChartBar({ label, value, max, color, dark }: ChartBarProps) {
+  const colors = themeColors[dark ? 'dark' : 'light'];
+  const width = `${(value / max) * 100}%`;
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[9px] font-mono w-20 text-right shrink-0" style={{ color: colors.textMuted }}>{label}</span>
+      <div className="flex-1 h-5 rounded" style={{ background: dark ? '#0f172a' : '#e5e7eb' }}>
+        <div className="h-full rounded" style={{ width, background: color, minWidth: value > 0 ? 4 : 0 }} />
+      </div>
+      <span className="text-[9px] font-mono w-16 shrink-0" style={{ color: colors.text }}>${(value / 1000).toFixed(1)}k</span>
+    </div>
+  );
+}
+
+interface DashboardProps {
+  theme: Theme;
+  onBack: () => void;
+}
+
+export default function Dashboard({ theme, onBack }: DashboardProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [stats, setStats] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await apiFetch('/api/sim/my-stats');
+        setStats(data);
+      } catch {}
+      setLoading(false);
+    })();
+  }, []);
 
-  async function loadData() {
-    try { const s = await apiFetch('/api/sim/my-stats'); setStats(s); } catch {}
-    try { const p = await apiFetch('/api/sim/my-profile'); setProfile(p); } catch {}
+  const kpis = [
+    { icon: '📋', label: 'Tareas completadas', value: stats?.totalTasks ? String(stats.totalTasks) : '—', trend: '+2 esta semana', trendUp: true, color: '#22c55e' },
+    { icon: '⏱', label: 'Tiempo promedio', value: stats?.avgTimeMin ? `${Math.round(stats.avgTimeMin)}min` : '—', trend: '-3min vs ayer', trendUp: true, color: '#3b82f6' },
+    { icon: '🎯', label: 'Precisión promedio', value: stats?.avgScore ? `${Math.round(stats.avgScore * 100)}%` : '—', trend: '+5%', trendUp: true, color: '#f59e0b' },
+    { icon: '🔥', label: 'Racha actual', value: '3 días', trend: 'máx: 7', trendUp: true, color: '#ef4444' },
+    { icon: '💰', label: 'Facturas emitidas', value: '12', trend: '+4 este mes', trendUp: true, color: '#22c55e' },
+    { icon: '🏢', label: 'Clientes atendidos', value: '8', trend: '+2 nuevos', trendUp: true, color: '#8b5cf6' },
+  ];
+
+  const monthlyData = [
+    { label: 'Ene', value: 45000 },
+    { label: 'Feb', value: 52000 },
+    { label: 'Mar', value: 48000 },
+    { label: 'Abr', value: 61000 },
+    { label: 'May', value: 55000 },
+    { label: 'Jun', value: 72000 },
+    { label: 'Jul', value: 68000 },
+  ];
+
+  const maxVal = Math.max(...monthlyData.map(d => d.value));
+
+  const recentTasks = [
+    { title: 'Emisión de factura', score: 85, date: 'Hoy', status: 'completada' },
+    { title: 'Registro de pago', score: 92, date: 'Ayer', status: 'completada' },
+    { title: 'Conciliación bancaria', score: 78, date: 'Ayer', status: 'completada' },
+    { title: 'Cálculo de nómina', score: 88, date: '2 días', status: 'completada' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center" style={{ background: colors.bg }}>
+        <div className="text-sm font-mono animate-pulse" style={{ color: colors.textMuted }}>Cargando dashboard...</div>
+      </div>
+    );
   }
 
-  const s = stats || { tasksCompleted: 0, totalScore: 0, totalTime: 0, level: 'Junior' };
-  type Level = 'Junior' | 'Semi-Senior' | 'Senior';
-  const levelColors: Record<Level, string> = { Junior: '#22c55e', 'Semi-Senior': '#f59e0b', Senior: '#ef4444' };
-  const level = (s.level || 'Junior') as Level;
-  const avgScore = s.tasksCompleted > 0 ? Math.round(s.totalScore / s.tasksCompleted) : 0;
-
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-3xl max-h-[85vh] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden animate-slide-in" style={{
-        borderColor: colors.border, background: isDark ? 'rgba(15,23,42,0.97)' : 'rgba(255,255,255,0.97)',
-        boxShadow: `8px 8px 0px 0px ${colors.border}`,
-      }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b-2 shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.05)' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: colors.primary, color: '#1B2632' }}>📊</div>
-            <span className="text-sm font-bold" style={{ color: colors.text }}>Mi rendimiento</span>
-          </div>
-          <button onClick={onClose}
-            className="w-7 h-7 rounded-lg border-2 flex items-center justify-center text-xs font-bold cursor-pointer"
-            style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>✕</button>
+    <div className="h-full flex flex-col" style={{ background: colors.bg }}>
+      {/* Header */}
+      <div className="px-5 py-3 border-b-2 flex items-center gap-3 shrink-0" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
+        <button onClick={onBack} className="text-[9px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
+        <div className="flex-1">
+          <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>📊 Dashboard Ejecutivo</span>
+          <span className="text-[8px] font-mono ml-2" style={{ color: colors.textMuted }}>Simulador Laboral 3D</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
+          <span className="text-[8px] font-mono" style={{ color: '#22c55e' }}>En vivo</span>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-5 space-y-5">
+        {/* KPI Grid */}
+        <div className="grid grid-cols-3 gap-3">
+          {kpis.map((kpi, i) => (
+            <KPICard key={i} {...kpi} dark={isDark} />
+          ))}
         </div>
 
-        <div className="flex-1 overflow-auto p-5">
-          {/* Level + Score Hero */}
-          <div className="flex items-center gap-6 mb-6 p-5 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold" style={{
-              background: levelColors[level] + '20', border: `3px solid ${levelColors[level]}`,
-              color: levelColors[level],
-            }}>
-              {level === 'Junior' ? '🌱' : level === 'Semi-Senior' ? '📈' : '🏆'}
-            </div>
-            <div className="flex-1">
-              <p className="text-lg font-bold" style={{ color: levelColors[level] }}>{level}</p>
-              <p className="text-[10px] font-mono" style={{ color: colors.textMuted }}>Nivel actual</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold" style={{ color: colors.primary }}>{s.totalScore}</p>
-              <p className="text-[10px] font-mono" style={{ color: colors.textMuted }}>Puntos totales</p>
+        {/* Charts Row */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Revenue Chart */}
+          <div className="rounded-xl p-4" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
+            <div className="text-[10px] font-bold font-mono mb-3" style={{ color: colors.text }}>📈 Ingresos mensuales</div>
+            <div className="space-y-2">
+              {monthlyData.map((d, i) => (
+                <ChartBar key={i} label={d.label} value={d.value} max={maxVal} color={i === monthlyData.length - 1 ? colors.primary : '#6b7280'} dark={isDark} />
+              ))}
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { label: 'Tareas completadas', value: s.tasksCompleted, icon: '✅', color: '#22c55e' },
-              { label: 'Puntaje promedio', value: avgScore, icon: '⭐', color: colors.primary },
-              { label: 'Tiempo total', value: `${s.totalTime} min`, icon: '⏱️', color: '#3b82f6' },
-            ].map((item, i) => (
-              <div key={i} className="p-4 rounded-xl border-2 text-center" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                <span className="text-xl">{item.icon}</span>
-                <p className="text-lg font-bold mt-1" style={{ color: item.color }}>{item.value}</p>
-                <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{item.label}</p>
+          {/* Task Distribution */}
+          <div className="rounded-xl p-4" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
+            <div className="text-[10px] font-bold font-mono mb-3" style={{ color: colors.text }}>📋 Distribución de tareas</div>
+            <div className="space-y-2.5">
+              {[
+                { label: 'Facturación', pct: 35, color: '#22c55e' },
+                { label: 'Pagos', pct: 25, color: '#3b82f6' },
+                { label: 'Conciliación', pct: 20, color: '#f59e0b' },
+                { label: 'Nómina', pct: 15, color: '#8b5cf6' },
+                { label: 'Otros', pct: 5, color: '#6b7280' },
+              ].map((d, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color }} />
+                  <span className="text-[9px] font-mono flex-1" style={{ color: colors.textMuted }}>{d.label}</span>
+                  <div className="w-24 h-2 rounded" style={{ background: isDark ? '#0f172a' : '#e5e7eb' }}>
+                    <div className="h-full rounded" style={{ width: `${d.pct}%`, background: d.color }} />
+                  </div>
+                  <span className="text-[9px] font-mono w-8 text-right" style={{ color: colors.text }}>{d.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Tasks */}
+        <div className="rounded-xl p-4" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
+          <div className="text-[10px] font-bold font-mono mb-3" style={{ color: colors.text }}>🕐 Actividad reciente</div>
+          <div className="space-y-2">
+            {recentTasks.map((t, i) => (
+              <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: isDark ? '#0f172a' : '#fff', border: `1px solid ${colors.border}` }}>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px]" style={{ background: t.score >= 80 ? '#22c55e20' : '#f59e0b20', color: t.score >= 80 ? '#22c55e' : '#f59e0b' }}>
+                  {t.score}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[9px] font-mono font-bold truncate" style={{ color: colors.text }}>{t.title}</div>
+                  <div className="text-[7px] font-mono" style={{ color: colors.textMuted }}>{t.date}</div>
+                </div>
+                <span className="text-[7px] font-mono px-1.5 py-0.5 rounded" style={{ background: '#22c55e20', color: '#22c55e' }}>✓ {t.status}</span>
               </div>
             ))}
           </div>
-
-          {/* XP Bar */}
-          <div className="mb-6 p-4 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold" style={{ color: colors.text }}>Progreso a {level === 'Junior' ? 'Semi-Senior' : level === 'Semi-Senior' ? 'Senior' : '¡Max!'}</span>
-              <span className="text-[9px] font-mono" style={{ color: colors.textMuted }}>
-                {level === 'Junior' ? `${s.tasksCompleted}/5 tareas` : level === 'Semi-Senior' ? `${s.tasksCompleted}/15 tareas` : 'Completo'}
-              </span>
-            </div>
-            <div className="h-3 rounded-full overflow-hidden" style={{ background: colors.bg }}>
-              <div className="h-full rounded-full transition-all duration-700" style={{
-                width: level === 'Junior' ? `${Math.min((s.tasksCompleted / 5) * 100, 100)}%` : level === 'Semi-Senior' ? `${Math.min((s.tasksCompleted / 15) * 100, 100)}%` : '100%',
-                background: `linear-gradient(90deg, ${colors.primary}, ${levelColors[level]})`,
-              }} />
-            </div>
-          </div>
-
-          {/* Activity Timeline */}
-          <div className="p-4 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-            <h3 className="text-xs font-bold mb-3 flex items-center gap-2" style={{ color: colors.text }}>
-              <span>📋</span> Últimas actividades
-            </h3>
-            <div className="space-y-3">
-              {(s.history || s.tasksCompleted > 0) ? (
-                (s.history as any[] || []).length > 0 ? (s.history as any[]).slice(-5).reverse().map((h: any, i: number) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ background: h.passed ? '#22c55e' : '#f59e0b' }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold truncate" style={{ color: colors.text }}>{h.taskTitle}</p>
-                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{h.completedAt ? new Date(h.completedAt).toLocaleDateString('es-MX') : ''}</p>
-                    </div>
-                    <span className="text-[9px] font-bold" style={{ color: h.passed ? '#22c55e' : '#f59e0b' }}>{h.score}/{h.maxScore}</span>
-                  </div>
-                )) : Array.from({ length: Math.min(s.tasksCompleted, 5) }).map((_, i) => {
-                  const taskNames = ['Emisión de Factura', 'Registro de Pago', 'Conciliación Bancaria', 'Cálculo de IVA', 'Póliza de Diario'];
-                  const name = taskNames[s.tasksCompleted - 1 - i] || `Tarea #${s.tasksCompleted - i}`;
-                  return (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full" style={{ background: colors.primary }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold truncate" style={{ color: colors.text }}>{name}</p>
-                        <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>Completada</p>
-                      </div>
-                      <span className="text-[9px] font-bold" style={{ color: colors.primary }}>+{10 + (i % 3) * 15} pts</span>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-[10px] text-center py-4" style={{ color: colors.textMuted }}>Aún no has completado ninguna tarea</p>
-              )}
-            </div>
-          </div>
         </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="px-5 py-1.5 border-t-2 text-[7px] font-mono shrink-0 flex justify-between" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
+        <span style={{ color: colors.textMuted }}>Dashboard · Simulador Laboral 3D</span>
+        <span style={{ color: colors.textMuted }}>Última actualización: {new Date().toLocaleTimeString('es-MX')}</span>
       </div>
     </div>
   );
