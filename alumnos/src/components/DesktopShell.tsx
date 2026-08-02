@@ -8,6 +8,7 @@ import BankingPortal from './BankingPortal';
 import CalendarWidget from './CalendarWidget';
 import Calculator from './Calculator';
 import SpreadsheetSim from './SpreadsheetSim';
+import AccountingSystem from './AccountingSystem';
 import { apiFetch } from '../lib/api';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
@@ -15,7 +16,7 @@ interface TaskInfo { id: string; title: string; type: string; difficulty: number
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
   const colors = themeColors[theme];
@@ -68,7 +69,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   const appIcons = [
     { label: 'Tareas', icon: '📋', count: tasks.length, action: () => {} },
     { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox') },
-    { label: 'Contable', icon: '📊', action: () => { if (tasks.length > 0) startTask(tasks[0], true); } },
+    { label: 'Contable', icon: '📊', action: () => setScreen('accounting') },
     { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet') },
     { label: 'Calendario', icon: '📅', action: () => setScreen('calendar') },
     { label: 'Banco', icon: '🏦', action: () => setScreen('banking') },
@@ -131,6 +132,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         {screen === 'calculadora' && <Calculator theme={theme} onBack={() => setScreen('desktop')} />}
         {screen === 'banking' && <BankingPortal theme={theme} onClose={() => setScreen('desktop')} />}
         {screen === 'spreadsheet' && <SpreadsheetSim theme={theme} onBack={() => setScreen('desktop')} />}
+        {screen === 'accounting' && <AccountingSystem theme={theme} onBack={() => setScreen('desktop')} />}
         {screen === 'archivo' && (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
             <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
