@@ -11,13 +11,14 @@ import SpreadsheetSim from './SpreadsheetSim';
 import AccountingSystem from './AccountingSystem';
 import PaymentMatcher from './PaymentMatcher';
 import Dashboard from './Dashboard';
+import ProgressDashboard from './ProgressDashboard';
 import { apiFetch } from '../lib/api';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
   const colors = themeColors[theme];
@@ -102,6 +103,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
     { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora') },
     { label: 'Archivo', icon: '📁', action: () => setScreen('archivo') },
     { label: 'Dashboard', icon: '📊', action: () => setScreen('dashboard') },
+    { label: 'Progreso', icon: '📈', action: () => setScreen('progress') },
   ];
 
   return (
@@ -156,6 +158,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         {screen === 'spreadsheet' && <SpreadsheetSim theme={theme} onBack={() => setScreen('desktop')} />}
         {screen === 'accounting' && <AccountingSystem theme={theme} onBack={() => setScreen('desktop')} />}
         {screen === 'dashboard' && <Dashboard theme={theme} onBack={() => setScreen('desktop')} />}
+        {screen === 'progress' && <ProgressDashboard theme={theme} onBack={() => setScreen('desktop')} />}
         {screen === 'archivo' && (
           <div className="h-full flex flex-col">
             <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
