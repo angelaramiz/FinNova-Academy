@@ -99,6 +99,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const [reportTab, setReportTab] = useState<'bg' | 'er' | 'bal'>('bg');
   const [persistentClients, setPersistentClients] = useState<any[]>([]);
   const [persistentSuppliers, setPersistentSuppliers] = useState<any[]>([]);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const journal = genJournal();
   const allEntries = [...dynamicEntries, ...journal];
@@ -543,7 +544,6 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                 { key: 'date', label: 'Fecha', placeholder: '01/08/2026' },
                 { key: 'ref', label: 'Referencia', placeholder: 'POL-001' },
                 { key: 'desc', label: 'Descripción', placeholder: 'Descripción del asiento' },
-                { key: 'account', label: 'Cuenta', placeholder: '1-02 Bancos' },
               ].map(f => (
                 <div key={f.key}>
                   <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: colors.textMuted }}>{f.label}</label>
@@ -553,6 +553,39 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                     placeholder={f.placeholder} />
                 </div>
               ))}
+              {/* Account autocomplete */}
+              <div className="relative">
+                <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: colors.textMuted }}>Cuenta</label>
+                <input type="text" value={form.account} onChange={e => {
+                  setForm(prev => ({ ...prev, account: e.target.value }));
+                  setShowAccountDropdown(true);
+                }} onFocus={() => setShowAccountDropdown(true)} onBlur={() => setTimeout(() => setShowAccountDropdown(false), 200)}
+                  className="w-full px-3 py-2 rounded-lg border text-[13px] font-mono outline-none"
+                  style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text }}
+                  placeholder="Escriba código o nombre..." />
+                {showAccountDropdown && realAccounts.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 rounded-lg border max-h-40 overflow-auto" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#fff' }}>
+                    {realAccounts.filter(a => a.isDetail && (
+                      a.code.toLowerCase().includes(form.account.toLowerCase()) ||
+                      a.name.toLowerCase().includes(form.account.toLowerCase())
+                    )).slice(0, 10).map(a => (
+                      <div key={a.code} className="px-3 py-2 flex items-center gap-2 cursor-pointer hover:opacity-80 transition text-[12px]"
+                        style={{ borderBottom: `1px solid ${colors.border}30` }}
+                        onMouseDown={() => { setForm(prev => ({ ...prev, account: `${a.code} ${a.name}` })); setShowAccountDropdown(false); }}>
+                        <span className="font-mono font-bold" style={{ color: colors.primary }}>{a.code}</span>
+                        <span style={{ color: colors.text }}>{a.name}</span>
+                        <span className="ml-auto text-[10px] font-mono" style={{ color: a.nature === 'D' ? '#22c55e' : '#ef4444' }}>{a.nature}</span>
+                      </div>
+                    ))}
+                    {realAccounts.filter(a => a.isDetail && (
+                      a.code.toLowerCase().includes(form.account.toLowerCase()) ||
+                      a.name.toLowerCase().includes(form.account.toLowerCase())
+                    )).length === 0 && (
+                      <div className="px-3 py-2 text-[11px]" style={{ color: colors.textMuted }}>No se encontraron cuentas</div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: '#22c55e' }}>DEBE</label>
