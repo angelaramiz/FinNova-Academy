@@ -6,6 +6,9 @@ function getToken() { return localStorage.getItem('supabase_auth_token') || ''; 
 async function apiGet(path: string) {
   return apiFetch(path);
 }
+async function apiPost(path: string, body?: any) {
+  return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) });
+}
 
 // ─── DATA ─────────────────────────────────────────────────────────
 const ACCOUNTS = [
@@ -150,7 +153,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     setShowForm(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     const newEntry = {
       date: form.date,
       ref: form.ref || `POL-${Date.now()}`,
@@ -160,6 +163,10 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
       credit: Number(form.credit) || 0,
       type: 'manual',
     };
+    // Persistir en backend
+    try {
+      await apiPost('/api/sim/journal', newEntry);
+    } catch (e) { console.error('Error guardando asiento:', e); }
     setDynamicEntries(prev => {
       if (editEntry) {
         return prev.map(e => e === editEntry ? newEntry : e);
