@@ -153,10 +153,10 @@ export default function AccountingForm({ formData, onSubmit, theme, loading }: A
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-3 py-2 border-b-2 shrink-0" style={{ borderColor: colors.border, background: colors.cardBg }}>
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold" style={{ background: colors.bg }}>📋</div>
-          <span className="text-[10px] font-bold font-mono" style={{ color: colors.text }}>Sistema Contable</span>
+          <div className="w-5 h-5 rounded flex items-center justify-center text-[12px] font-bold" style={{ background: colors.bg }}>📋</div>
+          <span className="text-[13px] font-bold font-mono" style={{ color: colors.text }}>Sistema Contable</span>
         </div>
-        <span className="text-[8px] font-mono" style={{ color: colors.textMuted }}>Validación en tiempo real</span>
+        <span className="text-[11px] font-mono" style={{ color: colors.textMuted }}>Validación en tiempo real</span>
       </div>
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-5 space-y-4">
@@ -169,14 +169,14 @@ export default function AccountingForm({ formData, onSubmit, theme, loading }: A
           return (
             <div key={field.key}>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-bold font-mono uppercase tracking-wider" style={{ color: colors.text }}>
+                <label className="text-[13px] font-bold font-mono uppercase tracking-wider" style={{ color: colors.text }}>
                   {field.label}
                   {field.validation?.required && <span className="ml-0.5" style={{ color: '#ef4444' }}>*</span>}
-                  {field.type === 'calculated' && <span className="ml-1.5 text-[8px] font-mono" style={{ color: colors.primary }}>(auto)</span>}
+                  {field.type === 'calculated' && <span className="ml-1.5 text-[11px] font-mono" style={{ color: colors.primary }}>🔒 Auto</span>}
                 </label>
                 {field.hint && (
                   <button type="button" onClick={() => setShowHint(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
-                    className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer"
+                    className="text-[11px] px-1.5 py-0.5 rounded border cursor-pointer"
                     style={{ borderColor: colors.primary, color: colors.primary, background: 'transparent' }}>💡</button>
                 )}
               </div>
@@ -228,10 +228,10 @@ export default function AccountingForm({ formData, onSubmit, theme, loading }: A
                   style={inputStyle} placeholder="Escribe aquí..." />
               )}
 
-              {hasError && <p className="text-[8px] mt-1 font-mono" style={{ color: '#ef4444' }}>⚠ {errors[field.key]}</p>}
-              {isValid && <p className="text-[8px] mt-1 font-mono" style={{ color: '#22c55e' }}>✓ Válido</p>}
+              {hasError && <p className="text-[11px] mt-1 font-mono" style={{ color: '#ef4444' }}>⚠ {errors[field.key]}</p>}
+              {isValid && <p className="text-[11px] mt-1 font-mono" style={{ color: '#22c55e' }}>✓ Válido</p>}
               {showHint[field.key] && field.hint && (
-                <div className="mt-1 p-2 rounded-lg border text-[9px]" style={{ borderColor: colors.primary + '40', background: colors.primary + '10', color: colors.textMuted }}>
+                <div className="mt-1 p-2 rounded-lg border text-[12px]" style={{ borderColor: colors.primary + '40', background: colors.primary + '10', color: colors.textMuted }}>
                   💡 {field.hint}
                 </div>
               )}
@@ -241,7 +241,7 @@ export default function AccountingForm({ formData, onSubmit, theme, loading }: A
 
         <div className="pt-4">
           <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl border-2 text-xs font-bold cursor-pointer hover:opacity-85 transition disabled:opacity-50"
+            className="w-full max-w-xs mx-auto py-3 rounded-xl border-2 text-xs font-bold cursor-pointer hover:opacity-85 transition disabled:opacity-50"
             style={{ borderColor: colors.primary, background: colors.primary, color: '#1B2632', boxShadow: `3px 3px 0px 0px ${colors.border}` }}>
             {loading ? 'Validando...' : '✓ Validar y entregar'}
           </button>

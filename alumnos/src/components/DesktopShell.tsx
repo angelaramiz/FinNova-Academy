@@ -94,7 +94,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   function openTaskFromEmail(taskId: string) { const task = tasks.find(t => t.id === taskId); if (task) startTask(task, true); }
 
   const appIcons = [
-    { label: 'Tareas', icon: '📋', count: tasks.length, action: () => {} },
+    { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop') },
     { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox') },
     { label: 'Contable', icon: '📊', action: () => setScreen('accounting') },
     { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet') },
@@ -102,8 +102,8 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
     { label: 'Banco', icon: '🏦', action: () => setScreen('banking') },
     { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora') },
     { label: 'Archivo', icon: '📁', action: () => setScreen('archivo') },
-    { label: 'Dashboard', icon: '📊', action: () => setScreen('dashboard') },
-    { label: 'Progreso', icon: '📈', action: () => setScreen('progress') },
+    { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard') },
+    { label: 'Progreso', icon: '📉', action: () => setScreen('progress') },
   ];
 
   return (
@@ -111,44 +111,59 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       {/* Header */}
       <div className="px-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#e5e7eb', height: collapsed ? '26px' : '34px' }}>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCollapsed(!collapsed)} className="text-[8px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>{collapsed ? '▶' : '◀'}</button>
-          {!collapsed && <span className="text-[9px] font-bold font-mono" style={{ color: colors.text }}>Escritorio de Trabajo</span>}
+          <button onClick={() => setCollapsed(!collapsed)} className="text-[11px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>{collapsed ? '▶' : '◀'}</button>
+          {!collapsed && <span className="text-[12px] font-bold font-mono" style={{ color: colors.text }}>Escritorio de Trabajo</span>}
         </div>
-        <div className="flex items-center gap-2.5 text-[7px] font-mono" style={{ color: colors.textMuted }}>
+        <div className="flex items-center gap-2.5 text-[13px] font-mono" style={{ color: colors.textMuted }}>
           {!collapsed && <span>{new Date().toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
-          <button onClick={onClose} className="w-4 h-4 rounded flex items-center justify-center text-[8px] cursor-pointer hover:opacity-70" style={{ background: '#ef4444', color: '#fff' }}>✕</button>
+          <button onClick={onClose} className="w-4 h-4 rounded flex items-center justify-center text-[11px] cursor-pointer hover:opacity-70" style={{ background: '#ef4444', color: '#fff' }}>✕</button>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden" style={{ background: colors.bg }}>
         {screen === 'desktop' && (
-          <div className="h-full p-4 overflow-auto">
+          <div className="h-full p-4 overflow-auto animate-slide-in">
             <div className="flex gap-5 mb-6 flex-wrap">
               {appIcons.map((app, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
                   <div className="w-12 h-12 rounded-xl border-2 flex items-center justify-center text-base" style={{ borderColor: colors.border, background: colors.cardBg, boxShadow: `2px 2px 0px 0px ${colors.border}` }}>{app.icon}</div>
-                  <span className="text-[8px] font-bold font-mono text-center leading-tight" style={{ color: colors.text }}>{app.label}{app.count && app.count > 0 && app.label !== 'Tareas' ? <span className="ml-0.5" style={{ color: colors.primary }}>({app.count})</span> : null}</span>
+                  <span className="text-[11px] font-bold font-mono text-center leading-tight" style={{ color: colors.text }}>{app.label}{app.count && app.count > 0 && app.label !== 'Tareas' ? <span className="ml-0.5" style={{ color: colors.primary }}>({app.count})</span> : null}</span>
                 </div>
               ))}
             </div>
             <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: colors.border }}>
-              <div className="px-4 py-2 border-b-2 text-[10px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
+              <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
                 {tasks.map(t => (
                   <div key={t.id} className="px-4 py-3 flex items-center justify-between hover:opacity-80 transition cursor-pointer" onClick={() => startTask(t, true)}>
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: t.difficulty === 1 ? '#22c55e20' : '#f59e0b20', color: t.difficulty === 1 ? '#22c55e' : '#f59e0b' }}>{t.difficulty === 1 ? '🌱' : '📈'}</div>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0" style={{ background: t.difficulty === 1 ? '#22c55e20' : '#f59e0b20', color: t.difficulty === 1 ? '#22c55e' : '#f59e0b' }}>{t.difficulty === 1 ? '🌱' : '📈'}</div>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-bold truncate" style={{ color: colors.text }}>{t.title}</p>
-                        <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{t.time} min · {(t.type || '').replace(/_/g, ' ')}</p>
+                        <p className="text-[13px] font-bold truncate" style={{ color: colors.text }}>{t.title}</p>
+                        <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{t.time} min · {(t.type || '').replace(/_/g, ' ')}</p>
                       </div>
                     </div>
-                    <span className="text-[8px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: colors.primary, color: '#1B2632' }}>{t.difficulty === 1 ? 'Fácil' : 'Medio'}</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: colors.primary, color: '#1B2632' }}>{t.difficulty === 1 ? 'Fácil' : 'Medio'}</span>
                   </div>
                 ))}
               </div>
             </div>
+            {loading && (
+              <div className="px-4 py-3">
+                <div className="animate-pulse space-y-2">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: colors.cardBg }}>
+                      <div className="w-7 h-7 rounded-full" style={{ background: colors.border }} />
+                      <div className="flex-1 space-y-1">
+                        <div className="h-2 w-3/4 rounded" style={{ background: colors.border }} />
+                        <div className="h-1.5 w-1/2 rounded" style={{ background: colors.border }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {screen === 'banking' && <BankingPortal theme={theme} onClose={() => setScreen('desktop')} />}
@@ -162,20 +177,20 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         {screen === 'archivo' && (
           <div className="h-full flex flex-col">
             <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
-              <button onClick={() => setScreen('desktop')} className="text-[10px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
+              <button onClick={() => setScreen('desktop')} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
               <span className="text-base">📁</span>
               <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Archivo</span>
-              <span className="text-[8px] font-mono ml-auto" style={{ color: colors.textMuted }}>{tasks.length} documentos</span>
+              <span className="text-[11px] font-mono ml-auto" style={{ color: colors.textMuted }}>{tasks.length} documentos</span>
             </div>
             <div className="flex-1 overflow-auto p-4 space-y-2">
-              {tasks.length === 0 ? <p className="text-[10px] text-center py-8" style={{ color: colors.textMuted }}>No hay documentos</p> : tasks.map((t, i) => (
+              {tasks.length === 0 ? <p className="text-[13px] text-center py-8" style={{ color: colors.textMuted }}>No hay documentos</p> : tasks.map((t, i) => (
                 <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <span className="text-lg">{i % 3 === 0 ? '📄' : i % 3 === 1 ? '📊' : '📑'}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold truncate" style={{ color: colors.text }}>{t.title}</p>
-                    <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{(t.type || '').replace(/_/g, ' ')} · {t.time}min · Pendiente</p>
+                    <p className="text-[13px] font-bold truncate" style={{ color: colors.text }}>{t.title}</p>
+                    <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{(t.type || '').replace(/_/g, ' ')} · {t.time}min · Pendiente</p>
                   </div>
-                  <button onClick={() => startTask(t, true)} className="text-[8px] px-2 py-1 rounded-lg border-2 font-bold cursor-pointer shrink-0" style={{ borderColor: colors.primary, color: colors.primary }}>Abrir</button>
+                  <button onClick={() => startTask(t, true)} className="text-[11px] px-2 py-1 rounded-lg border-2 font-bold cursor-pointer shrink-0" style={{ borderColor: colors.primary, color: colors.primary }}>Abrir</button>
                 </div>
               ))}
             </div>
@@ -185,18 +200,18 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
           <div className="h-full overflow-auto animate-slide-in">
             {workflow && (<>
               <div className="px-4 py-2 border-b-2 flex items-center gap-2 shrink-0 sticky top-0 z-10 backdrop-blur-md" style={{ borderColor: colors.border, background: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)' }}>
-                <button onClick={closeWorkflow} className="text-[10px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
+                <button onClick={closeWorkflow} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
                   {workflow.steps.map((_: any, i: number) => (
                     _.type !== 'email' || !workflow._skipEmail ? (
                       <div key={i} className="flex items-center gap-1.5 flex-1">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0" style={{ background: i < stepIdx ? '#22c55e' : i === stepIdx ? colors.primary : colors.bg, color: i <= stepIdx ? '#1B2632' : colors.textMuted, border: `1.5px solid ${i <= stepIdx ? 'transparent' : colors.border}` }}>{i < stepIdx ? '✓' : i + 1}</div>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: i < stepIdx ? '#22c55e' : i === stepIdx ? colors.primary : colors.bg, color: i <= stepIdx ? '#1B2632' : colors.textMuted, border: `1.5px solid ${i <= stepIdx ? 'transparent' : colors.border}` }}>{i < stepIdx ? '✓' : i + 1}</div>
                         {i < workflow.steps.length - 1 && <div className="flex-1 h-0.5 rounded" style={{ background: i < stepIdx ? '#22c55e' : colors.bg }} />}
                       </div>
                     ) : null
                   ))}
                 </div>
-                <span className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{stepIdx + 1}/{workflow.steps.length}</span>
+                <span className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{stepIdx + 1}/{workflow.steps.length}</span>
               </div>
               {workflow.steps[stepIdx].type === 'email' && <EmailClient email={workflow.steps[stepIdx].data} onContinue={() => setStepIdx(stepIdx + 1)} theme={theme} />}
               {workflow.steps[stepIdx].type === 'form' && <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />}
@@ -226,12 +241,12 @@ function ResultView({ data, validation, taskTitle, onFinish, theme }: { data: an
       <div className="text-center py-6">
         <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mx-auto mb-3" style={{ background: validation?.passed ? '#22c55e20' : '#f59e0b20', border: `3px solid ${validation?.passed ? '#22c55e' : '#f59e0b'}` }}>{validation?.passed ? '✅' : '⚠️'}</div>
         <h2 className="text-sm font-bold" style={{ color: validation?.passed ? '#22c55e' : '#f59e0b' }}>{validation?.passed ? '¡Tarea completada!' : 'Completada con observaciones'}</h2>
-        <p className="text-[10px] mt-1" style={{ color: colors.textMuted }}>{taskTitle}</p>
+        <p className="text-[13px] mt-1" style={{ color: colors.textMuted }}>{taskTitle}</p>
       </div>
       {validation && (
         <div className="p-4 rounded-xl border-2 text-center" style={{ borderColor: colors.border, background: colors.cardBg }}>
           <p className="text-2xl font-bold" style={{ color: colors.primary }}>{validation.totalScore}/{validation.maxPossible}</p>
-          <p className="text-[8px] font-mono mt-1" style={{ color: colors.textMuted }}>{validation.scorePct}% · {validation.passed ? 'Aprobado' : 'Necesitas mejorar'}</p>
+          <p className="text-[11px] font-mono mt-1" style={{ color: colors.textMuted }}>{validation.scorePct}% · {validation.passed ? 'Aprobado' : 'Necesitas mejorar'}</p>
           <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: colors.bg }}><div className="h-full rounded-full transition-all duration-700" style={{ width: `${validation.scorePct}%`, background: validation.passed ? '#22c55e' : '#f59e0b' }} /></div>
         </div>
       )}

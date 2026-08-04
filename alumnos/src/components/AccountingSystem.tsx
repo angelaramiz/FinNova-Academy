@@ -96,6 +96,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const [reportTab, setReportTab] = useState<'bg' | 'er' | 'bal'>('bg');
   const [persistentClients, setPersistentClients] = useState<any[]>([]);
   const [persistentSuppliers, setPersistentSuppliers] = useState<any[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
   const journal = genJournal();
   const allEntries = [...dynamicEntries, ...journal];
 
@@ -112,7 +113,9 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         if (Array.isArray(accountsData)) setRealAccounts(accountsData);
         if (Array.isArray(clientsData)) setPersistentClients(clientsData);
         if (Array.isArray(suppliersData)) setPersistentSuppliers(suppliersData);
-      } catch {}
+      } catch {
+        setApiError('Error al cargar datos');
+      }
     })();
   }, []);
 
@@ -128,7 +131,9 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
           setBalanceGeneral(bg);
           setEstadoResultados(er);
           setBalanza(bal);
-        } catch {}
+        } catch {
+          setApiError('Error al cargar datos');
+        }
       })();
     }
   }, [mod]);
@@ -191,42 +196,48 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
       {/* Left Sidebar (Odoo-style) */}
       <div className="w-48 shrink-0 border-r-2 flex flex-col" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f0f4f8' }}>
         <div className="px-4 py-3 border-b-2" style={{ borderColor: colors.border }}>
-          <button onClick={onBack} className="text-[9px] px-2 py-1 rounded border cursor-pointer hover:opacity-70 mb-2 inline-block" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>← Escritorio</button>
+          <button onClick={onBack} className="text-[12px] px-2 py-1 rounded border cursor-pointer hover:opacity-70 mb-2 inline-block" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>← Escritorio</button>
           <p className="text-xs font-bold" style={{ color: colors.text }}>📊 Contabilidad</p>
-          <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>Operadora del Norte</p>
+          <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>Operadora del Norte</p>
         </div>
         <div className="flex-1 overflow-auto py-2">
           {modules.map(m => (
             <button key={m.id} onClick={() => setMod(m.id)}
-              className="w-full text-left px-4 py-2.5 flex items-center gap-2 text-[10px] font-mono cursor-pointer hover:opacity-80 transition"
+              className="w-full text-left px-4 py-2.5 flex items-center gap-2 text-[13px] font-mono cursor-pointer hover:opacity-80 transition"
               style={{ color: mod === m.id ? colors.primary : colors.textMuted, background: mod === m.id ? (isDark ? 'rgba(255,177,98,0.1)' : 'rgba(255,177,98,0.15)') : 'transparent', borderLeft: mod === m.id ? `3px solid ${colors.primary}` : '3px solid transparent' }}>
               <span className="text-sm">{m.icon}</span>
               <span className="font-bold">{m.label}</span>
             </button>
           ))}
         </div>
-        <div className="px-4 py-2 border-t-2 text-[7px] font-mono" style={{ borderColor: colors.border, color: colors.textMuted }}>
+        <div className="px-4 py-2 border-t-2 text-[13px] font-mono" style={{ borderColor: colors.border, color: colors.textMuted }}>
           Simulador v0.1 · Julio 2026
         </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto flex flex-col">
+        {apiError && (
+          <div className="mx-4 mt-3 px-4 py-2 rounded-lg text-[11px] font-mono flex items-center gap-2" style={{ background: '#FEE2E2', color: '#DC2626', border: '1px solid #FECACA' }}>
+            ⚠️ {apiError}
+            <button onClick={() => setApiError(null)} className="ml-auto text-[10px] cursor-pointer">✕</button>
+          </div>
+        )}
         {/* Toolbar */}
         <div className="px-4 py-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)' }}>
           <div className="flex items-center gap-3">
             <span className="text-xs font-bold font-mono uppercase tracking-wider" style={{ color: colors.primary }}>{modules.find(m => m.id === mod)?.icon} {modules.find(m => m.id === mod)?.label}</span>
-            <span className="text-[8px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? filteredEntries.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
+            <span className="text-[11px] font-mono px-1.5 py-0.5 rounded" style={{ background: colors.cardBg, color: colors.textMuted }}>{mod === 'diario' ? filteredEntries.length : mod === 'cuentas' ? ACCOUNTS.length : mod === 'clientes' ? CLIENTS.length : mod === 'proveedores' ? SUPPLIERS.length : '—'} registros</span>
           </div>
           <div className="flex items-center gap-2">
             {mod === 'diario' && (
               <input type="text" value={filter} onChange={e => setFilter(e.target.value)}
                 placeholder="🔍 Buscar..."
-                className="text-[8px] font-mono px-2 py-1 rounded border"
-                style={{ borderColor: colors.border, background: colors.cardBg, color: colors.text, width: 120 }} />
+                className="text-[11px] font-mono px-2 py-1 rounded border"
+                style={{ borderColor: colors.border, background: colors.cardBg, color: colors.text, width: 200 }} />
             )}
             {mod === 'diario' && (
-              <button onClick={openNewEntry} className="text-[8px] font-bold px-2 py-1 rounded cursor-pointer hover:opacity-80"
+              <button onClick={openNewEntry} className="text-[11px] font-bold px-2 py-1 rounded cursor-pointer hover:opacity-80"
                 style={{ background: colors.primary, color: '#1B2632' }}>+ Nuevo asiento</button>
             )}
           </div>
@@ -238,38 +249,38 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
             <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
               <thead className="sticky top-0 z-10">
                 <tr style={{ background: isDark ? '#1a1a2e' : '#e5e7eb' }}>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Fecha</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Ref</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Descripción</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Cuenta</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: '#22c55e' }}>Debe</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: '#ef4444' }}>Haber</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
-                  <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Acciones</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Fecha</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Ref</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Descripción</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Cuenta</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase text-right" style={{ color: '#22c55e' }}>Debe</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase text-right" style={{ color: '#ef4444' }}>Haber</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
+                  <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEntries.map((e, i) => (
                   <tr key={i} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30` }}>
-                    <td className="px-4 py-2 text-[9px] font-mono" style={{ color: colors.text }}>{e.date}</td>
-                    <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary }}>{e.ref}</td>
-                    <td className="px-4 py-2 text-[9px]" style={{ color: colors.text }}>{e.desc}</td>
-                    <td className="px-4 py-2 text-[9px] font-mono" style={{ color: colors.textMuted }}>{e.account}</td>
-                    <td className="px-4 py-2 text-[9px] font-mono text-right" style={{ color: e.debit > 0 ? '#22c55e' : colors.textMuted }}>{e.debit > 0 ? `$${fmt(e.debit)}` : ''}</td>
-                    <td className="px-4 py-2 text-[9px] font-mono text-right" style={{ color: e.credit > 0 ? '#ef4444' : colors.textMuted }}>{e.credit > 0 ? `$${fmt(e.credit)}` : ''}</td>
-                    <td className="px-4 py-2"><span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: e.type === 'manual' ? '#22c55e20' : colors.primary + '20', color: e.type === 'manual' ? '#22c55e' : colors.primary }}>{e.type}</span></td>
+                    <td className="px-4 py-2 text-[12px] font-mono" style={{ color: colors.text }}>{e.date}</td>
+                    <td className="px-4 py-2 text-[12px] font-mono font-bold" style={{ color: colors.primary }}>{e.ref}</td>
+                    <td className="px-4 py-2 text-[12px]" style={{ color: colors.text }}>{e.desc}</td>
+                    <td className="px-4 py-2 text-[12px] font-mono" style={{ color: colors.textMuted }}>{e.account}</td>
+                    <td className="px-4 py-2 text-[12px] font-mono text-right" style={{ color: e.debit > 0 ? '#22c55e' : colors.textMuted }}>{e.debit > 0 ? `$${fmt(e.debit)}` : ''}</td>
+                    <td className="px-4 py-2 text-[12px] font-mono text-right" style={{ color: e.credit > 0 ? '#ef4444' : colors.textMuted }}>{e.credit > 0 ? `$${fmt(e.credit)}` : ''}</td>
+                    <td className="px-4 py-2"><span className="text-[13px] font-bold px-1.5 py-0.5 rounded" style={{ background: e.type === 'manual' ? '#22c55e20' : colors.primary + '20', color: e.type === 'manual' ? '#22c55e' : colors.primary }}>{e.type}</span></td>
                     <td className="px-4 py-2 flex gap-1">
-                      <button onClick={() => openEditEntry(e)} className="text-[8px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: colors.primary + '30', color: colors.primary }}>✏️</button>
-                      <button onClick={() => handleDelete(e)} className="text-[8px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: '#ef444430', color: '#ef4444' }}>🗑</button>
+                      <button onClick={() => openEditEntry(e)} className="text-[11px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: colors.primary + '30', color: colors.primary }}>✏️</button>
+                      <button onClick={() => handleDelete(e)} className="text-[11px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-70" style={{ background: '#ef444430', color: '#ef4444' }}>🗑</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr style={{ background: isDark ? 'rgba(255,177,98,0.1)' : 'rgba(255,177,98,0.1)', borderTop: `2px solid ${colors.primary}` }}>
-                  <td colSpan={4} className="px-4 py-2 text-[9px] font-bold text-right" style={{ color: colors.text }}>TOTALES:</td>
-                  <td className="px-4 py-2 text-[9px] font-bold text-right" style={{ color: '#22c55e' }}>${fmt(totalDebe)}</td>
-                  <td className="px-4 py-2 text-[9px] font-bold text-right" style={{ color: '#ef4444' }}>${fmt(totalHaber)}</td>
+                  <td colSpan={4} className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: colors.text }}>TOTALES:</td>
+                  <td className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: '#22c55e' }}>${fmt(totalDebe)}</td>
+                  <td className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: '#ef4444' }}>${fmt(totalHaber)}</td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -281,27 +292,30 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
               <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
                 <thead className="sticky top-0 z-10">
                   <tr style={{ background: isDark ? '#1a1a2e' : '#e5e7eb' }}>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Código</th>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Cuenta</th>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Nivel</th>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase" style={{ color: colors.textMuted }}>Naturaleza</th>
-                    <th className="px-4 py-2 text-[8px] font-mono uppercase text-right" style={{ color: colors.text }}>Saldo</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Código</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Cuenta</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Tipo</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Nivel</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase" style={{ color: colors.textMuted }}>Naturaleza</th>
+                    <th className="px-4 py-2 text-[11px] font-mono uppercase text-right" style={{ color: colors.text }}>Saldo</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {realAccounts.length === 0 && (
+                    <tr><td colSpan={6} className="px-4 py-8 text-center text-[12px]" style={{ color: colors.textMuted }}>No hay cuentas registradas</td></tr>
+                  )}
                   {realAccounts.map(a => (
                     <tr key={a.code} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30`, paddingLeft: a.level > 1 ? `${(a.level - 1) * 16}px` : undefined }}>
-                      <td className="px-4 py-2 text-[9px] font-mono font-bold" style={{ color: colors.primary, paddingLeft: a.level > 1 ? `${16 + (a.level - 1) * 16}px` : undefined }}>{a.code}</td>
-                      <td className="px-4 py-2 text-[9px] font-bold" style={{ color: a.level === 1 ? colors.text : colors.textMuted }}>{a.name}</td>
+                      <td className="px-4 py-2 text-[12px] font-mono font-bold" style={{ color: colors.primary, paddingLeft: a.level > 1 ? `${16 + (a.level - 1) * 16}px` : undefined }}>{a.code}</td>
+                      <td className="px-4 py-2 text-[12px] font-bold" style={{ color: a.level === 1 ? colors.text : colors.textMuted }}>{a.name}</td>
                       <td className="px-4 py-2">
-                        <span className="text-[7px] font-bold px-1.5 py-0.5 rounded" style={{ background: a.type === 'Activo' ? '#22c55e20' : a.type === 'Pasivo' ? '#ef444420' : a.type === 'Capital' ? '#8b5cf620' : a.type === 'Ingreso' ? '#3b82f620' : '#f59e0b20', color: a.type === 'Activo' ? '#22c55e' : a.type === 'Pasivo' ? '#ef4444' : a.type === 'Capital' ? '#8b5cf6' : a.type === 'Ingreso' ? '#3b82f6' : '#f59e0b' }}>
+                        <span className="text-[13px] font-bold px-1.5 py-0.5 rounded" style={{ background: a.type === 'Activo' ? '#22c55e20' : a.type === 'Pasivo' ? '#ef444420' : a.type === 'Capital' ? '#8b5cf620' : a.type === 'Ingreso' ? '#3b82f620' : '#f59e0b20', color: a.type === 'Activo' ? '#22c55e' : a.type === 'Pasivo' ? '#ef4444' : a.type === 'Capital' ? '#8b5cf6' : a.type === 'Ingreso' ? '#3b82f6' : '#f59e0b' }}>
                           {a.type}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-[8px] font-mono" style={{ color: colors.textMuted }}>{a.level}</td>
-                      <td className="px-4 py-2 text-[8px] font-mono" style={{ color: a.nature === 'D' ? '#22c55e' : '#ef4444' }}>{a.nature === 'D' ? 'D (Deudora)' : 'H (Acreedora)'}</td>
-                      <td className="px-4 py-2 text-[9px] font-mono text-right font-bold" style={{ color: a.balance >= 0 ? '#22c55e' : '#ef4444' }}>{a.balance >= 0 ? `$${fmt(a.balance)}` : `-$${fmt(Math.abs(a.balance))}`}</td>
+                      <td className="px-4 py-2 text-[11px] font-mono" style={{ color: colors.textMuted }}>{a.level}</td>
+                      <td className="px-4 py-2 text-[11px] font-mono" style={{ color: a.nature === 'D' ? '#22c55e' : '#ef4444' }}>{a.nature === 'D' ? 'D (Deudora)' : 'H (Acreedora)'}</td>
+                      <td className="px-4 py-2 text-[12px] font-mono text-right font-bold" style={{ color: a.balance >= 0 ? '#22c55e' : '#ef4444' }}>{a.balance >= 0 ? `$${fmt(a.balance)}` : `-$${fmt(Math.abs(a.balance))}`}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -311,20 +325,23 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
 
           {mod === 'clientes' && (
             <div className="p-4 space-y-2">
+              {persistentClients.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-[12px]" style={{ color: colors.textMuted }}>No hay cuentas registradas</td></tr>
+              )}
               {persistentClients.map(c => (
                 <div key={c.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.primary, color: '#1B2632' }}>{c.name.charAt(0)}</div>
                     <div>
-                      <p className="text-[10px] font-bold" style={{ color: colors.text }}>{c.name}</p>
-                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{c.rfc} · {c.contact}</p>
-                      <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Límite crédito: ${fmt(c.creditLimit)} · {c.paymentTerms}</p>
+                      <p className="text-[13px] font-bold" style={{ color: colors.text }}>{c.name}</p>
+                      <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{c.rfc} · {c.contact}</p>
+                      <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>Límite crédito: ${fmt(c.creditLimit)} · {c.paymentTerms}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold" style={{ color: c.outstandingBalance > 0 ? '#f59e0b' : '#22c55e' }}>{c.outstandingBalance > 0 ? `$${fmt(c.outstandingBalance)}` : '$0'}</p>
-                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Saldo pendiente</p>
-                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>{c.invoicesCount} facturas · ${fmt(c.totalPurchases)}</p>
+                    <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>Saldo pendiente</p>
+                    <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>{c.invoicesCount} facturas · ${fmt(c.totalPurchases)}</p>
                   </div>
                 </div>
               ))}
@@ -333,20 +350,23 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
 
           {mod === 'proveedores' && (
             <div className="p-4 space-y-2">
+              {persistentSuppliers.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-[12px]" style={{ color: colors.textMuted }}>No hay cuentas registradas</td></tr>
+              )}
               {persistentSuppliers.map(s => (
                 <div key={s.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.secondary, color: '#fff' }}>{s.name.charAt(0)}</div>
                     <div>
-                      <p className="text-[10px] font-bold" style={{ color: colors.text }}>{s.name}</p>
-                      <p className="text-[8px] font-mono" style={{ color: colors.textMuted }}>{s.rfc} · {s.contact}</p>
-                      <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Términos: {s.paymentTerms}</p>
+                      <p className="text-[13px] font-bold" style={{ color: colors.text }}>{s.name}</p>
+                      <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{s.rfc} · {s.contact}</p>
+                      <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>Términos: {s.paymentTerms}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold" style={{ color: s.outstandingBalance > 0 ? '#ef4444' : '#22c55e' }}>{s.outstandingBalance > 0 ? `$${fmt(s.outstandingBalance)}` : '$0'}</p>
-                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>Por pagar</p>
-                    <p className="text-[7px] font-mono" style={{ color: colors.textMuted }}>{s.invoicesCount} facturas · ${fmt(s.totalPurchases)}</p>
+                    <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>Por pagar</p>
+                    <p className="text-[13px] font-mono" style={{ color: colors.textMuted }}>{s.invoicesCount} facturas · ${fmt(s.totalPurchases)}</p>
                   </div>
                 </div>
               ))}
@@ -356,9 +376,9 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
           {mod === 'reportes' && (
             <div className="p-6 max-w-3xl mx-auto space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setReportTab('bg')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bg' ? colors.primary : colors.cardBg, color: reportTab === 'bg' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balance General</button>
-                <button onClick={() => setReportTab('er')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'er' ? colors.primary : colors.cardBg, color: reportTab === 'er' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Estado de Resultados</button>
-                <button onClick={() => setReportTab('bal')} className="text-[9px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bal' ? colors.primary : colors.cardBg, color: reportTab === 'bal' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balanza Comprobación</button>
+                <button onClick={() => setReportTab('bg')} className="text-[12px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bg' ? colors.primary : colors.cardBg, color: reportTab === 'bg' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balance General</button>
+                <button onClick={() => setReportTab('er')} className="text-[12px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'er' ? colors.primary : colors.cardBg, color: reportTab === 'er' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Estado de Resultados</button>
+                <button onClick={() => setReportTab('bal')} className="text-[12px] font-bold px-3 py-1.5 rounded-lg cursor-pointer" style={{ background: reportTab === 'bal' ? colors.primary : colors.cardBg, color: reportTab === 'bal' ? '#1B2632' : colors.textMuted, border: `1px solid ${colors.border}` }}>Balanza Comprobación</button>
               </div>
 
               {reportTab === 'bg' && balanceGeneral && (
@@ -366,48 +386,48 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                   <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📊 Balance General</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                      <p className="text-[9px] font-bold mb-2" style={{ color: '#22c55e' }}>ACTIVOS</p>
+                      <p className="text-[12px] font-bold mb-2" style={{ color: '#22c55e' }}>ACTIVOS</p>
                       {balanceGeneral.activos.map((a: any) => (
-                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                        <div key={a.code} className="flex justify-between py-1 text-[11px] border-b" style={{ borderColor: colors.border + '30' }}>
                           <span style={{ color: colors.textMuted }}>{a.name}</span>
                           <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#22c55e' }}>
-                        <span className="text-[9px] font-bold" style={{ color: '#22c55e' }}>Total Activos</span>
-                        <span className="text-[9px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(balanceGeneral.totalActivos)}</span>
+                        <span className="text-[12px] font-bold" style={{ color: '#22c55e' }}>Total Activos</span>
+                        <span className="text-[12px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(balanceGeneral.totalActivos)}</span>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                        <p className="text-[9px] font-bold mb-2" style={{ color: '#ef4444' }}>PASIVOS</p>
+                        <p className="text-[12px] font-bold mb-2" style={{ color: '#ef4444' }}>PASIVOS</p>
                         {balanceGeneral.pasivos.map((a: any) => (
-                          <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                          <div key={a.code} className="flex justify-between py-1 text-[11px] border-b" style={{ borderColor: colors.border + '30' }}>
                             <span style={{ color: colors.textMuted }}>{a.name}</span>
                             <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
                           </div>
                         ))}
                         <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#ef4444' }}>
-                          <span className="text-[9px] font-bold" style={{ color: '#ef4444' }}>Total Pasivos</span>
-                          <span className="text-[9px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(balanceGeneral.totalPasivos)}</span>
+                          <span className="text-[12px] font-bold" style={{ color: '#ef4444' }}>Total Pasivos</span>
+                          <span className="text-[12px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(balanceGeneral.totalPasivos)}</span>
                         </div>
                       </div>
                       <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                        <p className="text-[9px] font-bold mb-2" style={{ color: '#8b5cf6' }}>CAPITAL</p>
+                        <p className="text-[12px] font-bold mb-2" style={{ color: '#8b5cf6' }}>CAPITAL</p>
                         {balanceGeneral.capital.map((a: any) => (
-                          <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                          <div key={a.code} className="flex justify-between py-1 text-[11px] border-b" style={{ borderColor: colors.border + '30' }}>
                             <span style={{ color: colors.textMuted }}>{a.name}</span>
                             <span className="font-mono" style={{ color: colors.text }}>${fmt(a.balance)}</span>
                           </div>
                         ))}
                         <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#8b5cf6' }}>
-                          <span className="text-[9px] font-bold" style={{ color: '#8b5cf6' }}>Total Capital</span>
-                          <span className="text-[9px] font-mono font-bold" style={{ color: '#8b5cf6' }}>${fmt(balanceGeneral.totalCapital)}</span>
+                          <span className="text-[12px] font-bold" style={{ color: '#8b5cf6' }}>Total Capital</span>
+                          <span className="text-[12px] font-mono font-bold" style={{ color: '#8b5cf6' }}>${fmt(balanceGeneral.totalCapital)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-center text-[9px] font-mono py-2 rounded-lg" style={{ background: balanceGeneral.balanced ? '#22c55e20' : '#ef444420', color: balanceGeneral.balanced ? '#22c55e' : '#ef4444' }}>
+                  <div className="text-center text-[12px] font-mono py-2 rounded-lg" style={{ background: balanceGeneral.balanced ? '#22c55e20' : '#ef444420', color: balanceGeneral.balanced ? '#22c55e' : '#ef4444' }}>
                     {balanceGeneral.balanced ? '✓ Balance cuadrado: Activos = Pasivos + Capital' : '⚠ Balance descuadrado'}
                   </div>
                 </div>
@@ -418,35 +438,35 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                   <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📈 Estado de Resultados — Julio 2026</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                      <p className="text-[9px] font-bold mb-2" style={{ color: '#22c55e' }}>INGRESOS</p>
+                      <p className="text-[12px] font-bold mb-2" style={{ color: '#22c55e' }}>INGRESOS</p>
                       {estadoResultados.ingresos.map((a: any) => (
-                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                        <div key={a.code} className="flex justify-between py-1 text-[11px] border-b" style={{ borderColor: colors.border + '30' }}>
                           <span style={{ color: colors.textMuted }}>{a.name}</span>
                           <span className="font-mono" style={{ color: '#22c55e' }}>${fmt(a.amount)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#22c55e' }}>
-                        <span className="text-[9px] font-bold" style={{ color: '#22c55e' }}>Total Ingresos</span>
-                        <span className="text-[9px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(estadoResultados.totalIngresos)}</span>
+                        <span className="text-[12px] font-bold" style={{ color: '#22c55e' }}>Total Ingresos</span>
+                        <span className="text-[12px] font-mono font-bold" style={{ color: '#22c55e' }}>${fmt(estadoResultados.totalIngresos)}</span>
                       </div>
                     </div>
                     <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                      <p className="text-[9px] font-bold mb-2" style={{ color: '#ef4444' }}>GASTOS</p>
+                      <p className="text-[12px] font-bold mb-2" style={{ color: '#ef4444' }}>GASTOS</p>
                       {estadoResultados.gastos.map((a: any) => (
-                        <div key={a.code} className="flex justify-between py-1 text-[8px] border-b" style={{ borderColor: colors.border + '30' }}>
+                        <div key={a.code} className="flex justify-between py-1 text-[11px] border-b" style={{ borderColor: colors.border + '30' }}>
                           <span style={{ color: colors.textMuted }}>{a.name}</span>
                           <span className="font-mono" style={{ color: '#ef4444' }}>${fmt(a.amount)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between pt-2 mt-2 border-t-2" style={{ borderColor: '#ef4444' }}>
-                        <span className="text-[9px] font-bold" style={{ color: '#ef4444' }}>Total Gastos</span>
-                        <span className="text-[9px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(estadoResultados.totalGastos)}</span>
+                        <span className="text-[12px] font-bold" style={{ color: '#ef4444' }}>Total Gastos</span>
+                        <span className="text-[12px] font-mono font-bold" style={{ color: '#ef4444' }}>${fmt(estadoResultados.totalGastos)}</span>
                       </div>
                     </div>
                   </div>
                   <div className="p-4 rounded-xl border-2" style={{ borderColor: colors.primary, background: colors.cardBg }}>
                     <div className="flex justify-between">
-                      <span className="text-[10px] font-bold" style={{ color: colors.text }}>UTILIDAD NETA</span>
+                      <span className="text-[13px] font-bold" style={{ color: colors.text }}>UTILIDAD NETA</span>
                       <span className="text-sm font-mono font-bold" style={{ color: colors.primary }}>${fmt(estadoResultados.utilidadNeta)}</span>
                     </div>
                   </div>
@@ -457,7 +477,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-center" style={{ color: colors.text }}>📋 Balanza de Comprobación — Julio 2026</h3>
                   <div className="p-4 rounded-xl border" style={{ borderColor: colors.border, background: colors.cardBg }}>
-                    <table className="w-full text-[8px]">
+                    <table className="w-full text-[11px]">
                       <thead>
                         <tr className="border-b" style={{ borderColor: colors.border }}>
                           <th className="text-left py-1" style={{ color: colors.textMuted }}>Código</th>
@@ -487,7 +507,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                       </tfoot>
                     </table>
                   </div>
-                  <div className="text-center text-[9px] font-mono py-2 rounded-lg" style={{ background: balanza.balanced ? '#22c55e20' : '#ef444420', color: balanza.balanced ? '#22c55e' : '#ef4444' }}>
+                  <div className="text-center text-[12px] font-mono py-2 rounded-lg" style={{ background: balanza.balanced ? '#22c55e20' : '#ef444420', color: balanza.balanced ? '#22c55e' : '#ef4444' }}>
                     {balanza.balanced ? '✓ Balanza cuadrada: DEBE = HABER' : '⚠ Balanza descuadrada'}
                   </div>
                 </div>
@@ -497,7 +517,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         </div>
 
         {/* Status bar */}
-        <div className="px-4 py-1.5 border-t-2 flex items-center justify-between text-[7px] font-mono shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
+        <div className="px-4 py-1.5 border-t-2 flex items-center justify-between text-[13px] font-mono shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
           <span style={{ color: colors.textMuted }}>Sistema Contable · Operadora del Norte S.A. de C.V.</span>
           <span style={{ color: colors.textMuted }}>Julio 2026</span>
         </div>
@@ -519,38 +539,38 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                 { key: 'account', label: 'Cuenta', placeholder: '1-02 Bancos' },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: colors.textMuted }}>{f.label}</label>
+                  <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: colors.textMuted }}>{f.label}</label>
                   <input type="text" value={(form as any)[f.key]} onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    className="w-full px-3 py-2 rounded-lg border text-[13px] font-mono outline-none"
                     style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text }}
                     placeholder={f.placeholder} />
                 </div>
               ))}
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: '#22c55e' }}>DEBE</label>
+                  <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: '#22c55e' }}>DEBE</label>
                   <input type="number" step="0.01" min="0" value={form.debit} onChange={e => setForm(prev => ({ ...prev, debit: e.target.value, credit: e.target.value ? '' : prev.credit }))}
-                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    className="w-full px-3 py-2 rounded-lg border text-[13px] font-mono outline-none"
                     style={{ borderColor: form.debit ? '#22c55e40' : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: '#22c55e' }}
                     placeholder="0.00" />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[9px] font-bold font-mono uppercase mb-1 block" style={{ color: '#ef4444' }}>HABER</label>
+                  <label className="text-[12px] font-bold font-mono uppercase mb-1 block" style={{ color: '#ef4444' }}>HABER</label>
                   <input type="number" step="0.01" min="0" value={form.credit} onChange={e => setForm(prev => ({ ...prev, credit: e.target.value, debit: e.target.value ? '' : prev.debit }))}
-                    className="w-full px-3 py-2 rounded-lg border text-[10px] font-mono outline-none"
+                    className="w-full px-3 py-2 rounded-lg border text-[13px] font-mono outline-none"
                     style={{ borderColor: form.credit ? '#ef444440' : colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: '#ef4444' }}
                     placeholder="0.00" />
                 </div>
               </div>
               {form.debit && form.credit && (
-                <p className="text-[8px] font-mono" style={{ color: '#f59e0b' }}>⚠ No puede tener DEBE y HABER al mismo tiempo</p>
+                <p className="text-[11px] font-mono" style={{ color: '#f59e0b' }}>⚠ No puede tener DEBE y HABER al mismo tiempo</p>
               )}
             </div>
             <div className="px-5 py-3 flex gap-2" style={{ borderTop: `1px solid ${colors.border}` }}>
-              <button onClick={() => setShowForm(false)} className="flex-1 text-[10px] py-2 rounded-lg font-medium cursor-pointer"
+              <button onClick={() => setShowForm(false)} className="flex-1 text-[13px] py-2 rounded-lg font-medium cursor-pointer"
                 style={{ background: colors.cardBg, color: colors.textMuted, border: `1px solid ${colors.border}` }}>Cancelar</button>
               <button onClick={handleSave} disabled={!form.desc || !form.account || (!form.debit && !form.credit)}
-                className="flex-1 text-[10px] py-2 rounded-lg font-bold cursor-pointer disabled:opacity-50"
+                className="flex-1 text-[13px] py-2 rounded-lg font-bold cursor-pointer disabled:opacity-50"
                 style={{ background: colors.primary, color: '#1B2632' }}>{editEntry ? 'Guardar' : 'Crear asiento'}</button>
             </div>
           </div>

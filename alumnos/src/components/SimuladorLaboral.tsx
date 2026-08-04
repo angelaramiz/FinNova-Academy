@@ -235,16 +235,16 @@ function TaskCard({ task, onClick, colors }: { task: SimTask; onClick: () => voi
     >
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold leading-tight" style={{ color: colors.text }}>{task.title}</span>
-        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ml-2" style={{
+        <span className="text-[12px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ml-2" style={{
           background: colors.primary, color: '#1B2632',
         }}>{task.estimatedMinutes}m</span>
       </div>
-      <p className="text-[10px] leading-relaxed mb-2" style={{ color: colors.textMuted }}>{task.description}</p>
+      <p className="text-[13px] leading-relaxed mb-2" style={{ color: colors.textMuted }}>{task.description}</p>
       <div className="flex items-center justify-between">
-        <span className="text-[8px] font-mono uppercase px-1.5 py-0.5 rounded" style={{
+        <span className="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded" style={{
           background: colors.bg, color: colors.textMuted,
         }}>{task.taskType.replace(/_/g, ' ')}</span>
-        <span className="text-[9px] font-mono" style={{ color: colors.secondary }}>
+        <span className="text-[12px] font-mono" style={{ color: colors.secondary }}>
           {'★'.repeat(task.difficulty)}<span style={{ opacity: 0.3 }}>{'★'.repeat(5 - task.difficulty)}</span>
         </span>
       </div>
@@ -485,9 +485,9 @@ export default function SimuladorLaboral({ theme }: SimProps) {
             background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
           }}>
             <div>
-              <p className="text-[10px] font-bold font-mono" style={{ color: colors.text }}>🏢 OFICINA VIRTUAL</p>
+              <p className="text-[13px] font-bold font-mono" style={{ color: colors.text }}>🏢 OFICINA VIRTUAL</p>
               {selectedJob && (
-                <p className="text-[7px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
+                <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
                   {selectedJob.title}
                 </p>
               )}
@@ -495,14 +495,14 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
             <div className="flex items-center gap-2 pointer-events-auto">
               <button onClick={() => setInboxOpen(true)}
-                className="relative px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105"
+                className="relative px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[13px] font-mono font-bold backdrop-blur-md transition hover:scale-105"
                 style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
                 📬 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center" style={{ background: colors.primary, color: '#1B2632' }}>{unreadCount}</span>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[11px] font-bold flex items-center justify-center" style={{ background: colors.primary, color: '#1B2632' }}>{unreadCount}</span>
                 )}
               </button>
               <button onClick={toggleFullscreen}
-                className="px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[10px] font-mono font-bold backdrop-blur-md transition hover:scale-105 pointer-events-auto"
+                className="px-3 py-1.5 rounded-xl border-2 cursor-pointer text-[13px] font-mono font-bold backdrop-blur-md transition hover:scale-105 pointer-events-auto"
                 style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
                 {isFullscreen ? '⛶ Salir' : '⛶ Pantalla completa'}
               </button>
@@ -563,13 +563,13 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       {/* Stats HUD */}
       {userStats && (
         <div className="absolute bottom-3 left-3 z-30 flex gap-2">
-          <div className="px-3 py-2 rounded-xl border-2 backdrop-blur-xl text-[9px] font-mono" style={{
+          <div className="px-3 py-2 rounded-xl border-2 backdrop-blur-xl text-[12px] font-mono" style={{
             borderColor: colors.border, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
           }}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
               <span style={{ color: colors.textMuted }}>SESIÓN ACTIVA</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: colors.primary, color: '#1B2632' }}>
+              <span className="text-[13px] font-bold px-1.5 py-0.5 rounded" style={{ background: colors.primary, color: '#1B2632' }}>
                 🎯 {userStats.level}
               </span>
             </div>
@@ -579,11 +579,11 @@ export default function SimuladorLaboral({ theme }: SimProps) {
               <span>⏱️ <strong>{userStats.totalTime} min</strong></span>
             </div>
             <button onClick={() => setShowDashboard(true)}
-              className="mt-1.5 w-full text-[8px] font-bold py-1 rounded-lg border cursor-pointer hover:opacity-80 transition"
+              className="mt-1.5 w-full text-[11px] font-bold py-1 rounded-lg border cursor-pointer hover:opacity-80 transition"
               style={{ borderColor: colors.primary, color: colors.primary, background: 'transparent' }}
             >📊 Ver dashboard</button>
             <div className="mt-1 pt-1 border-t text-center" style={{ borderColor: colors.border + '40', color: colors.textMuted }}>
-              <span className="text-[7px] font-mono">v{VERSION} ({BUILD_HASH})</span>
+              <span className="text-[13px] font-mono">v{VERSION} ({BUILD_HASH})</span>
             </div>
           </div>
         </div>
