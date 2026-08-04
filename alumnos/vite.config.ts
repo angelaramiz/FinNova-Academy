@@ -30,8 +30,8 @@ export default defineConfig(async () => {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       proxy: isProduction ? undefined : {
-        '/api': 'http://localhost:3000',
-        '/webhooks': 'http://localhost:3000',
+        '/api': 'http://localhost:3001',
+        '/webhooks': 'http://localhost:3001',
       },
     },
   };
