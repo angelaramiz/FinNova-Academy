@@ -42,7 +42,7 @@
 18:00 - Cerrar turnos, pendientes para mañana
 ```
 
-### Stack Tecnológico del Proyecto
+## Stack Tecnológico del Proyecto
 *   **Backend**: Node.js, Express, TypeScript, tsx, MemoryDatabase (`memoryDb.ts`) + Supabase (PostgreSQL).
 *   **Frontend Alumnos**: React 19, Vite, TailwindCSS, **React Three Fiber** (motor 3D web), puerto 3000.
 *   **Frontend Staff**: React, Vite, TailwindCSS, puerto **3001**.
@@ -50,62 +50,210 @@
 *   **Infra**: Render (3 servicios: backend, alumnos, staff).
 *   **Motor de simulación**: 12 workflows contables (invoice, payment, tax, bank_reconciliation, journal, payroll, supplier, payment_scheduling, ap_reconciliation, cfdi_reception, credit_note, cash_cut).
 
+## Arquitectura del Simulador
+
+### Componentes Principales
+
+| Componente | Archivo | Función |
+|------------|---------|---------|
+| **SimuladorLaboral** | `SimuladorLaboral.tsx` | Escena 3D de oficina + controlador de vistas |
+| **DesktopShell** | `DesktopShell.tsx` | Escritorio virtual con 10 aplicaciones |
+| **OfficeScene** | `SimuladorLaboral.tsx` | Muebles 3D (escritorio, monitor, silla, estantería, lámpara) |
+| **SpreadsheetSim** | `SpreadsheetSim.tsx` | Hoja de cálculo tipo Excel con 40+ fórmulas |
+| **AccountingSystem** | `AccountingSystem.tsx` | Sistema contable tipo Odoo (pólizas, catálogo, reportes) |
+| **AccountingForm** | `AccountingForm.tsx` | Formularios validados con auto-cálculo |
+| **CalendarWidget** | `CalendarWidget.tsx` | Calendario con modal de eventos y recordatorios |
+| **Dashboard** | `Dashboard.tsx` | Dashboard ejecutivo con KPIs en tiempo real |
+| **ProgressDashboard** | `ProgressDashboard.tsx` | Seguimiento mensual de progreso |
+| **PaymentMatcher** | `PaymentMatcher.tsx` | Matching automático de pagos con facturas |
+| **EmailInbox** | `EmailInbox.tsx` | Bandeja de entrada con correos por tarea |
+| **BankingPortal** | `BankingPortal.tsx` | Portal bancario con CSV |
+| **Calculator** | `Calculator.tsx` | Calculadora con expresiones |
+| **Onboarding** | `Onboarding.tsx` | Wizard de bienvenida |
+
+### Servicios Backend
+
+| Servicio | Archivo | Función |
+|----------|---------|---------|
+| **TaskPlanner** | `taskPlanner.ts` | Generador de tareas coherentes (33/mes, 4 trampas) |
+| **WorkflowEngine** | `workflowEngine.ts` | 12 workflows contables con validación |
+| **PersistentData** | `persistentData.ts` | Datos coherentes (clientes, proveedores, productos) |
+| **ChartOfAccounts** | `chartOfAccounts.ts` | Catálogo jerárquico (40 cuentas) |
+| **AutoEntries** | `autoEntries.ts` | Auto-generación de asientos contables |
+| **PaymentMatching** | `paymentMatching.ts` | Matching de pagos con score |
+| **ExcelExercises** | `excelExercises.ts` | 7 ejercicios Excel puros |
+| **ProgressTracker** | `progressTracker.ts` | Seguimiento de progreso mensual |
+
+### Endpoints API
+
+```
+# Autenticación
+POST /api/auth/login-credentials
+GET  /api/auth/me
+
+# Simulador
+GET  /api/sim/task-plan/:month/:year
+GET  /api/sim/today-tasks/:month/:year/:week/:day
+GET  /api/sim/month-stats/:month/:year
+GET  /api/sim/task-knowledge/:taskType
+GET  /api/sim/trap-scenarios
+
+# Workflows
+GET  /api/workflows/:taskType
+POST /api/workflows/validate
+
+# Sistema Contable
+GET  /api/sim/chart-of-accounts
+GET  /api/sim/journal
+POST /api/sim/journal
+POST /api/sim/generate-entries
+GET  /api/sim/reports/balance-general
+GET  /api/sim/reports/estado-resultados
+GET  /api/sim/reports/balanza-comprobacion
+
+# Matching de pagos
+POST /api/sim/suggest-matches
+POST /api/sim/confirm-match
+GET  /api/sim/pending-invoices
+
+# Datos persistentes
+GET  /api/sim/company
+GET  /api/sim/clients
+GET  /api/sim/suppliers
+GET  /api/sim/products
+
+# Ejercicios Excel
+GET  /api/sim/exercises
+GET  /api/sim/exercises/:id
+GET  /api/sim/exercises/type/:type
+GET  /api/sim/exercises/difficulty/:level
+
+# Progreso
+POST /api/sim/progress/record
+GET  /api/sim/progress/month/:month/:year
+GET  /api/sim/progress/quick
+
+# Health
+GET  /api/health
+```
+
+### Datos Persistentes
+
+| Entidad | Cantidad | Ejemplo |
+|---------|:--------:|---------|
+| **Clientes** | 5 | Comercial del Norte, Transportes Rápidos |
+| **Proveedores** | 4 | Transportes Express, Papelería del Norte |
+| **Productos** | 8 | Flete express, Almacenaje, Carga especializada |
+| **Cuentas contables** | 40 | 13 Activo, 7 Pasivo, 3 Capital, 3 Ingreso, 7 Gasto |
+
+### Workflows Contables
+
+| # | Workflow | Dificultad | Trap |
+|---|----------|:----------:|:----:|
+| 1 | Emisión de Factura | 1 | No |
+| 2 | Registro de Pago | 1 | No |
+| 3 | Cálculo de IVA | 2 | No |
+| 4 | Conciliación Bancaria | 2 | Sí (#3) |
+| 5 | Póliza de Diario | 2 | No |
+| 6 | Nómina | 2 | Sí (#4) |
+| 7 | Factura de Proveedor | 1 | No |
+| 8 | Programación de Pagos | 1 | No |
+| 9 | Conciliación AP | 2 | No |
+| 10 | Recepción de CFDI | 1 | No |
+| 11 | Nota de Crédito | 2 | Sí (#7) |
+| 12 | Corte de Caja | 2 | Sí (#8) |
+
+### Trampas (Errores Intencionales)
+
+| # | Trampa | Error | Riesgo real |
+|---|--------|-------|-------------|
+| 1 | IVA incorrecto | IVA al 10% en vez de 16% | Multa SAT |
+| 2 | Pago mal aplicado | Pago de cliente A en factura de B | Saldos incorrectos |
+| 3 | Conciliación no cuadra | Cheque sin cobrar no registrado | Diferencias bancarias |
+| 4 | Nómina con ISR mal calculado | ISR fijo 15% en vez de tabla | demandas laborales |
+
+### Ejercicios Excel Puros
+
+| # | Ejercicio | Dificultad | Tipo |
+|---|-----------|:----------:|------|
+| 1 | Balanza de Comprobación | 1 | balanza_comprobacion |
+| 2 | Pólizas de Diario Múltiples | 2 | poliza_diario_multi |
+| 3 | Estado de Resultados | 2 | estado_resultados |
+| 4 | Conciliación Bancaria | 2 | conciliacion_bancaria |
+| 5 | DIOT | 3 | diot |
+| 6 | Depreciación de Activos | 2 | depreciacion |
+| 7 | Edad de Saldos por Cobrar | 3 | cuentas_por_cobrar |
+
+### Fórmulas Excel Soportadas (40+)
+
+**Matemáticas**: SUM/SUMA, AVG/PROMEDIO, COUNT/CONTAR, MAX, MIN, ABS, ROUND/REDONDEAR, POWER/POTENCIA, SQRT/RAIZ, MOD, INT/ENTERO, RAND, RANDBETWEEN
+
+**Lógicas**: IF/SI, AND/Y, OR/O, NOT
+
+**Texto**: UPPER/MINUSC, LOWER/MAXUSC, PROPER/NOMPROPIO, LEN/LARGO, LEFT/IZQUIERDA, RIGHT/DERECHA, MID/EXTRAE, TRIM/ESPACIOS, VALUE/VALOR, CONCAT/CONCATENAR
+
+**Fechas**: NOW/AHORA, TODAY/HOY, DATE/FECHA, YEAR/AÑO, MONTH/MES, DAY/DIA
+
+## Diseño UI/UX
+
+### Fases de Diseño Completadas
+
+| Fase | Features | Estado |
+|------|----------|:------:|
+| **FASE 1** | Theme tokens (success/error/warning/info), fuentes accesibles (10-13px), loading skeletons, error states, empty states | ✅ |
+| **FASE 2** | Animaciones slide-in, Dashboard datos reales, persistir asientos, autocomplete cuentas | ✅ |
+| **FASE 3** | Virtual scrolling Excel, context menu, CSV export, pagination asientos | ✅ |
+
+### Mejoras de Diseño
+
+- **Fuentes**: Mínimo 10px (antes 5.25px) — accesibilidad WCAG
+- **Theme tokens**: 10 colores semánticos (success, error, warning, info + backgrounds)
+- **Loading states**: Skeletons pulsantes en DesktopShell y Dashboard
+- **Error handling**: Banners de error visibles en AccountingSystem
+- **Animaciones**: Transiciones slide-in en todas las pantallas
+- **Oficina 3D**: Materiales metálicos, teclado/mouse/café, silla ergonómica, ventana con marco, pizarra, libros/planta/trofeo
+
 ## Comandos Disponibles
+
 *   `/sugerencias`: Analiza código reciente, tareas y genera reportes en `agent_memory/suggestions/`.
 *   `/reunion`: Inicia/finaliza una reunión estructurada usando las plantillas de `agent_memory/meetings/`.
 *   `/protocol`: Audita el código frente a los lineamientos de desarrollo y seguridad en `agent_memory/protocol/`.
 
-## Cambios Recientes (2026-07-28)
+## Comandos de Desarrollo
 
-### Nuevas Herramientas de Escritorio
-- **Nuevo**: 📈 Hoja de Cálculo (SpreadsheetSim) — motor con fórmulas SUM/SUMA/AVG/PROMEDIO, edición directa en celdas, navegación por flechas
-- **Nuevo**: 🧮 Calculadora — expresión completa visible, preview de resultado, operaciones + - × ÷
-- **Nuevo**: 📅 Calendario — celdas clickeables con dots de colores por tipo de evento, panel de tareas del día
-- **Nuevo**: 📁 Archivo — listado de documentos pendientes con botón "Abrir"
-- **Mejora**: 📧 Correo — bandeja de entrada completa con todos los correos por tarea
-- **Mejora**: 🏦 Banco — botón "← Escritorio" en header izquierdo
-- **Mejora**: 🎨 Fondos sólidos dinámicos en todas las ventanas (oscuro/claro)
+```bash
+# Backend
+cd backend
+npx tsx src/server.ts          # Iniciar backend en puerto 3001
 
-### Navegación
-- Todos los botones de regreso están en el **header izquierdo** (←)
-- Back buttons consistentes en Correo, Calendario, Calculadora, Archivo, Excel, Banco
-- Flujo de tareas salta el paso de email cuando se accede desde la lista
+# Frontend
+cd alumnos
+npx vite --port=3000 --host=0.0.0.0  # Iniciar frontend
 
-### Spreadsheet Engine
-- Edición directa: click en celda + teclear = contenido visible inmediatamente
-- Fórmulas: =SUM(A1:A5), =SUMA(A1,B1,C2), =AVG(B1:B5), =PROMEDIO(A1,B1)
-- Operaciones aritméticas: +, -, *, /
-- Navegación por teclado: Enter, Escape, Tab, Flechas
-- Español/Inglés: SUMA/SUM, PROMEDIO/AVG
+# Tests
+npm run test                   # Ejecutar todos los tests (9)
+npm run test:watch             # Modo watch durante desarrollo
+```
 
 ## Reglas Básicas de Operación
-1.  **No asumir**: Siempre verificar el estado local antes de proceder.
-2.  **Planificación de Roles**: Generar `roles/plan-de-rol.md` antes de cualquier modificación compleja.
-3.  **Memoria**: Sincronizar decisiones críticas en el historial.
-4.  **Ahorro de Tokens**: Limitar la lectura de archivos innecesarios; usar resúmenes estructurados.
-5.  **Separación de Lógica (Staff vs Alumnos)**: Toda la lógica de autenticación, formularios de registro, paneles y ruteo debe estar estrictamente separada. El portal de alumnos solo debe procesar y permitir acceso a usuarios con el rol `student`. El portal de staff solo debe procesar y permitir acceso a usuarios con los roles `instructor` y `admin`.
+
+1. **No asumir**: Siempre verificar el estado local antes de proceder.
+2. **Planificación de Roles**: Generar `roles/plan-de-rol.md` antes de cualquier modificación compleja.
+3. **Memoria**: Sincronizar decisiones críticas en el historial.
+4. **Ahorro de Tokens**: Limitar la lectura de archivos innecesarios; usar resúmenes estructurados.
+5. **Separación de Lógica**: Backend y frontend estrictamente separados.
 
 ## Protocolo de Desarrollo
 
 ### Protocolos Obligatorios
-- **Análisis Completo**: Identificar todas las referencias afectadas (estructuras de datos, UI, APIs, scanners, reportes).
-- **Descomposición Jerárquica**: Dividir cada requerimiento en tareas atómicas siguiendo el flujo: Análisis ➔ Investigación ➔ Implementación ➔ Validación.
-- **Investigación Automática**: Buscar archivos, componentes y funciones que referencien los elementos modificados.
-- **Trazabilidad**: Indicar qué archivos/componentes afecta cada tarea en `tasks.md`.
+- **Análisis Completo**: Identificar todas las referencias afectadas.
+- **Descomposición Jerárquica**: Dividir cada requerimiento en tareas atómicas.
+- **Investigación Automática**: Buscar archivos, componentes y funciones.
+- **Trazabilidad**: Indicar qué archivos/componentes afecta cada tarea.
 
 ### Reglas de Ejecución
-1. **Antes de codificar**: Generar la lista completa de archivos/componentes afectados en `tasks.md`.
-2. **Priorización**: Ordenar tareas por dependencias (primero estructura de datos, luego UI, luego integraciones).
-3. **Migración**: Si cambias la estructura de datos, incluir script de migración en la base de datos (`schema.sql`).
-4. **Testing**: Verificar la integridad compilando localmente y realizando pruebas correspondientes. `npm run test` debe pasar antes de commitear.
-5. **Documentación**: Mantener actualizado este archivo `agents.md` con los cambios arquitectónicos importantes.
-
-## Tests
-
-```bash
-npm run test        # ejecuta todos los tests (9)
-npm run test:watch  # modo watch durante desarrollo
-```
-
-Los tests usan `vitest` y `supertest`. No requieren conexión a Supabase ni base de datos externa.
-
+1. **Antes de codificar**: Generar la lista completa de archivos/componentes afectados.
+2. **Priorización**: Ordenar tareas por dependencias.
+3. **Migración**: Si cambias la estructura de datos, incluir script de migración.
+4. **Testing**: Verificar la integridad compilando y realizando pruebas. `npm run test` debe pasar.
+5. **Documentación**: Mantener actualizado este archivo `agents.md` con los cambios arquitectónicos.
