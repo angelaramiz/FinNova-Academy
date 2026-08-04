@@ -61,50 +61,77 @@ export default function Dashboard({ theme, onBack }: DashboardProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [stats, setStats] = useState<any>(null);
+  const [progressData, setProgressData] = useState<any>(null);
+  const [quickStats, setQuickStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch('/api/sim/my-stats');
-        setStats(data);
+        const now = new Date();
+        const [statsData, progressResult, quickResult] = await Promise.all([
+          apiFetch('/api/sim/my-stats').catch(() => null),
+          apiFetch(`/api/sim/progress/month/${now.getMonth()}/${now.getFullYear()}`).catch(() => null),
+          apiFetch('/api/sim/progress/quick').catch(() => null),
+        ]);
+        setStats(statsData);
+        setProgressData(progressResult);
+        setQuickStats(quickResult);
       } catch {}
       setLoading(false);
     })();
   }, []);
 
   const kpis = [
-    { icon: '📋', label: 'Tareas completadas', value: stats?.totalTasks ? String(stats.totalTasks) : '—', trend: '+2 esta semana', trendUp: true, color: '#22c55e' },
-    { icon: '⏱', label: 'Tiempo promedio', value: stats?.avgTimeMin ? `${Math.round(stats.avgTimeMin)}min` : '—', trend: '-3min vs ayer', trendUp: true, color: '#3b82f6' },
-    { icon: '🎯', label: 'Precisión promedio', value: stats?.avgScore ? `${Math.round(stats.avgScore * 100)}%` : '—', trend: '+5%', trendUp: true, color: '#f59e0b' },
-    { icon: '🔥', label: 'Racha actual', value: '3 días', trend: 'máx: 7', trendUp: true, color: '#ef4444' },
-    { icon: '💰', label: 'Facturas emitidas', value: '12', trend: '+4 este mes', trendUp: true, color: '#22c55e' },
-    { icon: '🏢', label: 'Clientes atendidos', value: '8', trend: '+2 nuevos', trendUp: true, color: '#8b5cf6' },
+    { icon: '📋', label: 'Tareas completadas', value: progressData ? `${progressData.completedTasks}/${progressData.totalTasks}` : stats?.totalTasks ? String(stats.totalTasks) : '—', trend: quickStats?.todayCompleted ? `+${quickStats.todayCompleted} hoy` : undefined, trendUp: true, color: '#22c55e' },
+    { icon: '⏱', label: 'Tiempo invertido', value: progressData?.totalHours ? `${progressData.totalHours}h` : stats?.avgTimeMin ? `${Math.round(stats.avgTimeMin)}min` : '—', trend: undefined, trendUp: true, color: '#3b82f6' },
+    { icon: '🎯', label: 'Precisión promedio', value: progressData?.avgScore ? `${progressData.avgScore}%` : stats?.avgScore ? `${Math.round(stats.avgScore * 100)}%` : '—', trend: progressData?.passRate ? `${progressData.passRate}% aprobación` : undefined, trendUp: (progressData?.passRate || 0) >= 70, color: '#f59e0b' },
+    { icon: '🔥', label: 'Racha actual', value: quickStats?.streak ? `${quickStats.streak} días` : '0 días', trend: progressData?.bestStreak ? `máx: ${progressData.bestStreak}` : undefined, trendUp: true, color: '#ef4444' },
+    { icon: '💰', label: 'Facturas emitidas', value: progressData?.byCategory?.facturacion?.completed?.toString() || '0', trend: undefined, trendUp: true, color: '#22c55e' },
+    { icon: '🏢', label: 'Clientes atendidos', value: '5', trend: 'base datos', trendUp: true, color: '#8b5cf6' },
   ];
 
-  const monthlyData = [
-    { label: 'Ene', value: 45000 },
-    { label: 'Feb', value: 52000 },
-    { label: 'Mar', value: 48000 },
-    { label: 'Abr', value: 61000 },
-    { label: 'May', value: 55000 },
-    { label: 'Jun', value: 72000 },
-    { label: 'Jul', value: 68000 },
+  const monthlyData = progressData?.weeks ? progressData.weeks.map((w: any, i: number) => ({
+    label: `S${i + 1}`,
+    value: w.completed * 5000,
+  })) : [
+    { label: 'S1', value: 0 },
+    { label: 'S2', value: 0 },
+    { label: 'S3', value: 0 },
+    { label: 'S4', value: 0 },
   ];
 
-  const maxVal = Math.max(...monthlyData.map(d => d.value));
+  const maxVal = Math.max(...monthlyData.map((d: any) => d.value), 1);
 
-  const recentTasks = [
-    { title: 'Emisión de factura', score: 85, date: 'Hoy', status: 'completada' },
-    { title: 'Registro de pago', score: 92, date: 'Ayer', status: 'completada' },
-    { title: 'Conciliación bancaria', score: 78, date: 'Ayer', status: 'completada' },
-    { title: 'Cálculo de nómina', score: 88, date: '2 días', status: 'completada' },
-  ];
+  const recentTasks = (progressData?.recentCompletions || []).slice(0, 4).map((t: any) => ({
+    title: t.title,
+    score: t.score,
+    date: `S${t.week}D${t.day}`,
+    status: t.passed ? 'completada' : 'fallida',
+  }));
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center" style={{ background: colors.bg }}>
-        <div className="text-sm font-mono animate-pulse" style={{ color: colors.textMuted }}>Cargando dashboard...</div>
+      <div className="h-full flex flex-col" style={{ background: colors.bg }}>
+        <div className="px-5 py-3 border-b-2 shrink-0" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
+          <div className="h-4 w-40 rounded animate-pulse" style={{ background: colors.border }} />
+        </div>
+        <div className="flex-1 p-5 space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="rounded-xl p-4 animate-pulse" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
+                <div className="h-4 w-4 rounded mb-2" style={{ background: colors.border }} />
+                <div className="h-2 w-16 rounded mb-1" style={{ background: colors.border }} />
+                <div className="h-3 w-12 rounded" style={{ background: colors.border }} />
+              </div>
+            ))}
+          </div>
+          <div className="h-8 rounded-xl animate-pulse" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-48 rounded-xl animate-pulse" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }} />
+            <div className="h-48 rounded-xl animate-pulse" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -139,7 +166,7 @@ export default function Dashboard({ theme, onBack }: DashboardProps) {
           <div className="rounded-xl p-4" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
             <div className="text-[13px] font-bold font-mono mb-3" style={{ color: colors.text }}>📈 Ingresos mensuales</div>
             <div className="space-y-2">
-              {monthlyData.map((d, i) => (
+              {monthlyData.map((d: any, i: number) => (
                 <ChartBar key={i} label={d.label} value={d.value} max={maxVal} color={i === monthlyData.length - 1 ? colors.primary : '#6b7280'} dark={isDark} />
               ))}
             </div>
@@ -173,7 +200,7 @@ export default function Dashboard({ theme, onBack }: DashboardProps) {
         <div className="rounded-xl p-4" style={{ background: isDark ? '#1a1a2e' : '#f8fafc', border: `1px solid ${colors.border}` }}>
           <div className="text-[13px] font-bold font-mono mb-3" style={{ color: colors.text }}>🕐 Actividad reciente</div>
           <div className="space-y-2">
-            {recentTasks.map((t, i) => (
+            {recentTasks.map((t: any, i: number) => (
               <div key={i} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: isDark ? '#0f172a' : '#fff', border: `1px solid ${colors.border}` }}>
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px]" style={{ background: t.score >= 80 ? '#22c55e20' : '#f59e0b20', color: t.score >= 80 ? '#22c55e' : '#f59e0b' }}>
                   {t.score}

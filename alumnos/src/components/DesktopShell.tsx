@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 import EmailInbox from './EmailInbox';
 import EmailClient from './EmailClient';
@@ -32,6 +32,8 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   const [collapsed, setCollapsed] = useState(true);
   const [showMatcher, setShowMatcher] = useState(false);
   const [matcherData, setMatcherData] = useState<{ clientName: string; amount: number } | null>(null);
+  const [screenTransition, setScreenTransition] = useState(false);
+  const prevScreen = useRef<Screen>('desktop');
 
   async function startTask(task: TaskInfo, skipEmailStep = false) {
     setCurrentTask(task); setLoading(true);
@@ -121,7 +123,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden" style={{ background: colors.bg }}>
+      <div className="flex-1 overflow-hidden relative" style={{ background: colors.bg }}>
         {screen === 'desktop' && (
           <div className="h-full p-4 overflow-auto animate-slide-in">
             <div className="flex gap-5 mb-6 flex-wrap">
@@ -166,16 +168,16 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
             )}
           </div>
         )}
-        {screen === 'banking' && <BankingPortal theme={theme} onClose={() => setScreen('desktop')} />}
-        {screen === 'emailInbox' && <EmailInbox theme={theme} tasks={tasks} onSelectTask={openTaskFromEmail} onBack={() => setScreen('desktop')} />}
-        {screen === 'calendar' && <CalendarWidget theme={theme} tasks={tasks} onBack={() => setScreen('desktop')} />}
-        {screen === 'calculadora' && <Calculator theme={theme} onBack={() => setScreen('desktop')} />}
-        {screen === 'spreadsheet' && <SpreadsheetSim theme={theme} onBack={() => setScreen('desktop')} />}
-        {screen === 'accounting' && <AccountingSystem theme={theme} onBack={() => setScreen('desktop')} />}
-        {screen === 'dashboard' && <Dashboard theme={theme} onBack={() => setScreen('desktop')} />}
-        {screen === 'progress' && <ProgressDashboard theme={theme} onBack={() => setScreen('desktop')} />}
+        {screen === 'banking' && <div className="animate-slide-in h-full"><BankingPortal theme={theme} onClose={() => setScreen('desktop')} /></div>}
+        {screen === 'emailInbox' && <div className="animate-slide-in h-full"><EmailInbox theme={theme} tasks={tasks} onSelectTask={openTaskFromEmail} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'calendar' && <div className="animate-slide-in h-full"><CalendarWidget theme={theme} tasks={tasks} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'calculadora' && <div className="animate-slide-in h-full"><Calculator theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'spreadsheet' && <div className="animate-slide-in h-full"><SpreadsheetSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'accounting' && <div className="animate-slide-in h-full"><AccountingSystem theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'dashboard' && <div className="animate-slide-in h-full"><Dashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'progress' && <div className="animate-slide-in h-full"><ProgressDashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'archivo' && (
-          <div className="h-full flex flex-col">
+          <div className="animate-slide-in h-full flex flex-col">
             <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
               <button onClick={() => setScreen('desktop')} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
               <span className="text-base">📁</span>
