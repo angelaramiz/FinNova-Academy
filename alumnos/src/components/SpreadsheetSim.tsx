@@ -32,6 +32,8 @@ type HistoryEntry = {
 const COLUMNS = 26;
 const ROWS = 100;
 const MAX_HISTORY = 20;
+const ROW_HEIGHT = 24;
+const BUFFER = 5;
 
 function colToLetter(col: number): string {
   return String.fromCharCode(65 + col);
@@ -144,7 +146,7 @@ function evaluateFormula(
     if (!isNaN(num)) return trimmed;
     const ref = parseCellRef(trimmed);
     if (ref) return getVal(cells, ref.row, ref.col);
-    const funcMatch = trimmed.match(/^(\w+)\((.*)\)$/s);
+    const funcMatch = trimmed.match(/^(\w+)\(([\s\S]*)\)$/);
     if (funcMatch) {
       const funcName = funcMatch[1].toUpperCase();
       const argsStr = funcMatch[2];
@@ -374,7 +376,7 @@ function btnStyle(colors: { bg: string; cardBg: string; cardSecondary: string; t
     padding: '4px 8px',
     cursor: 'pointer',
     color: colors.text,
-    fontSize: '12px',
+    fontSize: '13px',
   };
 }
 
@@ -404,8 +406,10 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
   const [autoFillStart, setAutoFillStart] = useState<{ row: number; col: number } | null>(null);
   const [autoFillEnd, setAutoFillEnd] = useState<{ row: number; col: number } | null>(null);
   const [activeFormat, setActiveFormat] = useState<CellFormat>({});
-  const gridRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
 
   const pushHistory = useCallback((newCells: Map<string, CellData>) => {
     setHistory(prev => {
@@ -640,12 +644,12 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     if (!findText) return;
     const newCells = new Map(cells);
     let found = false;
-    for (const [id, cell] of newCells) {
+    Array.from(newCells.entries()).forEach(([id, cell]) => {
       if (cell.value.includes(findText)) {
         newCells.set(id, { ...cell, value: cell.value.replace(findText, replaceText) });
         found = true;
       }
-    }
+    });
     if (found) {
       setCells(newCells);
       pushHistory(newCells);
@@ -655,16 +659,82 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
   const findNext = useCallback(() => {
     if (!findText) return;
     const highlights = new Set<string>();
-    for (const [id, cell] of cells) {
+    Array.from(cells.entries()).forEach(([id, cell]) => {
       if (cell.value.includes(findText)) {
         highlights.add(id);
       }
-    }
+    });
     setHighlightedCells(highlights);
   }, [findText, cells]);
 
+  const insertRow = useCallback((above: boolean) => {
+    const insertAt = above ? selectedCell.row : selectedCell.row + 1;
+    const newCells = new Map<string, CellData>();
+    Array.from(cells.entries()).forEach(([id, cell]) => {
+      const parsed = parseCellRef(id);
+      if (parsed) {
+        if (parsed.row >= insertAt) {
+          const newId = cellId(parsed.row + 1, parsed.col);
+          newCells.set(newId, cell);
+        } else {
+          newCells.set(id, cell);
+        }
+      }
+    });
+    setCells(newCells);
+    pushHistory(newCells);
+  }, [cells, selectedCell, pushHistory]);
+
+  const exportCsv = useCallback(() => {
+    const rows: string[][] = [];
+    for (let r = 0; r < ROWS; r++) {
+      const row: string[] = [];
+      for (let c = 0; c < COLUMNS; c++) {
+        row.push(getDisplayValue(r, c));
+      }
+      rows.push(row);
+    }
+    const csvContent = rows.map(row =>
+      row.map(cell => {
+        if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+          return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+      }).join(',')
+    ).join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'hoja_calculo.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [getDisplayValue]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, visible: true });
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () => closeContextMenu();
+    if (contextMenu.visible) {
+      window.addEventListener('click', handleClick);
+      return () => window.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu.visible, closeContextMenu]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (contextMenu.visible) {
+        if (e.key === 'Escape') closeContextMenu();
+        return;
+      }
       if (findReplaceOpen) {
         if (e.key === 'Escape') setFindReplaceOpen(false);
         return;
@@ -690,11 +760,11 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [copySelection, pasteClipboard, undo, redo, deleteSelection, editMode, cancelEdit, findReplaceOpen, applyFormat, activeFormat]);
+  }, [copySelection, pasteClipboard, undo, redo, deleteSelection, editMode, cancelEdit, findReplaceOpen, applyFormat, activeFormat, contextMenu.visible, closeContextMenu]);
 
   useEffect(() => {
-    if (gridRef.current) {
-      const cellEl = gridRef.current.querySelector(`[data-cell="${cellId(selectedCell.row, selectedCell.col)}"]`);
+    if (containerRef.current) {
+      const cellEl = containerRef.current.querySelector(`[data-cell="${cellId(selectedCell.row, selectedCell.col)}"]`);
       if (cellEl) {
         cellEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       }
@@ -741,6 +811,19 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [isSelecting, autoFillStart, autoFillEnd, cells, getDisplayValue, pushHistory]);
 
+  const handleScroll = useCallback(() => {
+    if (containerRef.current) {
+      setScrollTop(containerRef.current.scrollTop);
+    }
+  }, []);
+
+  const containerHeight = containerRef.current?.clientHeight || 600;
+  const startRow = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
+  const endRow = Math.min(ROWS - 1, Math.ceil((scrollTop + containerHeight) / ROW_HEIGHT) + BUFFER);
+  const visibleRows = Array.from({ length: endRow - startRow + 1 }, (_, i) => startRow + i);
+  const totalHeight = ROWS * ROW_HEIGHT;
+  const offsetY = startRow * ROW_HEIGHT;
+
   const renderCellContent = (row: number, col: number) => {
     const id = cellId(row, col);
     const cell = cells.get(id);
@@ -774,7 +857,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
             outline: 'none',
             background: colors.cardBg,
             color: colors.text,
-            fontSize: '12px',
+            fontSize: '13px',
             padding: '0 4px',
             fontFamily: 'inherit',
           }}
@@ -793,6 +876,20 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
     );
   };
 
+  const contextMenuItems = [
+    { label: 'Cortar', shortcut: 'Ctrl+X', action: () => copySelection(true) },
+    { label: 'Copiar', shortcut: 'Ctrl+C', action: () => copySelection(false) },
+    { label: 'Pegar', shortcut: 'Ctrl+V', action: () => pasteClipboard() },
+    { label: 'Borrar', shortcut: 'Del', action: () => deleteSelection() },
+    { divider: true },
+    { label: 'Formato Moneda ($)', action: () => applyFormat({ type: 'currency' }) },
+    { label: 'Formato Porcentaje (%)', action: () => applyFormat({ type: 'percent' }) },
+    { label: 'Formato Number', action: () => applyFormat({ type: 'number' }) },
+    { divider: true },
+    { label: 'Insertar fila arriba', action: () => insertRow(true) },
+    { label: 'Insertar fila abajo', action: () => insertRow(false) },
+  ];
+
   return (
     <div style={{
       display: 'flex',
@@ -804,7 +901,6 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
       fontSize: '13px',
       userSelect: 'none',
     }}>
-      {/* Toolbar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -867,7 +963,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
 
         <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
 
-        <label style={{ fontSize: '11px', color: colors.text }}>Color:</label>
+        <label style={{ fontSize: '13px', color: colors.text }}>Color:</label>
         <input
           type="color"
           value={activeFormat.textColor || '#000000'}
@@ -875,7 +971,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
           style={{ width: '24px', height: '24px', border: 'none', cursor: 'pointer', padding: 0 }}
           title="Color de texto"
         />
-        <label style={{ fontSize: '11px', color: colors.text, marginLeft: '4px' }}>Fondo:</label>
+        <label style={{ fontSize: '13px', color: colors.text, marginLeft: '4px' }}>Fondo:</label>
         <input
           type="color"
           value={activeFormat.bgColor || '#ffffff'}
@@ -883,9 +979,12 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
           style={{ width: '24px', height: '24px', border: 'none', cursor: 'pointer', padding: 0 }}
           title="Color de fondo"
         />
+
+        <div style={{ width: '1px', height: '20px', background: colors.border, margin: '0 4px' }} />
+
+        <button onClick={exportCsv} style={btnStyle(colors)} title="Exportar CSV">Exportar CSV</button>
       </div>
 
-      {/* Formula Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -901,12 +1000,12 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
           padding: '2px 8px',
           minWidth: '60px',
           textAlign: 'center',
-          fontSize: '12px',
+          fontSize: '13px',
           fontWeight: 'bold',
         }}>
           {cellId(selectedCell.row, selectedCell.col)}
         </div>
-        <div style={{ color: colors.textMuted, fontSize: '12px' }}>=</div>
+        <div style={{ color: colors.textMuted, fontSize: '13px' }}>=</div>
         <input
           value={formulaBarValue}
           onChange={(e) => {
@@ -925,13 +1024,12 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
             borderRadius: '3px',
             padding: '2px 8px',
             color: colors.text,
-            fontSize: '12px',
+            fontSize: '13px',
             fontFamily: 'Consolas, monospace',
           }}
         />
       </div>
 
-      {/* Find & Replace Dialog */}
       {findReplaceOpen && (
         <div style={{
           position: 'absolute',
@@ -950,7 +1048,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
             <button onClick={() => { setFindReplaceOpen(false); setHighlightedCells(new Set()); }} style={{ background: 'none', border: 'none', color: colors.text, cursor: 'pointer', fontSize: '16px' }}>×</button>
           </div>
           <div style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '11px', color: colors.textMuted }}>Buscar:</label>
+            <label style={{ fontSize: '13px', color: colors.textMuted }}>Buscar:</label>
             <input
               value={findText}
               onChange={(e) => setFindText(e.target.value)}
@@ -962,12 +1060,12 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                 borderRadius: '3px',
                 padding: '4px 8px',
                 color: colors.text,
-                fontSize: '12px',
+                fontSize: '13px',
               }}
             />
           </div>
           <div style={{ marginBottom: '8px' }}>
-            <label style={{ fontSize: '11px', color: colors.textMuted }}>Reemplazar:</label>
+            <label style={{ fontSize: '13px', color: colors.textMuted }}>Reemplazar:</label>
             <input
               value={replaceText}
               onChange={(e) => setReplaceText(e.target.value)}
@@ -978,7 +1076,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                 borderRadius: '3px',
                 padding: '4px 8px',
                 color: colors.text,
-                fontSize: '12px',
+                fontSize: '13px',
               }}
             />
           </div>
@@ -989,12 +1087,68 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         </div>
       )}
 
-      {/* Grid */}
-      <div ref={gridRef} style={{
+      {contextMenu.visible && (
+        <div
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            background: colors.cardBg,
+            border: `1px solid ${colors.border}`,
+            borderRadius: '6px',
+            padding: '4px 0',
+            zIndex: 2000,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            minWidth: '200px',
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {contextMenuItems.map((item, i) => {
+            if ('divider' in item && item.divider) {
+              return <div key={i} style={{ height: '1px', background: colors.border, margin: '4px 0' }} />;
+            }
+            return (
+              <div
+                key={i}
+                style={{
+                  padding: '6px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '13px',
+                  color: colors.text,
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.background = colors.primary;
+                  (e.currentTarget as HTMLDivElement).style.color = '#fff';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLDivElement).style.color = colors.text;
+                }}
+                onClick={() => {
+                  if ('action' in item && item.action) {
+                    item.action();
+                  }
+                  closeContextMenu();
+                }}
+              >
+                <span>{item.label}</span>
+                {'shortcut' in item && item.shortcut && (
+                  <span style={{ fontSize: '11px', color: colors.textMuted, marginLeft: '24px' }}>{item.shortcut}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div ref={containerRef} onScroll={handleScroll} style={{
         flex: 1,
         overflow: 'auto',
         position: 'relative',
-      }}>
+      }} onContextMenu={handleContextMenu}>
         <table style={{
           borderCollapse: 'collapse',
           tableLayout: 'fixed',
@@ -1022,7 +1176,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                   minWidth: '80px',
                   padding: '4px',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: 'bold',
                 }}>
                   {colToLetter(c)}
@@ -1030,8 +1184,9 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {Array.from({ length: ROWS }, (_, r) => (
+          <tbody style={{ height: `${totalHeight}px` }}>
+            <tr style={{ height: `${offsetY}px` }}><td colSpan={COLUMNS + 1} style={{ padding: 0, border: 'none' }} /></tr>
+            {visibleRows.map(r => (
               <tr key={r}>
                 <td style={{
                   position: 'sticky',
@@ -1042,8 +1197,9 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                   width: '40px',
                   minWidth: '40px',
                   textAlign: 'center',
-                  fontSize: '11px',
+                  fontSize: '13px',
                   fontWeight: 'bold',
+                  height: `${ROW_HEIGHT}px`,
                 }}>
                   {r + 1}
                 </td>
@@ -1065,7 +1221,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
                       style={{
                         border: `1px solid ${colors.border}`,
                         padding: '0 4px',
-                        height: '22px',
+                        height: `${ROW_HEIGHT}px`,
                         overflow: 'hidden',
                         whiteSpace: 'nowrap',
                         textOverflow: 'ellipsis',
@@ -1094,7 +1250,6 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         </table>
       </div>
 
-      {/* Status Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -1102,7 +1257,7 @@ export default function SpreadsheetSim({ theme, onBack }: SpreadsheetSimProps) {
         padding: '4px 12px',
         borderTop: `1px solid ${colors.border}`,
         background: colors.cardSecondary,
-        fontSize: '11px',
+        fontSize: '13px',
         color: colors.textMuted,
         gap: '16px',
       }}>

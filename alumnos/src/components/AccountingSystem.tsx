@@ -101,6 +101,8 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
   const [persistentSuppliers, setPersistentSuppliers] = useState<any[]>([]);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [journalPage, setJournalPage] = useState(0);
+  const journalPageSize = 15;
   const journal = genJournal();
   const allEntries = [...dynamicEntries, ...journal];
 
@@ -254,6 +256,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         {/* Module content */}
         <div className="flex-1 overflow-auto">
           {mod === 'diario' && (
+            <>
             <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
               <thead className="sticky top-0 z-10">
                 <tr style={{ background: isDark ? '#1a1a2e' : '#e5e7eb' }}>
@@ -268,7 +271,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                 </tr>
               </thead>
               <tbody>
-                {filteredEntries.map((e, i) => (
+                {filteredEntries.slice(journalPage * journalPageSize, (journalPage + 1) * journalPageSize).map((e, i) => (
                   <tr key={i} className="hover:opacity-80" style={{ borderBottom: `1px solid ${colors.border}30` }}>
                     <td className="px-4 py-2 text-[12px] font-mono" style={{ color: colors.text }}>{e.date}</td>
                     <td className="px-4 py-2 text-[12px] font-mono font-bold" style={{ color: colors.primary }}>{e.ref}</td>
@@ -283,16 +286,35 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
                     </td>
                   </tr>
                 ))}
+                {filteredEntries.length === 0 && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-[12px]" style={{ color: colors.textMuted }}>No hay asientos que mostrar</td></tr>
+                )}
               </tbody>
               <tfoot>
                 <tr style={{ background: isDark ? 'rgba(255,177,98,0.1)' : 'rgba(255,177,98,0.1)', borderTop: `2px solid ${colors.primary}` }}>
                   <td colSpan={4} className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: colors.text }}>TOTALES:</td>
                   <td className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: '#22c55e' }}>${fmt(totalDebe)}</td>
                   <td className="px-4 py-2 text-[12px] font-bold text-right" style={{ color: '#ef4444' }}>${fmt(totalHaber)}</td>
-                  <td></td>
+                  <td colSpan={2}></td>
                 </tr>
               </tfoot>
             </table>
+            {/* Pagination */}
+            {filteredEntries.length > journalPageSize && (
+              <div className="px-4 py-2 flex items-center justify-between border-t" style={{ borderColor: colors.border }}>
+                <span className="text-[11px] font-mono" style={{ color: colors.textMuted }}>
+                  Mostrando {journalPage * journalPageSize + 1}-{Math.min((journalPage + 1) * journalPageSize, filteredEntries.length)} de {filteredEntries.length}
+                </span>
+                <div className="flex gap-1">
+                  <button onClick={() => setJournalPage(0)} disabled={journalPage === 0} className="text-[10px] px-2 py-1 rounded border cursor-pointer disabled:opacity-30" style={{ borderColor: colors.border, color: colors.textMuted }}>«</button>
+                  <button onClick={() => setJournalPage(p => Math.max(0, p - 1))} disabled={journalPage === 0} className="text-[10px] px-2 py-1 rounded border cursor-pointer disabled:opacity-30" style={{ borderColor: colors.border, color: colors.textMuted }}>‹</button>
+                  <span className="text-[11px] font-mono px-2 py-1" style={{ color: colors.text }}>{journalPage + 1}/{Math.ceil(filteredEntries.length / journalPageSize)}</span>
+                  <button onClick={() => setJournalPage(p => Math.min(Math.ceil(filteredEntries.length / journalPageSize) - 1, p + 1))} disabled={journalPage >= Math.ceil(filteredEntries.length / journalPageSize) - 1} className="text-[10px] px-2 py-1 rounded border cursor-pointer disabled:opacity-30" style={{ borderColor: colors.border, color: colors.textMuted }}>›</button>
+                  <button onClick={() => setJournalPage(Math.ceil(filteredEntries.length / journalPageSize) - 1)} disabled={journalPage >= Math.ceil(filteredEntries.length / journalPageSize) - 1} className="text-[10px] px-2 py-1 rounded border cursor-pointer disabled:opacity-30" style={{ borderColor: colors.border, color: colors.textMuted }}>»</button>
+                </div>
+              </div>
+            )}
+            </>
           )}
 
           {mod === 'cuentas' && (
