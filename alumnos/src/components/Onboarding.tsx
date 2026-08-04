@@ -140,7 +140,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         <div className="border-t" style={{ borderColor: colors.border }}></div>
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.primary, color: '#1B2632' }}>
-            {selectedJob.title.charAt(0)}
+            {(selectedJob?.title || '?').charAt(0)}
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: colors.text }}>{selectedJob.title}</p>

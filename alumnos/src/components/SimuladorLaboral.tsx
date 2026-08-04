@@ -504,7 +504,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       }));
 
       // Crear "jobs" virtuales basados en categorías del plan
-      const categories = [...new Set(formattedTasks.map((t: any) => t.category))] as string[];
+      const categories = [...new Set(formattedTasks.map((t: any) => t.category || 'general').filter(Boolean))] as string[];
       const virtualJobs = categories.map((cat: string) => ({
         id: `job-${cat}`,
         title: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' '),

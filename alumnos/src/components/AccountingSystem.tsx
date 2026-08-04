@@ -361,7 +361,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
               {persistentClients.map(c => (
                 <div key={c.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.primary, color: '#1B2632' }}>{c.name.charAt(0)}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.primary, color: '#1B2632' }}>{(c.name || '?').charAt(0)}</div>
                     <div>
                       <p className="text-[13px] font-bold" style={{ color: colors.text }}>{c.name}</p>
                       <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{c.rfc} · {c.contact}</p>
@@ -386,7 +386,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
               {persistentSuppliers.map(s => (
                 <div key={s.id} className="p-4 rounded-xl border-2 flex items-center justify-between" style={{ borderColor: colors.border, background: colors.cardBg }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.secondary, color: '#fff' }}>{s.name.charAt(0)}</div>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: colors.secondary, color: '#fff' }}>{(s.name || '?').charAt(0)}</div>
                     <div>
                       <p className="text-[13px] font-bold" style={{ color: colors.text }}>{s.name}</p>
                       <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{s.rfc} · {s.contact}</p>
