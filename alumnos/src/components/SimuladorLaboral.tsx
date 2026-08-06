@@ -134,9 +134,19 @@ function MonitorGroup({ onClick, hovered }: { onClick: () => void; hovered: bool
         <meshBasicMaterial color="#22c55e" />
       </mesh>
       {/* Brand logo placeholder */}
-      <mesh position={[0, 0.04, 0.025]}>
+      <mesh position={[0, 0.4, 0.025]}>
         <circleGeometry args={[0.02, 8]} />
         <meshBasicMaterial color="#333" />
+      </mesh>
+      {/* Glow ring around monitor */}
+      <mesh position={[0, 0.35, 0.03]}>
+        <ringGeometry args={[0.52, 0.56, 32]} />
+        <meshBasicMaterial color={hovered ? '#3b82f6' : '#FFB162'} transparent opacity={hovered ? 0.6 : 0.3} />
+      </mesh>
+      {/* Floating beacon above monitor */}
+      <mesh position={[0, 0.8, 0]}>
+        <coneGeometry args={[0.06, 0.12, 4]} />
+        <meshBasicMaterial color="#FFB162" transparent opacity={0.7} />
       </mesh>
     </group>
   );
@@ -271,6 +281,9 @@ function RoomGroup() {
         <boxGeometry args={[10, 0.1, 0.02]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.7} />
       </mesh>
+      {/* Spotlight on desk area */}
+      <spotLight position={[0, 4, -1]} angle={0.4} penumbra={0.5} intensity={1.5} color="#FFE4B5" castShadow
+        target-position={[0, 0.4, -2]} distance={8} />
     </group>
   );
 }
@@ -347,9 +360,10 @@ function CeilingLamp() {
 }
 
 // ─── CAMERA CONTROLLER (animates between office and workspace views) ──
-function CameraController({ viewMode }: { viewMode: ViewMode }) {
+function CameraController({ viewMode, cameraResetTrigger }: { viewMode: ViewMode; cameraResetTrigger: number }) {
   const { camera } = useThree();
   const targetPos = useRef(new THREE.Vector3());
+  const defaultOfficePos = new THREE.Vector3(0, 1.15, 1.4);
 
   useEffect(() => {
     if (viewMode === 'workspace' || viewMode === 'document') {
@@ -357,10 +371,30 @@ function CameraController({ viewMode }: { viewMode: ViewMode }) {
     }
   }, [viewMode]);
 
+  // Flyover on first visit
+  useEffect(() => {
+    if (viewMode === 'office' && !localStorage.getItem('sim_visited')) {
+      targetPos.current.set(0, 2.5, 2);
+      setTimeout(() => {
+        targetPos.current.copy(defaultOfficePos);
+        localStorage.setItem('sim_visited', 'true');
+      }, 1500);
+    }
+  }, [viewMode]);
+
+  // Camera reset trigger
+  useEffect(() => {
+    if (cameraResetTrigger > 0) {
+      targetPos.current.copy(defaultOfficePos);
+    }
+  }, [cameraResetTrigger]);
+
   useFrame(() => {
     if (viewMode === 'workspace' || viewMode === 'document') {
       camera.position.lerp(targetPos.current, 0.06);
       camera.lookAt(0, 0.55, -2);
+    } else if (viewMode === 'office') {
+      camera.position.lerp(targetPos.current, 0.04);
     }
   });
 
@@ -431,6 +465,8 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   const [userStats, setUserStats] = useState<any>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
+  const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
 
   const { notifications, toast, inboxOpen, setInboxOpen, unreadCount, addNotification, markAllRead, checkEvents } = useNotifications();
   const { addToast } = useToast();
@@ -667,6 +703,11 @@ export default function SimuladorLaboral({ theme }: SimProps) {
                 style={{ borderColor: colors.border, color: colors.text, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)' }}>
                 {isFullscreen ? '⛶ Salir' : '⛶ Pantalla completa'}
               </button>
+              <button onClick={() => setCameraResetTrigger(t => t + 1)}
+                className="px-2 py-1 rounded-lg text-[10px] font-mono cursor-pointer"
+                style={{ borderColor: colors.border, color: colors.textMuted, background: 'transparent', border: `1px solid ${colors.border}` }}>
+                🎯
+              </button>
             </div>
           </div>
         </div>
@@ -681,7 +722,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
           <directionalLight position={[6, 10, 4]} intensity={0.6} />
           <pointLight position={[0, 4.4, -1]} intensity={0.5} distance={10} color="#FFE4B5" />
           <OfficeScene onMonitorClick={handleMonitorClick} hovered={monitorHovered} setHovered={setMonitorHovered} />
-          <CameraController viewMode={viewMode} />
+          <CameraController viewMode={viewMode} cameraResetTrigger={cameraResetTrigger} />
           {viewMode === 'office' && (
             <OrbitControls enablePan={false} enableZoom={true} maxPolarAngle={Math.PI / 2.0} minDistance={0.8} maxDistance={3.5} target={[0, 0.7, -1.8]} />
           )}
