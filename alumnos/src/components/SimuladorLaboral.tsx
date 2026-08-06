@@ -252,39 +252,27 @@ function MonitorGroup({ onClick, hovered }: { onClick: () => void; hovered: bool
         <boxGeometry args={[1.0, 0.6, 0.001]} />
         <meshStandardMaterial color="#050505" roughness={0.3} metalness={0.1} />
       </mesh>
-      {/* Screen - glossy display */}
-      <mesh position={[0, 0.35, 0.022]}>
-        <planeGeometry args={[0.96, 0.56]} />
-        <meshStandardMaterial
-          color={hovered ? '#1a365d' : '#0f172a'}
-          roughness={0.08}
-          metalness={0.35}
-          emissive={hovered ? '#1e40af' : '#0c1929'}
-          emissiveIntensity={hovered ? 0.8 : 0.3}
+      {/* Screen - main surface with emissive glow */}
+      <mesh position={[0, 0.35, 0.021]}>
+        <planeGeometry args={[0.95, 0.55]} />
+        <meshStandardMaterial 
+          color={hovered ? '#1e40af' : '#0f172a'} 
+          emissive={hovered ? '#3b82f6' : '#1e3a5f'} 
+          emissiveIntensity={hovered ? 0.8 : 0.4}
+          roughness={0.1} 
+          metalness={0.3} 
         />
       </mesh>
-      {/* Screen content - OS interface */}
-      <mesh position={[0, 0.35, 0.023]}>
-        <planeGeometry args={[0.9, 0.5]} />
-        <meshBasicMaterial color={hovered ? '#2563eb' : '#1e3a5f'} transparent opacity={0.9} />
+      {/* Screen content - desktop-like pattern */}
+      <mesh position={[0, 0.35, 0.022]}>
+        <planeGeometry args={[0.88, 0.48]} />
+        <meshStandardMaterial 
+          color={hovered ? '#60a5fa' : '#2563eb'} 
+          emissive={hovered ? '#93c5fd' : '#3b82f6'} 
+          emissiveIntensity={hovered ? 0.5 : 0.3}
+          roughness={0.1} 
+        />
       </mesh>
-      {/* Screen taskbar */}
-      <mesh position={[0, 0.11, 0.023]}>
-        <planeGeometry args={[0.9, 0.04]} />
-        <meshBasicMaterial color="#111827" transparent opacity={0.95} />
-      </mesh>
-      {/* Screen window title bar */}
-      <mesh position={[0, 0.52, 0.023]}>
-        <planeGeometry args={[0.85, 0.03]} />
-        <meshBasicMaterial color="#1f2937" transparent opacity={0.9} />
-      </mesh>
-      {/* Screen content lines (simulated text) */}
-      {[-0.05, -0.08, -0.11, -0.14].map((y, i) => (
-        <mesh key={`line${i}`} position={[-0.15, 0.35 + y, 0.023]}>
-          <planeGeometry args={[0.4 + i * 0.05, 0.015]} />
-          <meshBasicMaterial color={i % 2 === 0 ? '#374151' : '#4b5563'} transparent opacity={0.7} />
-        </mesh>
-      ))}
       {/* Power LED */}
       <mesh position={[0.4, 0.04, 0.025]}>
         <circleGeometry args={[0.01, 12]} />
@@ -529,6 +517,83 @@ function RoomGroup() {
       <mesh position={[1.8, 1.22, -4.42]} receiveShadow>
         <boxGeometry args={[2.3, 0.04, 0.08]} />
         <meshStandardMaterial color="#e0dcd6" roughness={0.5} metalness={0.05} />
+      </mesh>
+
+      {/* ─── BACK WALL DETAILS ─────────────────────────── */}
+      {/* Whiteboard markers tray */}
+      <mesh position={[0, 1.0, -4.38]} receiveShadow>
+        <boxGeometry args={[1.5, 0.05, 0.08]} />
+        <meshStandardMaterial color="#333" roughness={0.6} />
+      </mesh>
+      {/* Whiteboard markers */}
+      <mesh position={[-0.3, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
+        <meshStandardMaterial color="#ef4444" />
+      </mesh>
+      <mesh position={[0, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
+        <meshStandardMaterial color="#22c55e" />
+      </mesh>
+      <mesh position={[0.3, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
+        <meshStandardMaterial color="#3b82f6" />
+      </mesh>
+
+      {/* Wall clock */}
+      <mesh position={[-2.5, 3.5, -4.38]} receiveShadow>
+        <circleGeometry args={[0.25, 32]} />
+        <meshStandardMaterial color="#fff" roughness={0.3} />
+      </mesh>
+      <mesh position={[-2.5, 3.5, -4.37]}>
+        <circleGeometry args={[0.23, 32]} />
+        <meshStandardMaterial color="#f8f8f8" roughness={0.4} />
+      </mesh>
+      {/* Clock hands */}
+      <mesh position={[-2.5, 3.5, -4.36]} rotation={[0, 0, -Math.PI / 6]}>
+        <boxGeometry args={[0.008, 0.12, 0.005]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      <mesh position={[-2.5, 3.5, -4.36]} rotation={[0, 0, -Math.PI / 3]}>
+        <boxGeometry args={[0.006, 0.08, 0.005]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      {/* Clock center dot */}
+      <mesh position={[-2.5, 3.5, -4.35]}>
+        <circleGeometry args={[0.015, 8]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+
+      {/* Picture frame on back wall */}
+      <mesh position={[3, 3, -4.38]} receiveShadow>
+        <boxGeometry args={[0.8, 0.6, 0.02]} />
+        <meshStandardMaterial color="#2d2d2d" roughness={0.5} />
+      </mesh>
+      <mesh position={[3, 3, -4.37]}>
+        <planeGeometry args={[0.7, 0.5]} />
+        <meshStandardMaterial color="#87CEEB" roughness={0.3} />
+      </mesh>
+      {/* Abstract art in frame */}
+      <mesh position={[2.85, 3.05, -4.36]}>
+        <circleGeometry args={[0.08, 12]} />
+        <meshStandardMaterial color="#FFB162" emissive="#FFB162" emissiveIntensity={0.2} />
+      </mesh>
+      <mesh position={[3.1, 2.95, -4.36]}>
+        <circleGeometry args={[0.06, 12]} />
+        <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.2} />
+      </mesh>
+      <mesh position={[3.15, 3.1, -4.36]}>
+        <circleGeometry args={[0.05, 12]} />
+        <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.2} />
+      </mesh>
+
+      {/* Thermostat on back wall */}
+      <mesh position={[4, 2, -4.38]}>
+        <boxGeometry args={[0.12, 0.12, 0.02]} />
+        <meshStandardMaterial color="#fff" roughness={0.4} />
+      </mesh>
+      <mesh position={[4, 2, -4.37]}>
+        <circleGeometry args={[0.04, 12]} />
+        <meshStandardMaterial color="#3b82f6" />
       </mesh>
 
       {/* ─── CORK BOARD ────────────────────────────────── */}
@@ -847,7 +912,7 @@ function FirstPersonController({ viewMode, cameraResetTrigger }: { viewMode: Vie
   const SPRINT_MULTIPLIER = 1.8;
   const LOOK_SPEED = 0.002;
   const MIN_Y = 0.5;
-  const MAX_Y = 2.0;
+  const MAX_Y = 1.6;
 
   const BOUNDS = { minX: -4.5, maxX: 4.5, minZ: -4, maxZ: 3.5 };
 
@@ -908,14 +973,14 @@ function FirstPersonController({ viewMode, cameraResetTrigger }: { viewMode: Vie
 
   useEffect(() => {
     if (viewMode === 'office') {
-      camera.position.set(0, 1.2, 2);
+      camera.position.set(0, 1.6, 2);
       camera.rotation.set(0, Math.PI, 0);
     }
   }, [viewMode, camera]);
 
   useEffect(() => {
     if (cameraResetTrigger > 0 && viewMode === 'office') {
-      camera.position.set(0, 1.2, 2);
+      camera.position.set(0, 1.6, 2);
       camera.rotation.set(0, Math.PI, 0);
     }
   }, [cameraResetTrigger, viewMode, camera]);
@@ -937,7 +1002,7 @@ function FirstPersonController({ viewMode, cameraResetTrigger }: { viewMode: Vie
       forward.normalize();
       right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-      velocity.current.copy(forward).multiplyScalar(-direction.current.z * speed * delta);
+      velocity.current.copy(forward).multiplyScalar(direction.current.z * speed * delta);
       velocity.current.add(right.multiplyScalar(direction.current.x * speed * delta));
 
       const newPos = camera.position.clone().add(velocity.current);
@@ -1265,7 +1330,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         </div>
       )}
 
-      <Canvas camera={{ position: [0, 1.2, 2], fov: 60, near: 0.1, far: 100 }}
+      <Canvas camera={{ position: [0, 1.6, 2], fov: 60, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         shadows
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(isDark ? '#0a1628' : '#E2DCD0'))}
