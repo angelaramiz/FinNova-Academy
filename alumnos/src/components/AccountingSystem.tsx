@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 import { apiFetch } from '../lib/api';
+import { useToast } from './Toast';
 
 function getToken() { return localStorage.getItem('supabase_auth_token') || ''; }
 async function apiGet(path: string) {
@@ -86,6 +87,7 @@ type Module = 'diario' | 'cuentas' | 'clientes' | 'proveedores' | 'reportes';
 export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBack: () => void }) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
+  const { addToast } = useToast();
   const [mod, setMod] = useState<Module>('diario');
   const [dynamicEntries, setDynamicEntries] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -119,9 +121,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
         if (Array.isArray(accountsData)) setRealAccounts(accountsData);
         if (Array.isArray(clientsData)) setPersistentClients(clientsData);
         if (Array.isArray(suppliersData)) setPersistentSuppliers(suppliersData);
-      } catch {
-        setApiError('Error al cargar datos');
-      }
+      } catch (e) { console.error(e); addToast('Error al cargar datos del sistema contable', 'error'); }
     })();
   }, []);
 
@@ -137,9 +137,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
           setBalanceGeneral(bg);
           setEstadoResultados(er);
           setBalanza(bal);
-        } catch {
-          setApiError('Error al cargar datos');
-        }
+        } catch (e) { console.error(e); addToast('Error al cargar datos del sistema contable', 'error'); }
       })();
     }
   }, [mod]);
@@ -169,7 +167,7 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     // Persistir en backend
     try {
       await apiPost('/api/sim/journal', newEntry);
-    } catch (e) { console.error('Error guardando asiento:', e); }
+    } catch (e) { console.error('Error guardando asiento:', e); addToast('Error al guardar el asiento', 'error'); }
     setDynamicEntries(prev => {
       if (editEntry) {
         return prev.map(e => e === editEntry ? newEntry : e);
@@ -178,10 +176,12 @@ export default function AccountingSystem({ theme, onBack }: { theme: Theme; onBa
     });
     setShowForm(false);
     setEditEntry(null);
+    addToast(editEntry ? 'Asiento actualizado' : 'Asiento creado correctamente', 'success');
   }
 
   function handleDelete(entry: any) {
     setDynamicEntries(prev => prev.filter(e => e !== entry));
+    addToast('Asiento eliminado', 'info');
   }
 
   const filteredEntries = allEntries.filter(e =>

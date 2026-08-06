@@ -9,6 +9,7 @@ import Onboarding from './Onboarding';
 import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
 import { NotificationToast, NotificationInbox, useNotifications } from './Notifications';
+import { useToast } from './Toast';
 
 function getToken(): string {
   return localStorage.getItem('supabase_auth_token') || '';
@@ -432,6 +433,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
 
   const { notifications, toast, inboxOpen, setInboxOpen, unreadCount, addNotification, markAllRead, checkEvents } = useNotifications();
+  const { addToast } = useToast();
 
   // Poll for events every 90s when in workspace mode
   useEffect(() => {
@@ -518,12 +520,13 @@ export default function SimuladorLaboral({ theme }: SimProps) {
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
       console.error(e);
+      addToast('Error al cargar tareas del servidor', 'error');
     }
   }
 
   async function loadStats() {
     try { const data = await apiGet('/api/sim/my-stats'); setUserStats(data); }
-    catch (e) { /* ignore */ }
+    catch (e) { console.error(e); addToast('Error al cargar estadísticas', 'warning'); }
   }
 
   async function handleCompleteTask(taskId: string) {

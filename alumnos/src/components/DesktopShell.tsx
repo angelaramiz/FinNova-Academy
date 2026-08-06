@@ -13,6 +13,7 @@ import PaymentMatcher from './PaymentMatcher';
 import Dashboard from './Dashboard';
 import ProgressDashboard from './ProgressDashboard';
 import { apiFetch } from '../lib/api';
+import { useToast } from './Toast';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
@@ -21,6 +22,7 @@ interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => vo
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
+  const { addToast } = useToast();
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [screen, setScreen] = useState<Screen>('desktop');
@@ -44,7 +46,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       setStepIdx(skipEmailStep ? firstContentStep : 0);
       setValidationResult(null);
       setScreen('workflow');
-    } catch (e) { console.error(e); }
+    } catch (e: any) { console.error(e); addToast(e.message || 'Error al cargar datos', 'error'); }
     setLoading(false);
   }
 
@@ -57,6 +59,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
       // Auto-generar asientos contables según el tipo de tarea
       generateEntriesForTask(currentTask.type, answers);
+      addToast('Asiento contable generado automáticamente', 'success');
       // Si es tarea de pago, mostrar matcher
       if (currentTask.type === 'payment_registration' && answers.clientName && answers.amountReceived) {
         setMatcherData({ clientName: answers.clientName, amount: Number(answers.amountReceived) });
@@ -65,7 +68,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         return;
       }
       if (onTaskComplete) onTaskComplete();
-    } catch (e) { console.error(e); }
+    } catch (e: any) { console.error(e); addToast(e.message || 'Error al cargar datos', 'error'); }
     setLoading(false);
   }
 
@@ -87,7 +90,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
       let entryType = type;
       if (type === 'supplier_invoice') entryType = 'supplier';
       apiPost('/api/sim/generate-entries', { type: entryType, data });
-    } catch (e) { console.error(e); }
+    } catch (e: any) { console.error(e); addToast(e.message || 'Error al cargar datos', 'error'); }
   }
 
   async function handleSpreadsheetSubmit(answers: Record<string, any>) { await handleFormSubmit(answers); }
