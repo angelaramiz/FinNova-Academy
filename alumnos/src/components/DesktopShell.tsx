@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import TutorialOverlay, { useTutorial } from './Tutorial';
 import { themeColors, Theme } from '../lib/theme';
 import EmailInbox from './EmailInbox';
 import EmailClient from './EmailClient';
@@ -22,6 +23,7 @@ interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => vo
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
+  const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial();
   const { addToast } = useToast();
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
@@ -100,8 +102,8 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
 
   const appIcons = [
     { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop') },
-    { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox') },
-    { label: 'Contable', icon: '📊', action: () => setScreen('accounting') },
+    { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+    { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
     { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet') },
     { label: 'Calendario', icon: '📅', action: () => setScreen('calendar') },
     { label: 'Banco', icon: '🏦', action: () => setScreen('banking') },
@@ -113,6 +115,19 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
+      {tutorialActive && currentStep && (
+        <TutorialOverlay
+          theme={theme}
+          step={tutorialStep}
+          totalSteps={totalSteps}
+          title={currentStep.title}
+          description={currentStep.description}
+          highlight={currentStep.highlight}
+          position={currentStep.position}
+          onDismiss={nextStep}
+          onSkip={skipTutorial}
+        />
+      )}
       {/* Header */}
       <div className="px-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#e5e7eb', height: collapsed ? '26px' : '34px' }}>
         <div className="flex items-center gap-2">
@@ -131,7 +146,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
           <div className="h-full p-4 overflow-auto animate-slide-in">
             <div className="flex gap-5 mb-6 flex-wrap">
               {appIcons.map((app, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
+                <div key={i} data-app={app.dataApp} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
                   <div className="w-12 h-12 rounded-xl border-2 flex items-center justify-center text-base" style={{ borderColor: colors.border, background: colors.cardBg, boxShadow: `2px 2px 0px 0px ${colors.border}` }}>{app.icon}</div>
                   <span className="text-[11px] font-bold font-mono text-center leading-tight" style={{ color: colors.text }}>{app.label}{app.count && app.count > 0 && app.label !== 'Tareas' ? <span className="ml-0.5" style={{ color: colors.primary }}>({app.count})</span> : null}</span>
                 </div>
@@ -141,7 +156,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
                 {tasks.map(t => (
-                  <div key={t.id} className="px-4 py-3 flex items-center justify-between hover:opacity-80 transition cursor-pointer" onClick={() => startTask(t, true)}>
+                  <div key={t.id} data-task={t.id} className="px-4 py-3 flex items-center justify-between hover:opacity-80 transition cursor-pointer" onClick={() => startTask(t, true)}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0" style={{ background: t.difficulty === 1 ? '#22c55e20' : '#f59e0b20', color: t.difficulty === 1 ? '#22c55e' : '#f59e0b' }}>{t.difficulty === 1 ? '🌱' : '📈'}</div>
                       <div className="min-w-0">
