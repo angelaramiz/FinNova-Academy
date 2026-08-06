@@ -1,5 +1,4 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
 import { Suspense, useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { themeColors, Theme } from '../lib/theme';
@@ -677,8 +676,7 @@ function RoomGroup() {
         intensity={0.8}
         color="#FFF5E6"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-far={20}
         shadow-camera-left={-5}
         shadow-camera-right={5}
@@ -836,42 +834,118 @@ function CeilingLamp() {
   );
 }
 
-// ─── CAMERA CONTROLLER (animates between office and workspace views) ──
-function CameraController({ viewMode, cameraResetTrigger }: { viewMode: ViewMode; cameraResetTrigger: number }) {
-  const { camera } = useThree();
-  const targetPos = useRef(new THREE.Vector3());
-  const defaultOfficePos = new THREE.Vector3(0, 1.15, 1.4);
+// ─── FIRST-PERSON CONTROLLER ───────────────────────────────────
+function FirstPersonController({ viewMode, cameraResetTrigger }: { viewMode: ViewMode; cameraResetTrigger: number }) {
+  const { camera, gl } = useThree();
+  const moveState = useRef({ forward: false, backward: false, left: false, right: false, sprint: false });
+  const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+  const isLocked = useRef(false);
+  const velocity = useRef(new THREE.Vector3());
+  const direction = useRef(new THREE.Vector3());
+
+  const MOVE_SPEED = 2.5;
+  const SPRINT_MULTIPLIER = 1.8;
+  const LOOK_SPEED = 0.002;
+  const MIN_Y = 0.5;
+  const MAX_Y = 2.0;
+
+  const BOUNDS = { minX: -4.5, maxX: 4.5, minZ: -4, maxZ: 3.5 };
 
   useEffect(() => {
-    if (viewMode === 'workspace' || viewMode === 'document') {
-      targetPos.current.set(0, 0.65, -1.0);
-    }
-  }, [viewMode]);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (viewMode !== 'office') return;
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp': moveState.current.forward = true; break;
+        case 'KeyS': case 'ArrowDown': moveState.current.backward = true; break;
+        case 'KeyA': case 'ArrowLeft': moveState.current.left = true; break;
+        case 'KeyD': case 'ArrowRight': moveState.current.right = true; break;
+        case 'ShiftLeft': case 'ShiftRight': moveState.current.sprint = true; break;
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      switch (e.code) {
+        case 'KeyW': case 'ArrowUp': moveState.current.forward = false; break;
+        case 'KeyS': case 'ArrowDown': moveState.current.backward = false; break;
+        case 'KeyA': case 'ArrowLeft': moveState.current.left = false; break;
+        case 'KeyD': case 'ArrowRight': moveState.current.right = false; break;
+        case 'ShiftLeft': case 'ShiftRight': moveState.current.sprint = false; break;
+      }
+    };
 
-  // Flyover on first visit
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isLocked.current || viewMode !== 'office') return;
+      euler.current.setFromQuaternion(camera.quaternion);
+      euler.current.y -= e.movementX * LOOK_SPEED;
+      euler.current.x -= e.movementY * LOOK_SPEED;
+      euler.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.current.x));
+      camera.quaternion.setFromEuler(euler.current);
+    };
+
+    const onPointerLockChange = () => {
+      isLocked.current = document.pointerLockElement === gl.domElement;
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+
+    const onClick = () => {
+      if (viewMode === 'office' && !isLocked.current) {
+        gl.domElement.requestPointerLock();
+      }
+    };
+    gl.domElement.addEventListener('click', onClick);
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('pointerlockchange', onPointerLockChange);
+      gl.domElement.removeEventListener('click', onClick);
+    };
+  }, [camera, gl, viewMode]);
+
   useEffect(() => {
-    if (viewMode === 'office' && !localStorage.getItem('sim_visited')) {
-      targetPos.current.set(0, 2.5, 2);
-      setTimeout(() => {
-        targetPos.current.copy(defaultOfficePos);
-        localStorage.setItem('sim_visited', 'true');
-      }, 1500);
+    if (viewMode === 'office') {
+      camera.position.set(0, 1.2, 2);
+      camera.rotation.set(0, Math.PI, 0);
     }
-  }, [viewMode]);
+  }, [viewMode, camera]);
 
-  // Camera reset trigger
   useEffect(() => {
-    if (cameraResetTrigger > 0) {
-      targetPos.current.copy(defaultOfficePos);
+    if (cameraResetTrigger > 0 && viewMode === 'office') {
+      camera.position.set(0, 1.2, 2);
+      camera.rotation.set(0, Math.PI, 0);
     }
-  }, [cameraResetTrigger]);
+  }, [cameraResetTrigger, viewMode, camera]);
 
-  useFrame(() => {
-    if (viewMode === 'workspace' || viewMode === 'document') {
-      camera.position.lerp(targetPos.current, 0.06);
-      camera.lookAt(0, 0.55, -2);
-    } else if (viewMode === 'office') {
-      camera.position.lerp(targetPos.current, 0.04);
+  useFrame((_, delta) => {
+    if (viewMode !== 'office') return;
+
+    const speed = moveState.current.sprint ? MOVE_SPEED * SPRINT_MULTIPLIER : MOVE_SPEED;
+
+    direction.current.z = Number(moveState.current.forward) - Number(moveState.current.backward);
+    direction.current.x = Number(moveState.current.right) - Number(moveState.current.left);
+    direction.current.normalize();
+
+    if (moveState.current.forward || moveState.current.backward || moveState.current.left || moveState.current.right) {
+      const right = new THREE.Vector3();
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+      right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+      velocity.current.copy(forward).multiplyScalar(-direction.current.z * speed * delta);
+      velocity.current.add(right.multiplyScalar(direction.current.x * speed * delta));
+
+      const newPos = camera.position.clone().add(velocity.current);
+      newPos.x = Math.max(BOUNDS.minX, Math.min(BOUNDS.maxX, newPos.x));
+      newPos.z = Math.max(BOUNDS.minZ, Math.min(BOUNDS.maxZ, newPos.z));
+      newPos.y = MAX_Y;
+
+      camera.position.copy(newPos);
     }
   });
 
@@ -1191,30 +1265,42 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         </div>
       )}
 
-      <Canvas camera={{ position: [0, 1.15, 1.4], fov: 45, near: 0.01, far: 100 }}
-        shadows
+      <Canvas camera={{ position: [0, 1.2, 2], fov: 60, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        shadows
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(isDark ? '#0a1628' : '#E2DCD0'))}
       >
         <Suspense fallback={null}>
+          {/* Lighting */}
+          <ambientLight intensity={0.25} color="#F0F0F0" />
+          <directionalLight position={[5, 8, 3]} intensity={0.8} color="#FFF5E6" castShadow
+            shadow-mapSize={[2048, 2048]}
+            shadow-camera-far={20} shadow-camera-left={-5} shadow-camera-right={5}
+            shadow-camera-top={5} shadow-camera-bottom={-5} />
+          <directionalLight position={[-3, 4, 2]} intensity={0.3} color="#E6F0FF" />
+          <directionalLight position={[0, 3, -5]} intensity={0.2} color="#FFFFFF" />
+
           <OfficeScene onMonitorClick={handleMonitorClick} hovered={monitorHovered} setHovered={setMonitorHovered} />
-          <CameraController viewMode={viewMode} cameraResetTrigger={cameraResetTrigger} />
-          {viewMode === 'office' && (
-            <OrbitControls enablePan={false} enableZoom={true} maxPolarAngle={Math.PI / 2.0} minDistance={0.8} maxDistance={3.5} target={[0, 0.7, -1.8]} />
-          )}
+          <FirstPersonController viewMode={viewMode} cameraResetTrigger={cameraResetTrigger} />
         </Suspense>
       </Canvas>
 
-      {/* Welcome hint */}
+      {/* Crosshair for first-person mode */}
       {viewMode === 'office' && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
-          <div className="px-5 py-2.5 rounded-xl border-2 backdrop-blur-xl animate-pulse-slow flex items-center gap-2" style={{
-            borderColor: colors.primary,
-            background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
-            boxShadow: `4px 4px 0px 0px ${colors.primary}`,
-          }}>
-            <span className="text-base">🖥️</span>
-            <span className="text-xs font-bold" style={{ color: colors.primary }}>Haz clic en la pantalla para empezar a trabajar</span>
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <div className="w-6 h-6 relative">
+            <div className="absolute top-1/2 left-0 w-full h-px" style={{ background: 'rgba(255,255,255,0.5)' }} />
+            <div className="absolute left-1/2 top-0 h-full w-px" style={{ background: 'rgba(255,255,255,0.5)' }} />
+          </div>
+        </div>
+      )}
+
+      {/* First-person controls instruction */}
+      {viewMode === 'office' && !localStorage.getItem('fp_controls_shown') && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+          <div className="px-4 py-2 rounded-xl text-center" style={{ background: 'rgba(0,0,0,0.7)', color: '#fff' }}>
+            <div className="text-[11px] font-bold mb-1">🎮 Controles</div>
+            <div className="text-[9px]">WASD: Mover · Mouse: Mirar · Shift: Correr · Click: Interactuar</div>
           </div>
         </div>
       )}
