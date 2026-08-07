@@ -1002,6 +1002,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
   const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
+  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>('accounting');
 
   const { notifications, toast, inboxOpen, setInboxOpen, unreadCount, addNotification, markAllRead, checkEvents } = useNotifications();
   const { addToast } = useToast();
@@ -1053,7 +1054,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
 
       let todayTasks: any[] = [];
       try {
-        todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}`);
+        todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}?specialty=${specialty}`);
       } catch (e) {
         console.warn('TaskPlanner no disponible, usando tareas por defecto');
         // Fallback: crear tareas de ejemplo si el TaskPlanner falla
@@ -1281,6 +1282,8 @@ export default function SimuladorLaboral({ theme }: SimProps) {
               loadStats();
             }}
             onTaskComplete={loadStats}
+            specialty={specialty}
+            onSpecialtyChange={(s) => { setSpecialty(s as any); fetchJobs(); }}
           />
         </div>
       )}

@@ -23,10 +23,10 @@ import { useToast } from './Toast';
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
-interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; }
+interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor';
 
-export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
+export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial();
   const { addToast } = useToast();
   const colors = themeColors[theme];
@@ -157,12 +157,12 @@ const deApps = [
         <div className="flex items-center gap-2.5 text-[13px] font-mono" style={{ color: colors.textMuted }}>
           {!collapsed && <span>{new Date().toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
           <div className="flex items-center gap-1 mr-2">
-            <button onClick={() => setSpecialty('accounting')} 
+            <button onClick={() => { setSpecialty('accounting'); onSpecialtyChange?.('accounting'); }} 
               className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
               style={{ background: specialty === 'accounting' ? colors.primary : 'transparent', color: specialty === 'accounting' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'accounting' ? colors.primary : colors.border}` }}>
               📊 Contabilidad
             </button>
-            <button onClick={() => setSpecialty('data_engineering')}
+            <button onClick={() => { setSpecialty('data_engineering'); onSpecialtyChange?.('data_engineering'); }}
               className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
               style={{ background: specialty === 'data_engineering' ? colors.primary : 'transparent', color: specialty === 'data_engineering' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'data_engineering' ? colors.primary : colors.border}` }}>
               🔀 Data Engineering
