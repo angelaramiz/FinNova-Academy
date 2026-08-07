@@ -1,6 +1,15 @@
 # SIMULADOR LABORAL 3D — Centro de Control
 
-## Rol del Usuario: Contador General Junior
+## Especialidades Disponibles
+
+| # | Especialidad | Empresa | Stack Principal |
+|---|-------------|---------|-----------------|
+| 1 | **Contador General Junior** | Logística del Norte S.A. | Odoo, Excel, CFDI, SAT |
+| 2 | **Ingeniero de Datos Jr** | DataFlow Analytics S.A. | Palantir Foundry, SQL, Python, AWS |
+
+---
+
+## ESPECIALIDAD 1: Contador General Junior
 
 ### Contexto de la Empresa
 - **Empresa**: Logística del Norte S.A. de C.V. (LNO)
@@ -41,6 +50,65 @@
 17:00 - Corte de caja (si aplica)
 18:00 - Cerrar turnos, pendientes para mañana
 ```
+
+---
+
+## ESPECIALIDAD 2: Ingeniero de Datos Junior (Palantir Foundry)
+
+### Contexto de la Empresa
+- **Empresa**: DataFlow Analytics S.A. de C.V.
+- **Giro**: Consultoría y análisis de datos para empresas de retail y logística
+- **Ubicación**: Av. Insurgentes Sur 1234, Col. Del Valle, C.P. 03100, CDMX
+- **Tamaño**: ~30 empleados, 2 oficinas (CDMX + Monterrey)
+- **Stack**: Palantir Foundry, AWS (S3, Redshift, Airflow), Python, SQL
+- **Moneda**: MXN
+
+### Perfil del Estudiante
+- **Rol**: Ingeniero de Datos Junior (recién egresado o con 1-2 años de experiencia)
+- **Jefe directo**: Ing. Sandra Mora (Lead Data Engineer)
+- **Horario**: Lunes a viernes, 9:00 - 18:00
+- **Nivel**: Básico-Intermedio en SQL, Python, ETL/ELT
+
+### Responsabilidades Diarias del Rol
+1. **Desarrollo de Transforms**: Escribir código Python/SQL en Palantir Foundry para procesar datos
+2. **Monitoreo de pipelines**: Verificar ejecuciones diarias, reprocessar jobs fallidos
+3. **Calidad de datos**: Profiling, validaciones y atención a alertas de datos
+4. **Ingesta de datos**: Conectar nuevas fuentes (APIs, bases de datos, archivos CSV)
+5. **Ontología**: Contribuir al modelado semántico del negocio
+6. **Code reviews**: Revisar código del equipo y documentar datasets
+7. **Soporte**: Responder solicitudes de datos de analistas y otras áreas
+8. **Aprendizaje**: 30-60 min diarios de cursos (Foundry Academy, cloud)
+
+### Flujo de Trabajo Típico (1 día)
+```
+09:00 - Standup diario con el equipo
+09:30 - Revisar ejecuciones de pipelines y alertas
+10:00 - Desarrollo de Transforms (Python/SQL)
+12:00 - Almuerzo
+13:00 - Code reviews y documentación
+14:00 - Soporte a analistas / integración de nuevas fuentes
+16:00 - Aprendizaje (Foundry Academy / cloud)
+17:30 - Revisión final y cierre de tareas
+```
+
+### Plan de Capacitación (12 semanas)
+
+| Semana | Tema | Entregable |
+|:------:|------|------------|
+| 1-3 | SQL (joins, window functions), Python pandas, ETL/ELT | Ejercicios SQL + script pandas |
+| 4-5 | Palantir Academy: Connections, Transforms | Pipeline de ingesta básico |
+| 6-7 | Ontología, Contour, Workshop | Modelo semántico + tablero |
+| 8-9 | Cloud (AWS): S3, Redshift, Airflow | Deploy en cloud |
+| 10-12 | Proyecto integrador | Caso end-to-end completo |
+
+### Meses de Progreso
+
+| Mes | Fase | Entregable |
+|:---:|------|------------|
+| 1 | Absorción | Primer pipeline bajo supervisión |
+| 2 | Ejecución guiada | Módulo propio en producción |
+| 3 | Autonomía | Proyecto integrador completo |
+| 4-6 | Consolidación | Propiedad de módulos + onboarding de nuevos
 
 ## Stack Tecnológico del Proyecto
 *   **Backend**: Node.js, Express, TypeScript, tsx, MemoryDatabase (`memoryDb.ts`) + Supabase (PostgreSQL).
