@@ -42,6 +42,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   const [matcherData, setMatcherData] = useState<{ clientName: string; amount: number } | null>(null);
   const [screenTransition, setScreenTransition] = useState(false);
   const prevScreen = useRef<Screen>('desktop');
+  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>('accounting');
 
   async function startTask(task: TaskInfo, skipEmailStep = false) {
     setCurrentTask(task); setLoading(true);
@@ -104,22 +105,33 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
   function closeWorkflow() { setScreen('desktop'); setCurrentTask(null); setWorkflow(null); setStepIdx(0); setValidationResult(null); }
   function openTaskFromEmail(taskId: string) { const task = tasks.find(t => t.id === taskId); if (task) startTask(task, true); }
 
-  const appIcons = [
-    { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop') },
-    { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
-    { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
-    { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet') },
-    { label: 'Calendario', icon: '📅', action: () => setScreen('calendar') },
-    { label: 'Banco', icon: '🏦', action: () => setScreen('banking') },
-    { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora') },
-    { label: 'Archivo', icon: '📁', action: () => setScreen('archivo') },
-    { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard') },
-    { label: 'Progreso', icon: '📉', action: () => setScreen('progress') },
-    { label: 'Pipelines', icon: '🔀', action: () => setScreen('pipeline') },
-    { label: 'SQL', icon: '🗃️', action: () => setScreen('sql') },
-    { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse') },
-    { label: 'Monitor', icon: '📊', action: () => setScreen('monitor') },
-  ];
+const accountingApps = [
+  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+  { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
+  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Calendario', icon: '📅', action: () => setScreen('calendar'), dataApp: 'calendario' },
+  { label: 'Banco', icon: '🏦', action: () => setScreen('banking'), dataApp: 'banco' },
+  { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora'), dataApp: 'calculadora' },
+  { label: 'Archivo', icon: '📁', action: () => setScreen('archivo'), dataApp: 'archivo' },
+  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
+  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+];
+
+const deApps = [
+  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+  { label: 'Pipelines', icon: '🔀', action: () => setScreen('pipeline'), dataApp: 'pipelines' },
+  { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
+  { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse'), dataApp: 'warehouse' },
+  { label: 'Monitor', icon: '📊', action: () => setScreen('monitor'), dataApp: 'monitor' },
+  { label: 'Calendario', icon: '📅', action: () => setScreen('calendar'), dataApp: 'calendario' },
+  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
+  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+];
+
+  const appIcons = specialty === 'accounting' ? accountingApps : deApps;
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -144,9 +156,27 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         </div>
         <div className="flex items-center gap-2.5 text-[13px] font-mono" style={{ color: colors.textMuted }}>
           {!collapsed && <span>{new Date().toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
+          <div className="flex items-center gap-1 mr-2">
+            <button onClick={() => setSpecialty('accounting')} 
+              className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
+              style={{ background: specialty === 'accounting' ? colors.primary : 'transparent', color: specialty === 'accounting' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'accounting' ? colors.primary : colors.border}` }}>
+              📊 Contabilidad
+            </button>
+            <button onClick={() => setSpecialty('data_engineering')}
+              className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
+              style={{ background: specialty === 'data_engineering' ? colors.primary : 'transparent', color: specialty === 'data_engineering' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'data_engineering' ? colors.primary : colors.border}` }}>
+              🔀 Data Engineering
+            </button>
+          </div>
           <button onClick={onClose} className="w-4 h-4 rounded flex items-center justify-center text-[11px] cursor-pointer hover:opacity-70" style={{ background: '#ef4444', color: '#fff' }}>✕</button>
         </div>
       </div>
+
+      {specialty === 'data_engineering' && (
+        <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
+          🔀 Modo: Ingeniero de Datos Jr — Palantir Foundry
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-hidden relative" style={{ background: colors.bg }}>
