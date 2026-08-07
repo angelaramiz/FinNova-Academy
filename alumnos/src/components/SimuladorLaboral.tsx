@@ -38,9 +38,9 @@ function DustParticles() {
   const velocities = useRef(new Float32Array(count * 3));
 
   for (let i = 0; i < count; i++) {
-    positions.current[i * 3] = (Math.random() - 0.5) * 4;
+    positions.current[i * 3] = (Math.random() - 0.5) * 3;
     positions.current[i * 3 + 1] = Math.random() * 3 + 0.5;
-    positions.current[i * 3 + 2] = (Math.random() - 0.5) * 3 - 1;
+    positions.current[i * 3 + 2] = (Math.random() - 0.5) * 2 - 0.5;
     velocities.current[i * 3] = (Math.random() - 0.5) * 0.002;
     velocities.current[i * 3 + 1] = (Math.random() - 0.5) * 0.001;
     velocities.current[i * 3 + 2] = (Math.random() - 0.5) * 0.002;
@@ -400,96 +400,96 @@ function RoomGroup() {
     <group>
       {/* Floor - polished concrete */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[14, 14]} />
+        <planeGeometry args={[8, 8]} />
         <meshStandardMaterial color="#6b7280" roughness={0.75} metalness={0.05} />
       </mesh>
       {/* Floor tile lines (subtle grid) */}
-      {[-3, 0, 3].map((x) => (
+      {[-2, 0, 2].map((x) => (
         <mesh key={`fx${x}`} position={[x, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[0.01, 14]} />
+          <planeGeometry args={[0.01, 8]} />
           <meshStandardMaterial color="#9ca3af" roughness={0.8} metalness={0.05} transparent opacity={0.3} />
         </mesh>
       ))}
-      {[-3, 0, 3].map((z) => (
+      {[-2, 0, 2].map((z) => (
         <mesh key={`fz${z}`} position={[0, -0.005, z]} rotation={[-Math.PI / 2, 0, Math.PI / 2]} receiveShadow>
-          <planeGeometry args={[0.01, 14]} />
+          <planeGeometry args={[0.01, 8]} />
           <meshStandardMaterial color="#9ca3af" roughness={0.8} metalness={0.05} transparent opacity={0.3} />
         </mesh>
       ))}
       {/* Back wall - drywall/plaster */}
-      <mesh position={[0, 2.5, -4.5]} receiveShadow>
-        <boxGeometry args={[10, 5, 0.3]} />
+      <mesh position={[0, 2.5, -2.5]} receiveShadow>
+        <boxGeometry args={[6, 5, 0.3]} />
         <meshStandardMaterial color="#e8e4de" roughness={0.95} metalness={0.0} />
       </mesh>
       {/* Left wall */}
-      <mesh position={[-5, 2.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[9, 5, 0.3]} />
+      <mesh position={[-3, 2.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[6, 5, 0.3]} />
         <meshStandardMaterial color="#ebe7e1" roughness={0.95} metalness={0.0} />
       </mesh>
       {/* Right wall */}
-      <mesh position={[5, 2.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-        <boxGeometry args={[9, 5, 0.3]} />
+      <mesh position={[3, 2.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+        <boxGeometry args={[6, 5, 0.3]} />
         <meshStandardMaterial color="#e5e1db" roughness={0.95} metalness={0.0} />
       </mesh>
       {/* Ceiling - acoustic tile */}
-      <mesh position={[0, 5, -2]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10, 9]} />
+      <mesh position={[0, 5, -1]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[6, 6]} />
         <meshStandardMaterial color="#f0ede8" roughness={0.92} metalness={0.0} />
       </mesh>
 
       {/* ─── WINDOW WITH SKY ───────────────────────────── */}
       {/* Sky gradient behind window */}
-      <mesh position={[1.8, 2, -4.46]}>
-        <planeGeometry args={[2.0, 1.3]} />
+      <mesh position={[1.2, 2, -2.46]}>
+        <planeGeometry args={[1.5, 1.0]} />
         <meshBasicMaterial color="#87CEEB" />
       </mesh>
       {/* Sky gradient overlay - lighter at bottom */}
-      <mesh position={[1.8, 1.5, -4.455]}>
-        <planeGeometry args={[2.0, 0.6]} />
+      <mesh position={[1.2, 1.65, -2.455]}>
+        <planeGeometry args={[1.5, 0.45]} />
         <meshBasicMaterial color="#e0f0ff" transparent opacity={0.6} />
       </mesh>
       {/* Sun glow */}
-      <mesh position={[2.2, 2.5, -4.45]}>
-        <circleGeometry args={[0.15, 24]} />
+      <mesh position={[1.5, 2.5, -2.45]}>
+        <circleGeometry args={[0.12, 24]} />
         <meshBasicMaterial color="#fff5d4" transparent opacity={0.8} />
       </mesh>
-      <mesh position={[2.2, 2.5, -4.454]}>
-        <circleGeometry args={[0.25, 24]} />
+      <mesh position={[1.5, 2.5, -2.454]}>
+        <circleGeometry args={[0.2, 24]} />
         <meshBasicMaterial color="#fff5d4" transparent opacity={0.3} />
       </mesh>
       {/* Cloud shapes */}
-      <mesh position={[1.2, 2.8, -4.452]}>
-        <boxGeometry args={[0.3, 0.08, 0.01]} />
+      <mesh position={[0.85, 2.7, -2.452]}>
+        <boxGeometry args={[0.22, 0.06, 0.01]} />
         <meshStandardMaterial color="#ffffff" transparent opacity={0.6} roughness={1} />
       </mesh>
-      <mesh position={[1.35, 2.82, -4.452]}>
-        <boxGeometry args={[0.2, 0.06, 0.01]} />
+      <mesh position={[0.95, 2.72, -2.452]}>
+        <boxGeometry args={[0.15, 0.045, 0.01]} />
         <meshStandardMaterial color="#ffffff" transparent opacity={0.5} roughness={1} />
       </mesh>
-      <mesh position={[2.5, 2.6, -4.452]}>
-        <boxGeometry args={[0.25, 0.07, 0.01]} />
+      <mesh position={[1.6, 2.55, -2.452]}>
+        <boxGeometry args={[0.18, 0.055, 0.01]} />
         <meshStandardMaterial color="#ffffff" transparent opacity={0.55} roughness={1} />
       </mesh>
       {/* Distant buildings silhouette */}
-      <mesh position={[1.0, 1.4, -4.45]}>
-        <boxGeometry args={[0.15, 0.3, 0.01]} />
+      <mesh position={[0.75, 1.4, -2.45]}>
+        <boxGeometry args={[0.1, 0.25, 0.01]} />
         <meshStandardMaterial color="#b0bec5" transparent opacity={0.3} roughness={1} />
       </mesh>
-      <mesh position={[1.3, 1.5, -4.45]}>
-        <boxGeometry args={[0.1, 0.4, 0.01]} />
+      <mesh position={[0.95, 1.5, -2.45]}>
+        <boxGeometry args={[0.07, 0.3, 0.01]} />
         <meshStandardMaterial color="#90a4ae" transparent opacity={0.25} roughness={1} />
       </mesh>
-      <mesh position={[1.55, 1.35, -4.45]}>
-        <boxGeometry args={[0.12, 0.25, 0.01]} />
+      <mesh position={[1.1, 1.35, -2.45]}>
+        <boxGeometry args={[0.09, 0.2, 0.01]} />
         <meshStandardMaterial color="#b0bec5" transparent opacity={0.28} roughness={1} />
       </mesh>
-      <mesh position={[2.5, 1.3, -4.45]}>
-        <boxGeometry args={[0.08, 0.2, 0.01]} />
+      <mesh position={[1.6, 1.3, -2.45]}>
+        <boxGeometry args={[0.06, 0.15, 0.01]} />
         <meshStandardMaterial color="#90a4ae" transparent opacity={0.22} roughness={1} />
       </mesh>
       {/* Window glass */}
-      <mesh position={[1.8, 2, -4.44]} receiveShadow>
-        <boxGeometry args={[2.2, 1.5, 0.02]} />
+      <mesh position={[1.2, 2, -2.44]} receiveShadow>
+        <boxGeometry args={[1.7, 1.2, 0.02]} />
         <meshStandardMaterial
           color="#b8d4e8"
           transparent
@@ -500,137 +500,137 @@ function RoomGroup() {
         />
       </mesh>
       {/* Window frame - white painted wood */}
-      <mesh position={[1.8, 2, -4.43]}>
-        <boxGeometry args={[2.25, 1.55, 0.015]} />
+      <mesh position={[1.2, 2, -2.43]}>
+        <boxGeometry args={[1.75, 1.25, 0.015]} />
         <meshStandardMaterial color="#e8e4e0" roughness={0.5} metalness={0.05} />
       </mesh>
       {/* Window cross bars */}
-      <mesh position={[1.8, 2, -4.42]}>
-        <boxGeometry args={[2.2, 0.035, 0.012]} />
+      <mesh position={[1.2, 2, -2.42]}>
+        <boxGeometry args={[1.7, 0.03, 0.012]} />
         <meshStandardMaterial color="#d5d0ca" roughness={0.5} metalness={0.05} />
       </mesh>
-      <mesh position={[1.8, 2, -4.42]}>
-        <boxGeometry args={[0.035, 1.5, 0.012]} />
+      <mesh position={[1.2, 2, -2.42]}>
+        <boxGeometry args={[0.03, 1.2, 0.012]} />
         <meshStandardMaterial color="#d5d0ca" roughness={0.5} metalness={0.05} />
       </mesh>
       {/* Window sill */}
-      <mesh position={[1.8, 1.22, -4.42]} receiveShadow>
-        <boxGeometry args={[2.3, 0.04, 0.08]} />
+      <mesh position={[1.2, 1.37, -2.42]} receiveShadow>
+        <boxGeometry args={[1.8, 0.04, 0.08]} />
         <meshStandardMaterial color="#e0dcd6" roughness={0.5} metalness={0.05} />
       </mesh>
 
       {/* ─── BACK WALL DETAILS ─────────────────────────── */}
       {/* Whiteboard markers tray */}
-      <mesh position={[0, 1.0, -4.38]} receiveShadow>
+      <mesh position={[0, 1.0, -2.38]} receiveShadow>
         <boxGeometry args={[1.5, 0.05, 0.08]} />
         <meshStandardMaterial color="#333" roughness={0.6} />
       </mesh>
       {/* Whiteboard markers */}
-      <mesh position={[-0.3, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-0.3, 1.05, -2.36]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#ef4444" />
       </mesh>
-      <mesh position={[0, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0, 1.05, -2.36]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#22c55e" />
       </mesh>
-      <mesh position={[0.3, 1.05, -4.36]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[0.3, 1.05, -2.36]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#3b82f6" />
       </mesh>
 
       {/* Wall clock */}
-      <mesh position={[-2.5, 3.5, -4.38]} receiveShadow>
+      <mesh position={[-1.5, 3.5, -2.38]} receiveShadow>
         <circleGeometry args={[0.25, 32]} />
         <meshStandardMaterial color="#fff" roughness={0.3} />
       </mesh>
-      <mesh position={[-2.5, 3.5, -4.37]}>
+      <mesh position={[-1.5, 3.5, -2.37]}>
         <circleGeometry args={[0.23, 32]} />
         <meshStandardMaterial color="#f8f8f8" roughness={0.4} />
       </mesh>
       {/* Clock hands */}
-      <mesh position={[-2.5, 3.5, -4.36]} rotation={[0, 0, -Math.PI / 6]}>
+      <mesh position={[-1.5, 3.5, -2.36]} rotation={[0, 0, -Math.PI / 6]}>
         <boxGeometry args={[0.008, 0.12, 0.005]} />
         <meshStandardMaterial color="#1a1a1a" />
       </mesh>
-      <mesh position={[-2.5, 3.5, -4.36]} rotation={[0, 0, -Math.PI / 3]}>
+      <mesh position={[-1.5, 3.5, -2.36]} rotation={[0, 0, -Math.PI / 3]}>
         <boxGeometry args={[0.006, 0.08, 0.005]} />
         <meshStandardMaterial color="#333" />
       </mesh>
       {/* Clock center dot */}
-      <mesh position={[-2.5, 3.5, -4.35]}>
+      <mesh position={[-1.5, 3.5, -2.35]}>
         <circleGeometry args={[0.015, 8]} />
         <meshStandardMaterial color="#1a1a1a" />
       </mesh>
 
       {/* Picture frame on back wall */}
-      <mesh position={[3, 3, -4.38]} receiveShadow>
+      <mesh position={[2, 3, -2.38]} receiveShadow>
         <boxGeometry args={[0.8, 0.6, 0.02]} />
         <meshStandardMaterial color="#2d2d2d" roughness={0.5} />
       </mesh>
-      <mesh position={[3, 3, -4.37]}>
+      <mesh position={[2, 3, -2.37]}>
         <planeGeometry args={[0.7, 0.5]} />
         <meshStandardMaterial color="#87CEEB" roughness={0.3} />
       </mesh>
       {/* Abstract art in frame */}
-      <mesh position={[2.85, 3.05, -4.36]}>
+      <mesh position={[1.85, 3.05, -2.36]}>
         <circleGeometry args={[0.08, 12]} />
         <meshStandardMaterial color="#FFB162" emissive="#FFB162" emissiveIntensity={0.2} />
       </mesh>
-      <mesh position={[3.1, 2.95, -4.36]}>
+      <mesh position={[2.1, 2.95, -2.36]}>
         <circleGeometry args={[0.06, 12]} />
         <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.2} />
       </mesh>
-      <mesh position={[3.15, 3.1, -4.36]}>
+      <mesh position={[2.15, 3.1, -2.36]}>
         <circleGeometry args={[0.05, 12]} />
         <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.2} />
       </mesh>
 
       {/* Thermostat on back wall */}
-      <mesh position={[4, 2, -4.38]}>
+      <mesh position={[2.8, 2, -2.38]}>
         <boxGeometry args={[0.12, 0.12, 0.02]} />
         <meshStandardMaterial color="#fff" roughness={0.4} />
       </mesh>
-      <mesh position={[4, 2, -4.37]}>
+      <mesh position={[2.8, 2, -2.37]}>
         <circleGeometry args={[0.04, 12]} />
         <meshStandardMaterial color="#3b82f6" />
       </mesh>
 
       {/* ─── CORK BOARD ────────────────────────────────── */}
-      <mesh position={[3.2, 2.2, -4.44]} receiveShadow>
+      <mesh position={[2.2, 2.2, -2.44]} receiveShadow>
         <boxGeometry args={[0.8, 0.6, 0.03]} />
         <meshStandardMaterial color="#c49a6c" roughness={0.9} metalness={0.0} />
       </mesh>
       {/* Cork board frame */}
-      <mesh position={[3.2, 2.2, -4.435]}>
+      <mesh position={[2.2, 2.2, -2.435]}>
         <boxGeometry args={[0.85, 0.65, 0.01]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.7} metalness={0.05} />
       </mesh>
       {/* Pinned notes */}
-      <mesh position={[3.05, 2.35, -4.43]}>
+      <mesh position={[2.05, 2.35, -2.43]}>
         <planeGeometry args={[0.15, 0.12]} />
         <meshStandardMaterial color="#fef08a" roughness={0.9} metalness={0.0} />
       </mesh>
-      <mesh position={[3.25, 2.28, -4.43]}>
+      <mesh position={[2.25, 2.28, -2.43]}>
         <planeGeometry args={[0.12, 0.15]} />
         <meshStandardMaterial color="#bbf7d0" roughness={0.9} metalness={0.0} />
       </mesh>
-      <mesh position={[3.35, 2.1, -4.43]}>
+      <mesh position={[2.35, 2.1, -2.43]}>
         <planeGeometry args={[0.18, 0.1]} />
         <meshStandardMaterial color="#fecaca" roughness={0.9} metalness={0.0} />
       </mesh>
       {/* Pin on notes */}
-      <mesh position={[3.05, 2.41, -4.428]}>
+      <mesh position={[2.05, 2.41, -2.428]}>
         <sphereGeometry args={[0.008, 8, 8]} />
         <meshStandardMaterial color="#ef4444" roughness={0.3} metalness={0.2} />
       </mesh>
-      <mesh position={[3.25, 2.36, -4.428]}>
+      <mesh position={[2.25, 2.36, -2.428]}>
         <sphereGeometry args={[0.008, 8, 8]} />
         <meshStandardMaterial color="#3b82f6" roughness={0.3} metalness={0.2} />
       </mesh>
 
-      {/* ─── WALL CLOCK ────────────────────────────────── */}
-      <group position={[-4.44, 3.0, -1]}>
+      {/* ─── WALL CLOCK ON LEFT WALL ────────────────────── */}
+      <group position={[-2.44, 3.0, -1]}>
         {/* Clock face */}
         <mesh rotation={[0, Math.PI / 2, 0]} receiveShadow>
           <circleGeometry args={[0.18, 32]} />
@@ -670,7 +670,7 @@ function RoomGroup() {
       </group>
 
       {/* ─── PICTURE FRAME ON LEFT WALL ────────────────── */}
-      <group position={[-4.44, 2.0, 0.5]}>
+      <group position={[-2.44, 2.0, 0.5]}>
         {/* Frame */}
         <mesh rotation={[0, Math.PI / 2, 0]} receiveShadow>
           <boxGeometry args={[0.5, 0.4, 0.02]} />
@@ -693,44 +693,44 @@ function RoomGroup() {
       </group>
 
       {/* ─── WHITEBOARD ────────────────────────────────── */}
-      <mesh position={[-4.44, 2.2, -2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh position={[-2.44, 2.2, -2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <boxGeometry args={[2.5, 1.5, 0.03]} />
         <meshStandardMaterial color="#ffffff" roughness={0.25} metalness={0.05} />
       </mesh>
-      <mesh position={[-4.43, 2.2, -2]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh position={[-2.43, 2.2, -2]} rotation={[0, Math.PI / 2, 0]}>
         <boxGeometry args={[2.55, 1.55, 0.01]} />
         <meshStandardMaterial color="#2a2a2a" roughness={0.5} metalness={0.3} />
       </mesh>
       {/* Whiteboard marker tray */}
-      <mesh position={[-4.42, 1.42, -2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh position={[-2.42, 1.42, -2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <boxGeometry args={[1.8, 0.04, 0.06]} />
         <meshStandardMaterial color="#333" roughness={0.5} metalness={0.4} />
       </mesh>
       {/* Markers on tray */}
-      <mesh position={[-4.41, 1.44, -2.2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh position={[-2.41, 1.44, -2.2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#ef4444" roughness={0.6} />
       </mesh>
-      <mesh position={[-4.41, 1.44, -2.0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh position={[-2.41, 1.44, -2.0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#3b82f6" roughness={0.6} />
       </mesh>
-      <mesh position={[-4.41, 1.44, -1.8]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <mesh position={[-2.41, 1.44, -1.8]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
         <cylinderGeometry args={[0.008, 0.008, 0.12, 6]} />
         <meshStandardMaterial color="#22c55e" roughness={0.6} />
       </mesh>
 
       {/* ─── BASEBOARDS ────────────────────────────────── */}
-      <mesh position={[0, 0.05, -4.35]}>
-        <boxGeometry args={[10, 0.1, 0.02]} />
+      <mesh position={[0, 0.05, -2.35]}>
+        <boxGeometry args={[6, 0.1, 0.02]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.7} metalness={0.05} />
       </mesh>
-      <mesh position={[-4.95, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <boxGeometry args={[9, 0.1, 0.02]} />
+      <mesh position={[-2.95, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <boxGeometry args={[6, 0.1, 0.02]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.7} metalness={0.05} />
       </mesh>
-      <mesh position={[4.95, 0.05, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <boxGeometry args={[9, 0.1, 0.02]} />
+      <mesh position={[2.95, 0.05, 0]} rotation={[0, -Math.PI / 2, 0]}>
+        <boxGeometry args={[6, 0.1, 0.02]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.7} metalness={0.05} />
       </mesh>
 
@@ -758,7 +758,7 @@ function RoomGroup() {
       {/* Desk lamp - warm point light */}
       <pointLight position={[0, 1.2, -2]} intensity={0.5} distance={3} color="#FFE4B5" decay={2} castShadow />
       {/* Window light spill */}
-      <pointLight position={[1.8, 2, -3.5]} intensity={0.3} distance={4} color="#e0f0ff" decay={2} />
+      <pointLight position={[1.2, 2, -2]} intensity={0.3} distance={3} color="#e0f0ff" decay={2} />
     </group>
   );
 }
@@ -767,7 +767,7 @@ function RoomGroup() {
 function ShelfGroup() {
   const shelves = [[0.15, 0.4, 0], [0.15, 1.1, 0], [0.15, 1.8, 0]];
   return (
-    <group position={[-4.3, 0, -3.5]}>
+    <group position={[-2.5, 0, -2.2]}>
       {/* Shelf body - dark walnut */}
       <mesh position={[0, 1.1, 0]} receiveShadow castShadow>
         <boxGeometry args={[0.2, 2.2, 1.0]} />
@@ -850,7 +850,7 @@ function ShelfGroup() {
 // ─── CEILING LAMP ──────────────────────────────────────────────
 function CeilingLamp() {
   return (
-    <group position={[0, 4.6, -1]}>
+    <group position={[0, 4.6, -0.5]}>
       {/* Lamp shade - frosted glass */}
       <mesh receiveShadow castShadow>
         <sphereGeometry args={[0.2, 24, 24]} />
@@ -918,23 +918,23 @@ function OfficeScene({ onMonitorClick, hovered, setHovered }: { onMonitorClick: 
 
 function CameraController({ viewMode, cameraResetTrigger }: { viewMode: ViewMode; cameraResetTrigger: number }) {
   const { camera } = useThree();
-  const targetPos = useRef(new THREE.Vector3(0, 1.5, 3));
-  const targetLookAt = useRef(new THREE.Vector3(0, 0.5, -2));
+  const targetPos = useRef(new THREE.Vector3(0, 1.5, 2));
+  const targetLookAt = useRef(new THREE.Vector3(0, 0.5, -1));
 
   useEffect(() => {
     if (viewMode === 'office') {
-      targetPos.current.set(0, 1.5, 3);
-      targetLookAt.current.set(0, 0.5, -2);
+      targetPos.current.set(0, 1.5, 2);
+      targetLookAt.current.set(0, 0.5, -1);
     } else {
-      targetPos.current.set(0, 1.2, 1.5);
-      targetLookAt.current.set(0, 0.8, -2);
+      targetPos.current.set(0, 1.2, 1);
+      targetLookAt.current.set(0, 0.8, -1);
     }
   }, [viewMode]);
 
   useEffect(() => {
     if (cameraResetTrigger > 0) {
-      targetPos.current.set(0, 1.5, 3);
-      targetLookAt.current.set(0, 0.5, -2);
+      targetPos.current.set(0, 1.5, 2);
+      targetLookAt.current.set(0, 0.5, -1);
     }
   }, [cameraResetTrigger]);
 
@@ -1244,7 +1244,7 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         </div>
       )}
 
-      <Canvas camera={{ position: [0, 1.5, 3], fov: 50, near: 0.1, far: 100 }}
+      <Canvas camera={{ position: [0, 1.5, 2], fov: 50, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         shadows
         onCreated={({ gl }) => gl.setClearColor(new THREE.Color(isDark ? '#0a1628' : '#E2DCD0'))}
