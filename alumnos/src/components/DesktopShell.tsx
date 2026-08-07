@@ -13,6 +13,10 @@ import AccountingSystem from './AccountingSystem';
 import PaymentMatcher from './PaymentMatcher';
 import Dashboard from './Dashboard';
 import ProgressDashboard from './ProgressDashboard';
+import PipelineSim from './PipelineSim';
+import SQLSim from './SQLSim';
+import WarehouseSim from './WarehouseSim';
+import MonitorSim from './MonitorSim';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 
@@ -20,7 +24,7 @@ interface TaskInfo { id: string; title: string; type: string; difficulty: number
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: DesktopShellProps) {
   const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial();
@@ -111,6 +115,10 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
     { label: 'Archivo', icon: '📁', action: () => setScreen('archivo') },
     { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard') },
     { label: 'Progreso', icon: '📉', action: () => setScreen('progress') },
+    { label: 'Pipelines', icon: '🔀', action: () => setScreen('pipeline') },
+    { label: 'SQL', icon: '🗃️', action: () => setScreen('sql') },
+    { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse') },
+    { label: 'Monitor', icon: '📊', action: () => setScreen('monitor') },
   ];
 
   return (
@@ -194,6 +202,10 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete }: 
         {screen === 'accounting' && <div className="animate-slide-in h-full"><AccountingSystem theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'dashboard' && <div className="animate-slide-in h-full"><Dashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'progress' && <div className="animate-slide-in h-full"><ProgressDashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'pipeline' && <div className="animate-slide-in h-full"><PipelineSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'archivo' && (
           <div className="animate-slide-in h-full flex flex-col">
             <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
