@@ -61,7 +61,21 @@ function executeSQL(query: string): { columns: string[]; rows: any[][]; error?: 
     const table = (SAMPLE_TABLES as any)[tableName];
     if (!table) return { columns: [], rows: [], error: `Tabla "${tableName}" no encontrada` };
 
-    let result = { columns: [...table.columns], rows: [...table.rows] };
+    let result = { columns: [...table.columns], rows: [...table.rows.map((r: any[]) => [...r])] };
+
+    // Handle SELECT with specific columns
+    const selectMatch = query.match(/SELECT\s+([\w\s,*]+)\s+FROM/i);
+    if (selectMatch) {
+      const selectClause = selectMatch[1].trim();
+      if (selectClause !== '*') {
+        const selectedCols = selectClause.split(',').map(c => c.trim().toLowerCase());
+        const colIndices = selectedCols.map(c => table.columns.indexOf(c)).filter(i => i >= 0);
+        if (colIndices.length > 0) {
+          result.columns = colIndices.map(i => table.columns[i]);
+          result.rows = result.rows.map(row => colIndices.map(i => row[i]));
+        }
+      }
+    }
 
     // Simple WHERE
     const whereMatch = query.match(/WHERE\s+(\w+)\s*(=|>|<|>=|<=|!=)\s*'?([^']*)'?/i);

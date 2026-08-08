@@ -1094,7 +1094,10 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       const now = new Date();
       const month = now.getMonth();
       const year = now.getFullYear();
-      const week = Math.ceil(now.getDate() / 7) || 1;
+      
+      // Para DE, usar semanas 5-8; para accounting, 1-4
+      const calendarWeek = Math.ceil(now.getDate() / 7) || 1;
+      const week = specialty === 'data_engineering' ? calendarWeek + 4 : calendarWeek;
       const day = now.getDay() || 1; // 1=Lun
 
       let todayTasks: any[] = [];
@@ -1103,11 +1106,19 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       } catch (e) {
         console.warn('TaskPlanner no disponible, usando tareas por defecto');
         // Fallback: crear tareas de ejemplo si el TaskPlanner falla
-        todayTasks = [
-          { id: 'task-1', title: 'Factura a Comercial del Norte', type: 'invoice_emission', difficulty: 1, time: 10, category: 'facturacion', description: 'Emitir factura CFDI', priority: 'alta' },
-          { id: 'task-2', title: 'Pago de Transportes Rápidos', type: 'payment_registration', difficulty: 1, time: 8, category: 'cobranza', description: 'Registrar pago', priority: 'media' },
-          { id: 'task-3', title: 'CFDI de Papelería del Norte', type: 'supplier_invoice', difficulty: 1, time: 8, category: 'compras', description: 'Registrar factura proveedor', priority: 'media' },
-        ];
+        if (specialty === 'data_engineering') {
+          todayTasks = [
+            { id: 'task-1', title: 'Consulta SQL — Análisis de datos', type: 'sql_query', difficulty: 1, time: 15, category: 'sql', description: 'Escribir consulta SQL para análisis', priority: 'alta' },
+            { id: 'task-2', title: 'Pipeline ETL — Transformación', type: 'etl_pipeline', difficulty: 1, time: 20, category: 'etl', description: 'Crear pipeline ETL', priority: 'alta' },
+            { id: 'task-3', title: 'Calidad de datos — Validación', type: 'data_quality', difficulty: 1, time: 20, category: 'data_quality', description: 'Revisar métricas de calidad', priority: 'media' },
+          ];
+        } else {
+          todayTasks = [
+            { id: 'task-1', title: 'Factura a Comercial del Norte', type: 'invoice_emission', difficulty: 1, time: 10, category: 'facturacion', description: 'Emitir factura CFDI', priority: 'alta' },
+            { id: 'task-2', title: 'Pago de Transportes Rápidos', type: 'payment_registration', difficulty: 1, time: 8, category: 'cobranza', description: 'Registrar pago', priority: 'media' },
+            { id: 'task-3', title: 'CFDI de Papelería del Norte', type: 'supplier_invoice', difficulty: 1, time: 8, category: 'compras', description: 'Registrar factura proveedor', priority: 'media' },
+          ];
+        }
       }
 
       // Convertir tareas del plan al formato esperado por DesktopShell
