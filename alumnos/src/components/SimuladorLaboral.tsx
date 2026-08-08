@@ -917,34 +917,79 @@ function OfficeScene({ onMonitorClick, hovered, setHovered }: { onMonitorClick: 
 }
 
 function CameraController({ viewMode, cameraResetTrigger }: { viewMode: ViewMode; cameraResetTrigger: number }) {
-  const { camera } = useThree();
-  const targetPos = useRef(new THREE.Vector3(0, 1.5, 2));
+  const { camera, gl } = useThree();
+  const isDragging = useRef(false);
+  const previousMouse = useRef({ x: 0, y: 0 });
+  const spherical = useRef(new THREE.Spherical(3, Math.PI / 2.5, Math.PI)); // radius, phi, theta
+  const targetSpherical = useRef(new THREE.Spherical(3, Math.PI / 2.5, Math.PI));
   const targetLookAt = useRef(new THREE.Vector3(0, 0.5, -1));
 
   useEffect(() => {
     if (viewMode === 'office') {
-      targetPos.current.set(0, 1.5, 2);
+      targetSpherical.current.set(3, Math.PI / 2.5, Math.PI);
       targetLookAt.current.set(0, 0.5, -1);
     } else {
-      targetPos.current.set(0, 1.2, 1);
+      targetSpherical.current.set(1.5, Math.PI / 2.5, Math.PI);
       targetLookAt.current.set(0, 0.8, -1);
     }
   }, [viewMode]);
 
   useEffect(() => {
     if (cameraResetTrigger > 0) {
-      targetPos.current.set(0, 1.5, 2);
+      targetSpherical.current.set(3, Math.PI / 2.5, Math.PI);
       targetLookAt.current.set(0, 0.5, -1);
     }
   }, [cameraResetTrigger]);
 
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (viewMode !== 'office') return;
+      isDragging.current = true;
+      previousMouse.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseUp = () => { isDragging.current = false; };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || viewMode !== 'office') return;
+      const deltaX = e.clientX - previousMouse.current.x;
+      const deltaY = e.clientY - previousMouse.current.y;
+      previousMouse.current = { x: e.clientX, y: e.clientY };
+
+      spherical.current.theta -= deltaX * 0.005;
+      spherical.current.phi = Math.max(0.5, Math.min(Math.PI / 2, spherical.current.phi + deltaY * 0.005));
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (viewMode !== 'office') return;
+      spherical.current.radius = Math.max(1.5, Math.min(5, spherical.current.radius + e.deltaY * 0.005));
+    };
+
+    const canvas = gl.domElement;
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('wheel', onWheel);
+
+    return () => {
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('wheel', onWheel);
+    };
+  }, [gl, viewMode]);
+
   useFrame(() => {
-    camera.position.lerp(targetPos.current, 0.05);
-    const lookAtTarget = new THREE.Vector3();
-    camera.getWorldDirection(lookAtTarget);
-    lookAtTarget.add(camera.position);
-    lookAtTarget.lerp(targetLookAt.current, 0.05);
-    camera.lookAt(lookAtTarget);
+    if (viewMode === 'office') {
+      spherical.current.theta += (targetSpherical.current.theta - spherical.current.theta) * 0.05;
+      spherical.current.phi += (targetSpherical.current.phi - spherical.current.phi) * 0.05;
+      spherical.current.radius += (targetSpherical.current.radius - spherical.current.radius) * 0.05;
+
+      const pos = new THREE.Vector3().setFromSpherical(spherical.current);
+      camera.position.copy(pos);
+      camera.lookAt(targetLookAt.current);
+    } else {
+      const targetPos = new THREE.Vector3().setFromSpherical(targetSpherical.current);
+      camera.position.lerp(targetPos, 0.05);
+      camera.lookAt(targetLookAt.current);
+    }
   });
 
   return null;
