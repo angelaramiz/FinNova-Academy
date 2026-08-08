@@ -1336,8 +1336,8 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       {/* Dashboard modal */}
       {showDashboard && <Dashboard theme={theme} onBack={() => { setShowDashboard(false); loadStats(); }} />}
 
-      {/* Stats HUD */}
-      {userStats && (
+      {/* Stats HUD - solo visible en modo oficina */}
+      {userStats && viewMode === 'office' && (
         <div className="absolute bottom-3 left-3 z-30 flex gap-2">
           <div className="px-3 py-2 rounded-xl border-2 backdrop-blur-xl text-[12px] font-mono" style={{
             borderColor: colors.border, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
