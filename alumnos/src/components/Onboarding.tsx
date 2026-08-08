@@ -24,6 +24,11 @@ const JOBS = [
   { id: 'b0000000-0000-0000-0000-000000000002', title: 'Analista de Cuentas por Pagar', desc: 'Gestión de proveedores, programación de pagos, conciliación CxP', difficulty: 2 },
 ];
 
+const SPECIALTIES = [
+  { id: 'accounting', label: 'Contabilidad', desc: 'Contador General Junior — Facturación, impuestos, reportes financieros', icon: '📊' },
+  { id: 'data_engineering', label: 'Data Engineering', desc: 'Ingeniero de Datos Jr — SQL, Python, pipelines, Palantir Foundry', icon: '🔀' },
+];
+
 const LEVELS = [
   { id: 'beginner', label: 'Junior', desc: 'Poco o nada de experiencia profesional', icon: '🌱' },
   { id: 'intermediate', label: 'Semi-Senior', desc: 'Conocimientos básicos de contabilidad', icon: '📈' },
@@ -36,6 +41,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
   const [experience, setExperience] = useState('');
   const [selectedCompany, setSelectedCompany] = useState(COMPANIES[0]);
   const [selectedJob, setSelectedJob] = useState(JOBS[0]);
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -48,6 +54,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         experienceLevel: experience,
         assignedJobId: selectedJob.id,
         assignedCompanyId: selectedCompany.id,
+        specialty: selectedSpecialty,
       });
       onComplete();
     } catch (e) { console.error(e); }
@@ -57,7 +64,8 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
   function handleContinue() {
     if (step === 0) setStep(1);
     else if (step === 1 && simProfile) setStep(2);
-    else if (step === 2 && experience) setStep(3);
+    else if (step === 2 && selectedSpecialty) setStep(3);
+    else if (step === 3 && experience) setStep(4);
   }
 
   const steps = [
@@ -103,7 +111,31 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
       ))}
     </div>,
 
-    // Step 2: Experience level
+    // Step 2: Specialty selection
+    <div key="specialty" className="space-y-5 animate-fade-in">
+      <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>¿Qué especialidad?</h2>
+      <p className="text-xs text-center" style={{ color: colors.textMuted }}>Selecciona el área en la que quieres trabajar</p>
+      {SPECIALTIES.map(s => (
+        <button key={s.id} onClick={() => setSelectedSpecialty(s.id)}
+          className="w-full text-left p-5 rounded-xl border-2 transition cursor-pointer hover:scale-[1.01]"
+          style={{
+            borderColor: selectedSpecialty === s.id ? colors.primary : colors.border,
+            background: selectedSpecialty === s.id ? colors.primary + '15' : colors.cardBg,
+            boxShadow: `4px 4px 0px 0px ${colors.border}`,
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-3xl">{s.icon}</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: colors.text }}>{s.label}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: colors.textMuted }}>{s.desc}</p>
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>,
+
+    // Step 3: Experience level
     <div key="experience" className="space-y-5 animate-fade-in">
       <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>¿Cuál es tu nivel de experiencia?</h2>
       {LEVELS.map(l => (
@@ -126,7 +158,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
       ))}
     </div>,
 
-    // Step 3: Summary
+    // Step 4: Summary
     <div key="summary" className="space-y-6 animate-fade-in">
       <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>Tu perfil fue asignado</h2>
       <div className="p-6 rounded-xl border-2 space-y-4" style={{ borderColor: colors.border, background: colors.cardBg }}>
@@ -135,6 +167,14 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
           <div>
             <p className="text-sm font-bold" style={{ color: colors.text }}>{selectedCompany.name}</p>
             <p className="text-[11px]" style={{ color: colors.textMuted }}>Empresa asignada</p>
+          </div>
+        </div>
+        <div className="border-t" style={{ borderColor: colors.border }}></div>
+        <div className="flex items-center gap-4">
+          <span className="text-2xl">{selectedSpecialty === 'data_engineering' ? '🔀' : '📊'}</span>
+          <div>
+            <p className="text-sm font-bold" style={{ color: colors.text }}>{selectedSpecialty === 'data_engineering' ? 'Data Engineering' : 'Contabilidad'}</p>
+            <p className="text-[11px]" style={{ color: colors.textMuted }}>Especialidad</p>
           </div>
         </div>
         <div className="border-t" style={{ borderColor: colors.border }}></div>
@@ -169,7 +209,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         {/* Progress bar */}
         <div className="h-2" style={{ background: colors.bg }}>
           <div className="h-full transition-all duration-500" style={{
-            width: `${((step + 1) / 4) * 100}%`,
+            width: `${((step + 1) / 5) * 100}%`,
             background: colors.primary,
           }} />
         </div>
@@ -186,7 +226,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
             >← Atrás</button>
           ) : <div />}
 
-          {step < 3 ? (
+          {step < 4 ? (
             <button onClick={handleContinue}
               className="px-8 py-3 rounded-xl border-2 text-sm font-bold cursor-pointer hover:opacity-85 transition"
               style={{

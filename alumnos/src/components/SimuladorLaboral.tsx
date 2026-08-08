@@ -1304,17 +1304,6 @@ export default function SimuladorLaboral({ theme }: SimProps) {
         </Suspense>
       </Canvas>
 
-      {viewMode === 'office' && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-          <div className="px-6 py-4 rounded-2xl text-center" style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(8px)' }}>
-            <div className="text-2xl mb-2">🖥️</div>
-            <div className="text-[13px] font-bold mb-1">Haz clic en el monitor</div>
-            <div className="text-[11px] opacity-70">para comenzar a trabajar</div>
-          </div>
-        </div>
-      )}
-
-
       {/* DESKTOP SHELL — escritorio de trabajo */}
       {(viewMode === 'workspace' || viewMode === 'document') && (
         <div className="absolute inset-0 z-30">
@@ -1336,34 +1325,46 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       {/* Dashboard modal */}
       {showDashboard && <Dashboard theme={theme} onBack={() => { setShowDashboard(false); loadStats(); }} />}
 
-      {/* Stats HUD - solo visible en modo oficina */}
-      {userStats && viewMode === 'office' && (
-        <div className="absolute bottom-3 left-3 z-30 flex gap-2">
-          <div className="px-3 py-2 rounded-xl border-2 backdrop-blur-xl text-[12px] font-mono" style={{
-            borderColor: colors.border, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
-          }}>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-              <span style={{ color: colors.textMuted }}>SESIÓN ACTIVA</span>
-              <span className="text-[13px] font-bold px-1.5 py-0.5 rounded" style={{ background: colors.primary, color: '#1B2632' }}>
-                🎯 {userStats.level}
-              </span>
-            </div>
-            <div className="flex items-center gap-3" style={{ color: colors.text }}>
-              <span>✅ <strong>{userStats.tasksCompleted}</strong> tareas</span>
-              <span>⭐ <strong>{userStats.totalScore} pts</strong></span>
-              <span>⏱️ <strong>{userStats.totalTime} min</strong></span>
-            </div>
-            <button onClick={() => setShowDashboard(true)}
-              className="mt-1.5 w-full text-[11px] font-bold py-1 rounded-lg border cursor-pointer hover:opacity-80 transition"
-              style={{ borderColor: colors.primary, color: colors.primary, background: 'transparent' }}
-            >📊 Ver dashboard</button>
-            <div className="mt-1 pt-1 border-t text-center" style={{ borderColor: colors.border + '40', color: colors.textMuted }}>
-              <span className="text-[13px] font-mono">v{VERSION} ({BUILD_HASH})</span>
+      {/* Stats HUD + Office overlays — solo visible en modo oficina */}
+      {viewMode === 'office' && (
+        <>
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <div className="px-6 py-4 rounded-2xl text-center" style={{ background: 'rgba(0,0,0,0.65)', color: '#fff', backdropFilter: 'blur(8px)' }}>
+              <div className="text-2xl mb-2">🖥️</div>
+              <div className="text-[13px] font-bold mb-1">Haz clic en el monitor</div>
+              <div className="text-[11px] opacity-70">para comenzar a trabajar</div>
             </div>
           </div>
-        </div>
+          {userStats && (
+            <div className="absolute bottom-3 left-3 z-30 flex gap-2">
+              <div className="px-3 py-2 rounded-xl border-2 backdrop-blur-xl text-[12px] font-mono" style={{
+                borderColor: colors.border, background: isDark ? 'rgba(27,38,50,0.7)' : 'rgba(255,255,255,0.7)',
+              }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span style={{ color: colors.textMuted }}>SESIÓN ACTIVA</span>
+                  <span className="text-[13px] font-bold px-1.5 py-0.5 rounded" style={{ background: colors.primary, color: '#1B2632' }}>
+                    🎯 {userStats.level}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3" style={{ color: colors.text }}>
+                  <span>✅ <strong>{userStats.tasksCompleted}</strong> tareas</span>
+                  <span>⭐ <strong>{userStats.totalScore} pts</strong></span>
+                  <span>⏱️ <strong>{userStats.totalTime} min</strong></span>
+                </div>
+                <button onClick={() => setShowDashboard(true)}
+                  className="mt-1.5 w-full text-[11px] font-bold py-1 rounded-lg border cursor-pointer hover:opacity-80 transition"
+                  style={{ borderColor: colors.primary, color: colors.primary, background: 'transparent' }}
+                >📊 Ver dashboard</button>
+                <div className="mt-1 pt-1 border-t text-center" style={{ borderColor: colors.border + '40', color: colors.textMuted }}>
+                  <span className="text-[13px] font-mono">v{VERSION} ({BUILD_HASH})</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
       {toast && <NotificationToast notif={toast} theme={theme} />}
       {inboxOpen && <NotificationInbox theme={theme} onClose={() => setInboxOpen(false)} notifications={notifications} markAllRead={markAllRead} unreadCount={unreadCount} />}
     </div>

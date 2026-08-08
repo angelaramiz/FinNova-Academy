@@ -125,10 +125,7 @@ const deApps = [
   { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
   { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse'), dataApp: 'warehouse' },
   { label: 'Monitor', icon: '📊', action: () => setScreen('monitor'), dataApp: 'monitor' },
-  { label: 'Calendario', icon: '📅', action: () => setScreen('calendar'), dataApp: 'calendario' },
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
-  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
-  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
 ];
 
   const appIcons = specialty === 'accounting' ? accountingApps : deApps;
