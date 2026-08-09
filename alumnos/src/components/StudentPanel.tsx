@@ -7,7 +7,7 @@ interface StudentPanelProps {
   profile: any;
 }
 
-export default function StudentPanel({ theme }: StudentPanelProps) {
+export default function StudentPanel({ theme, profile }: StudentPanelProps) {
   const colors = themeColors[theme];
 
   return (
@@ -23,7 +23,7 @@ export default function StudentPanel({ theme }: StudentPanelProps) {
         </div>
       </div>
       <div className="flex-1">
-        <SimuladorLaboral theme={theme} />
+        <SimuladorLaboral theme={theme} profile={profile} />
       </div>
     </div>
   );

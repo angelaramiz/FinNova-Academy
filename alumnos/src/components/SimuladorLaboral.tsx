@@ -1026,9 +1026,9 @@ function TaskCard({ task, onClick, colors }: { task: SimTask; onClick: () => voi
 }
 
 // ─── MAIN ─────────────────────────────────────────────────────
-interface SimProps { theme: Theme; }
+interface SimProps { theme: Theme; profile?: any; }
 
-export default function SimuladorLaboral({ theme }: SimProps) {
+export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const colors = themeColors[theme];
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('office');
@@ -1047,7 +1047,11 @@ export default function SimuladorLaboral({ theme }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
   const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
-  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>('accounting');
+  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>(() => {
+    // Usar specialty del profile si está disponible
+    if (profile?.specialty === 'data_engineering') return 'data_engineering';
+    return 'accounting';
+  });
 
   const { notifications, toast, inboxOpen, setInboxOpen, unreadCount, addNotification, markAllRead, checkEvents } = useNotifications();
   const { addToast } = useToast();
