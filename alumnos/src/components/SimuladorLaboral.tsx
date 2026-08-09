@@ -1098,7 +1098,11 @@ export default function SimuladorLaboral({ theme }: SimProps) {
       // Para DE, usar semanas 5-8; para accounting, 1-4
       const calendarWeek = Math.ceil(now.getDate() / 7) || 1;
       const week = specialty === 'data_engineering' ? calendarWeek + 4 : calendarWeek;
-      const day = now.getDay() || 1; // 1=Lun
+      
+      // Si es fin de semana (6=Sat, 0=Sun), usar viernes (5)
+      // Si es lunes-viernes, usar el día actual
+      const currentDay = now.getDay();
+      const day = (currentDay === 0 || currentDay === 6) ? 5 : currentDay;
 
       let todayTasks: any[] = [];
       try {
