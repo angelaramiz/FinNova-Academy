@@ -70,6 +70,18 @@ function parseRange(range: string): { startRow: number; startCol: number; endRow
   };
 }
 
+function parseRangeStr(range: string): [number, number][] | null {
+  const r = parseRange(range);
+  if (!r) return null;
+  const result: [number, number][] = [];
+  for (let row = r.startRow; row <= r.endRow; row++) {
+    for (let col = r.startCol; col <= r.endCol; col++) {
+      result.push([row, col]);
+    }
+  }
+  return result;
+}
+
 function getCellValue(cells: Map<string, CellData>, row: number, col: number): string {
   const id = cellId(row, col);
   const cell = cells.get(id);
@@ -326,6 +338,117 @@ function evaluateFormula(
       const v = evalExpr(args[0] ?? '""');
       const d = new Date(v);
       return isNaN(d.getTime()) ? '#VALUE!' : String(d.getDate());
+    }
+
+    // ─── VLOOKUP / CONSULTAV ──────────────────────────────────
+    if (name === 'VLOOKUP' || name === 'CONSULTAV' || name === 'BUSCARV') {
+      const lookupValue = evalExpr(args[0] ?? '');
+      const rangeStr = args[1] ?? '';
+      const colIndex = nums[2] ?? 1;
+      const exactMatch = args[3] !== undefined ? evalExpr(args[3]) : 'FALSE';
+      const range = parseRangeStr(rangeStr);
+      if (!range) return '#REF!';
+      for (const [row, col] of range) {
+        const cellVal = getVal(cells, row, col);
+        if (exactMatch.toUpperCase() === 'TRUE') {
+          if (String(cellVal) === String(lookupValue)) {
+            return getVal(cells, row, col + colIndex - 1);
+          }
+        } else {
+          if (parseFloat(cellVal) >= parseFloat(lookupValue)) {
+            return getVal(cells, row, col + colIndex - 1);
+          }
+        }
+      }
+      return '#N/A';
+    }
+
+    // ─── INDEX ────────────────────────────────────────────────
+    if (name === 'INDEX') {
+      const rangeStr = args[0] ?? '';
+      const rowIdx = (nums[1] ?? 1) - 1;
+      const colIdx = (nums[2] ?? 1) - 1;
+      const range = parseRangeStr(rangeStr);
+      if (!range || range.length === 0) return '#REF!';
+      const rangeRows = [...new Set(range.map(r => r[0]))].sort((a, b) => a - b);
+      const rangeCols = [...new Set(range.map(r => r[1]))].sort((a, b) => a - b);
+      const targetRow = rangeRows[rowIdx] ?? rangeRows[0];
+      const targetCol = rangeCols[colIdx] ?? rangeCols[0];
+      return getVal(cells, targetRow, targetCol);
+    }
+
+    // ─── MATCH / COINCIDIR ────────────────────────────────────
+    if (name === 'MATCH' || name === 'COINCIDIR') {
+      const lookupValue = evalExpr(args[0] ?? '');
+      const rangeStr = args[1] ?? '';
+      const matchType = nums[2] ?? 1;
+      const range = parseRangeStr(rangeStr);
+      if (!range) return '#N/A';
+      if (matchType === 0) {
+        for (let i = 0; i < range.length; i++) {
+          if (String(getVal(cells, range[i][0], range[i][1])) === String(lookupValue)) return String(i + 1);
+        }
+      } else if (matchType === 1) {
+        for (let i = 0; i < range.length; i++) {
+          if (parseFloat(getVal(cells, range[i][0], range[i][1])) <= parseFloat(lookupValue)) return String(i + 1);
+        }
+      } else {
+        for (let i = 0; i < range.length; i++) {
+          if (parseFloat(getVal(cells, range[i][0], range[i][1])) >= parseFloat(lookupValue)) return String(i + 1);
+        }
+      }
+      return '#N/A';
+    }
+
+    // ─── PMT / PAGO ───────────────────────────────────────────
+    if (name === 'PMT' || name === 'PAGO') {
+      const rate = nums[0] ?? 0;
+      const nper = nums[1] ?? 1;
+      const pv = nums[2] ?? 0;
+      if (nper === 0) return '#DIV/0!';
+      const pmt = -(rate * pv) / (1 - Math.pow(1 + rate, -nper));
+      return String(Math.round(pmt * 100) / 100);
+    }
+
+    // ─── NPV / VNA ────────────────────────────────────────────
+    if (name === 'NPV' || name === 'VNA') {
+      const rate = nums[0] ?? 0;
+      let npv = 0;
+      for (let i = 1; i < nums.length; i++) {
+        npv += nums[i] / Math.pow(1 + rate, i);
+      }
+      return String(Math.round(npv * 100) / 100);
+    }
+
+    // ─── IRR / TIR ────────────────────────────────────────────
+    if (name === 'IRR' || name === 'TIR') {
+      const cashflows = nums;
+      if (cashflows.length < 2) return '#NUM!';
+      let low = -0.99, high = 10, irr = 0;
+      for (let iter = 0; iter < 100; iter++) {
+        irr = (low + high) / 2;
+        let npv = 0;
+        for (let i = 0; i < cashflows.length; i++) { npv += cashflows[i] / Math.pow(1 + irr, i); }
+        if (Math.abs(npv) < 0.01) break;
+        if (npv > 0) low = irr; else high = irr;
+      }
+      return String(Math.round(irr * 10000) / 10000);
+    }
+
+    // ─── STDEV / DESVEST ──────────────────────────────────────
+    if (name === 'STDEV' || name === 'DESVEST') {
+      if (nums.length < 2) return '#DIV/0!';
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const variance = nums.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / (nums.length - 1);
+      return String(Math.sqrt(variance));
+    }
+
+    // ─── VAR (varianza) ───────────────────────────────────────
+    if (name === 'VAR' || name === 'VAR') {
+      if (nums.length < 2) return '#DIV/0!';
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const variance = nums.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / (nums.length - 1);
+      return String(variance);
     }
 
     return '#NAME?';
