@@ -13,7 +13,7 @@ import AccountingSystem from './AccountingSystem';
 import PaymentMatcher from './PaymentMatcher';
 import Dashboard from './Dashboard';
 import ProgressDashboard from './ProgressDashboard';
-import PipelineSim from './PipelineSim';
+import PipelineSim from './PipelineSim'; // Palantir Foundry Transforms
 import SQLSim from './SQLSim';
 import WarehouseSim from './WarehouseSim';
 import MonitorSim from './MonitorSim';
@@ -121,7 +121,7 @@ const accountingApps = [
 const deApps = [
   { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
   { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
-  { label: 'Pipelines', icon: '🔀', action: () => setScreen('pipeline'), dataApp: 'pipelines' },
+  { label: 'Foundry', icon: '🔀', action: () => setScreen('pipeline'), dataApp: 'pipelines' },
   { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
   { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse'), dataApp: 'warehouse' },
   { label: 'Monitor', icon: '📊', action: () => setScreen('monitor'), dataApp: 'monitor' },

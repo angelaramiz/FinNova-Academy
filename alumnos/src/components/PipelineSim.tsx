@@ -1,494 +1,570 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
-interface PipelineSimProps { theme: Theme; onBack: () => void; }
+interface FoundrySimProps { theme: Theme; onBack: () => void; }
 
-// ─── Datos de prueba ──────────────────────────────────────────
-interface DataRow { [key: string]: any }
+// ─── Datos de prueba (datasets) ────────────────────────────────
 
-const SAMPLE_DATA: Record<string, DataRow[]> = {
-  'CSV - Ventas': [
-    { id: 1, cliente: 'TechCorp', producto: 'Flete', cantidad: 2, precio: 8500, fecha: '2026-07-01' },
-    { id: 2, cliente: 'Luna', producto: 'Almacenaje', cantidad: 10, precio: 320, fecha: '2026-07-01' },
-    { id: 3, cliente: 'TechCorp', producto: 'Carga', cantidad: 1, precio: 12500, fecha: '2026-07-02' },
-    { id: 4, cliente: 'Norte', producto: 'Flete', cantidad: 3, precio: 8500, fecha: '2026-07-03' },
-    { id: 5, cliente: 'Luna', producto: 'Seguro', cantidad: 5, precio: 250, fecha: '2026-07-03' },
-    { id: 6, cliente: 'Valle', producto: 'Internacional', cantidad: 1, precio: 28500, fecha: '2026-07-04' },
-    { id: 7, cliente: 'TechCorp', producto: 'Almacenaje', cantidad: 20, precio: 320, fecha: '2026-07-05' },
-    { id: 8, cliente: 'Trust', producto: 'Flete', cantidad: 4, precio: 8500, fecha: '2026-07-05' },
-  ],
-  'API - Clientes': [
-    { id: 1, nombre: 'TechCorp', ciudad: 'CDMX', sector: 'Tecnología' },
-    { id: 2, nombre: 'Luna', ciudad: 'Guadalajara', sector: 'Retail' },
-    { id: 3, nombre: 'Norte', ciudad: 'Monterrey', sector: 'Construcción' },
-    { id: 4, nombre: 'Valle', ciudad: 'Puebla', sector: 'Comercio' },
-    { id: 5, nombre: 'Trust', ciudad: 'CDMX', sector: 'Finanzas' },
-  ],
+const DATASETS: Record<string, { schema: string[]; rows: any[][]; description: string }> = {
+  'raw_ventas': {
+    schema: ['id', 'fecha', 'cliente', 'producto', 'cantidad', 'precio_unit'],
+    rows: [
+      [1, '2026-07-01', 'TechCorp', 'Flete express', 2, 8500],
+      [2, '2026-07-01', 'Distribuidora Luna', 'Almacenaje', 10, 320],
+      [3, '2026-07-02', 'TechCorp', 'Carga especializada', 1, 12500],
+      [4, '2026-07-03', 'Constructora Norte', 'Flete express', 3, 8500],
+      [5, '2026-07-03', 'Distribuidora Luna', 'Seguro de carga', 5, 250],
+      [6, '2026-07-04', 'Comercial Valle', 'Transporte intl', 1, 28500],
+      [7, '2026-07-05', 'TechCorp', 'Almacenaje', 20, 320],
+      [8, '2026-07-05', 'Inversiones Trust', 'Flete express', 4, 8500],
+    ],
+    description: 'Registros de ventas del ERP en formato CSV',
+  },
+  'raw_clientes': {
+    schema: ['id', 'nombre', 'rfc', 'ciudad', 'sector'],
+    rows: [
+      [1, 'TechCorp SA', 'TEC-990101', 'CDMX', 'Tecnología'],
+      [2, 'Distribuidora Luna', 'DLU-880202', 'Guadalajara', 'Retail'],
+      [3, 'Constructora Norte', 'CNO-770303', 'Monterrey', 'Construcción'],
+      [4, 'Comercial Valle', 'CVA-660404', 'Puebla', 'Comercio'],
+      [5, 'Inversiones Trust', 'ITR-550505', 'CDMX', 'Finanzas'],
+    ],
+    description: 'Catálogo de clientes desde la API de CRM',
+  },
 };
 
-type NodeType = 'source' | 'filter' | 'transform' | 'aggregate' | 'destination';
-type NodeStatus = 'idle' | 'running' | 'completed' | 'error';
+// ─── Transform files (como en Foundry) ─────────────────────────
 
-interface PipelineNode {
+interface TransformFile {
   id: string;
-  type: NodeType;
-  label: string;
-  status: NodeStatus;
-  config: Record<string, any>;
-  output?: DataRow[];
-  input?: DataRow[];
-  error?: string;
+  name: string;
+  path: string;
+  type: 'python' | 'sql';
+  inputDatasets: string[];
+  outputDataset: string;
+  code: string;
+  description: string;
 }
 
-interface PipelineConnection {
-  from: string;
-  to: string;
-}
-
-const NODE_TYPES: Record<NodeType, { icon: string; color: string; label: string }> = {
-  source: { icon: '📥', color: '#3b82f6', label: 'Fuente' },
-  filter: { icon: '🔍', color: '#f59e0b', label: 'Filtro' },
-  transform: { icon: '⚙️', color: '#8b5cf6', label: 'Transformar' },
-  aggregate: { icon: '📊', color: '#ec4899', label: 'Agregar' },
-  destination: { icon: '📤', color: '#22c55e', label: 'Destino' },
-};
-
-// ─── Ejecución de nodos ──────────────────────────────────────
-
-function executeNode(node: PipelineNode, inputData: DataRow[]): DataRow[] {
-  switch (node.type) {
-    case 'source': {
-      const sourceName = node.config.source;
-      return SAMPLE_DATA[sourceName] ? [...SAMPLE_DATA[sourceName]] : [];
-    }
-    case 'filter': {
-      const { column, operator, value } = node.config;
-      if (!column || !operator || value === undefined) return inputData;
-      return inputData.filter(row => {
-        const cellVal = row[column];
-        const numVal = Number(cellVal);
-        const compareVal = Number(value);
-        switch (operator) {
-          case '=': return String(cellVal) === String(value);
-          case '>': return numVal > compareVal;
-          case '<': return numVal < compareVal;
-          case '>=': return numVal >= compareVal;
-          case '<=': return numVal <= compareVal;
-          case 'contains': return String(cellVal).includes(String(value));
-          default: return true;
-        }
-      });
-    }
-    case 'transform': {
-      const { newColumn, expression } = node.config;
-      if (!newColumn || !expression) return inputData;
-      return inputData.map(row => {
-        try {
-          let expr = expression;
-          for (const [key, val] of Object.entries(row)) {
-            expr = expr.replace(new RegExp(`\\b${key}\\b`, 'g'), String(val));
-          }
-          const result = Function(`"use strict"; return (${expr})`)();
-          return { ...row, [newColumn]: result };
-        } catch {
-          return { ...row, [newColumn]: '#ERR' };
-        }
-      });
-    }
-    case 'aggregate': {
-      const { groupBy, aggFunc, aggCol } = node.config;
-      if (!groupBy || !aggFunc || !aggCol) return inputData;
-      const groups: Record<string, DataRow[]> = {};
-      inputData.forEach(row => {
-        const key = String(row[groupBy]);
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(row);
-      });
-      return Object.entries(groups).map(([key, rows]) => {
-        const values = rows.map(r => Number(r[aggCol])).filter(v => !isNaN(v));
-        let aggValue = 0;
-        switch (aggFunc) {
-          case 'SUM': aggValue = values.reduce((s, v) => s + v, 0); break;
-          case 'AVG': aggValue = values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0; break;
-          case 'COUNT': aggValue = rows.length; break;
-          case 'MIN': aggValue = values.length ? Math.min(...values) : 0; break;
-          case 'MAX': aggValue = values.length ? Math.max(...values) : 0; break;
-        }
-        return { [groupBy]: key, [`${aggFunc.toLowerCase()}_${aggCol}`]: Math.round(aggValue * 100) / 100 };
-      });
-    }
-    case 'destination': {
-      return inputData;
-    }
-    default:
-      return inputData;
-  }
-}
-
-// ─── Plantillas de pipeline ───────────────────────────────────
-
-const PIPELINE_TEMPLATES: { name: string; nodes: PipelineNode[]; connections: PipelineConnection[] }[] = [
+const TRANSFORMS: TransformFile[] = [
   {
-    name: 'Ventas: Filtrar + Total',
-    nodes: [
-      { id: 'n1', type: 'source', label: 'CSV Ventas', status: 'idle', config: { source: 'CSV - Ventas' } },
-      { id: 'n2', type: 'transform', label: 'Calcular Total', status: 'idle', config: { newColumn: 'total', expression: 'cantidad * precio' } },
-      { id: 'n3', type: 'filter', label: 'Total > 5000', status: 'idle', config: { column: 'total', operator: '>', value: '5000' } },
-      { id: 'n4', type: 'destination', label: 'Tabla Resultado', status: 'idle', config: {} },
-    ],
-    connections: [{ from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n3', to: 'n4' }],
+    id: 't1', name: 'ventas_limpias', path: '/transforms-python/', type: 'python',
+    inputDatasets: ['raw_ventas'], outputDataset: 'ventas_limpias',
+    code: `from transforms.api import transform, Input, Output
+from pyspark.sql import functions as F
+
+@transform(
+    output=Output("/datasets/ventas_limpias"),
+    raw=Input("/datasets/raw_ventas")
+)
+def compute(raw, output):
+    """Limpia y calcula el total de ventas."""
+    df = raw.dataframe()
+    
+    # 1. Eliminar nulos
+    df = df.dropna()
+    
+    # 2. Calcular columna total
+    df = df.withColumn("total", F.col("cantidad") * F.col("precio_unit"))
+    
+    # 3. Agregar fecha de procesamiento
+    df = df.withColumn("fecha_proc", F.current_date())
+    
+    # 4. Filtrar ventas mayores a $1000
+    df = df.filter(F.col("total") > 1000)
+    
+    # 5. Ordenar por total descendente
+    df = df.orderBy(F.col("total").desc())
+    
+    output.write_dataframe(df)`,
+    description: 'Limpia datos crudos de ventas y calcula el total',
   },
   {
-    name: 'Ventas por Cliente',
-    nodes: [
-      { id: 'n1', type: 'source', label: 'CSV Ventas', status: 'idle', config: { source: 'CSV - Ventas' } },
-      { id: 'n2', type: 'transform', label: 'Calcular Total', status: 'idle', config: { newColumn: 'total', expression: 'cantidad * precio' } },
-      { id: 'n3', type: 'aggregate', label: 'SUM por Cliente', status: 'idle', config: { groupBy: 'cliente', aggFunc: 'SUM', aggCol: 'total' } },
-      { id: 'n4', type: 'destination', label: 'Tabla Resultado', status: 'idle', config: {} },
-    ],
-    connections: [{ from: 'n1', to: 'n2' }, { from: 'n2', to: 'n3' }, { from: 'n3', to: 'n4' }],
+    id: 't2', name: 'resumen_ventas_cliente', path: '/transforms-python/',
+    type: 'python', inputDatasets: ['ventas_limpias', 'raw_clientes'],
+    outputDataset: 'resumen_ventas_cliente',
+    code: `from transforms.api import transform, Input, Output
+from pyspark.sql import functions as F
+
+@transform(
+    output=Output("/datasets/resumen_ventas_cliente"),
+    ventas=Input("/datasets/ventas_limpias"),
+    clientes=Input("/datasets/raw_clientes")
+)
+def compute(ventas, clientes, output):
+    """Agrega ventas por cliente con JOIN."""
+    df_v = ventas.dataframe()
+    df_c = clientes.dataframe()
+    
+    # JOIN ventas con clientes
+    df = df_v.join(df_c, df_v.cliente == df_c.nombre, "left")
+    
+    # Agrupar por cliente
+    result = df.groupBy("cliente", "ciudad", "sector") \\
+        .agg(
+            F.sum("total").alias("total_ventas"),
+            F.count("*").alias("num_ventas"),
+            F.avg("total").alias("promedio_venta")
+        ) \\
+        .orderBy(F.col("total_ventas").desc())
+    
+    output.write_dataframe(result)`,
+    description: 'Resumen de ventas totales por cliente con datos del CRM',
   },
   {
-    name: 'JOIN Clientes + Ventas',
-    nodes: [
-      { id: 'n1', type: 'source', label: 'CSV Ventas', status: 'idle', config: { source: 'CSV - Ventas' } },
-      { id: 'n2', type: 'source', label: 'API Clientes', status: 'idle', config: { source: 'API - Clientes' } },
-      { id: 'n3', type: 'aggregate', label: 'COUNT Ventas', status: 'idle', config: { groupBy: 'cliente', aggFunc: 'COUNT', aggCol: 'id' } },
-      { id: 'n4', type: 'destination', label: 'Resumen', status: 'idle', config: {} },
-    ],
-    connections: [{ from: 'n1', to: 'n3' }, { from: 'n3', to: 'n4' }],
+    id: 't3', name: 'clean_sql_view', path: '/transforms-sql/', type: 'sql',
+    inputDatasets: ['ventas_limpias'], outputDataset: 'ventas_alta',
+    code: `-- Transform SQL: Ventas de alto valor
+-- Este transform filtra solo ventas > $10,000
+
+SELECT
+    id,
+    fecha,
+    cliente,
+    producto,
+    cantidad,
+    precio_unit,
+    total,
+    fecha_proc
+FROM /datasets/ventas_limpias
+WHERE total > 10000
+ORDER BY total DESC`,
+    description: 'Filtra ventas de alto valor (> $10,000) para análisis ejecutivo',
   },
 ];
 
-// ─── Componente ───────────────────────────────────────────────
+// ─── Ejecución de transforms ──────────────────────────────────
 
-export default function PipelineSim({ theme, onBack }: PipelineSimProps) {
+function executePythonTransform(code: string, datasets: Record<string, any>): { output: any[][]; schema: string[]; rowCount: number; log: string[] } {
+  const log: string[] = [];
+  const lines = code.split('\n');
+
+  // Extraer inputs del decorador
+  const inputs: Record<string, string> = {};
+  let outputName = 'output';
+  const decoratorContent = code.match(/@transform\(([\s\S]*?)\)\s*(?:def )?(\w+)?/);
+  if (decoratorContent) {
+    const decoratorBody = decoratorContent[1];
+    const outputMatch = decoratorBody.match(/output\s*=\s*Output\(\s*["']\/datasets\/(\w+)['"]\)/);
+    if (outputMatch) outputName = outputMatch[1];
+    const inputMatches = [...decoratorBody.matchAll(/(\w+)\s*=\s*Input\(\s*["']\/datasets\/(\w+)['"]\)/g)];
+    for (const m of inputMatches) inputs[m[1]] = m[2];
+  }
+
+  log.push(`[TRANSFORM] Detectado: Python → ${outputName}`);
+  log.push(`[TRANSFORM] Inputs: ${Object.values(inputs).join(', ')}`);
+
+  // Parsear las operaciones del código
+  let data: any[] = [];
+  let schema: string[] = [];
+
+  // Cargar primer input
+  const firstInputName = Object.values(inputs)[0];
+  if (firstInputName && datasets[firstInputName]) {
+    const ds = datasets[firstInputName];
+      data = ds.rows.map((r: any[], i: number) => {
+        const obj: any = {};
+        ds.schema.forEach((col: string, j: number) => { obj[col] = r[j]; });
+      return obj;
+    });
+    schema = [...ds.schema];
+    log.push(`[TRANSFORM] Cargado: ${firstInputName} (${data.length} filas)`);
+  }
+
+  // Parsear código para operaciones
+  if (code.includes('.dropna()')) {
+    const before = data.length;
+    data = data.filter(row => !Object.values(row).some(v => v === null || v === undefined));
+    log.push(`[TRANSFORM] ➤ dropna(): ${before} → ${data.length} filas`);
+  }
+
+  if (code.includes('total') && code.includes('withColumn')) {
+    data = data.map(row => ({
+      ...row,
+      total: (Number(row.cantidad) || 0) * (Number(row.precio_unit) || 0),
+    }));
+    if (!schema.includes('total')) schema.push('total');
+    log.push('[TRANSFORM] ➤ Calculado: total = cantidad × precio_unit');
+  }
+
+  if (code.includes('fecha_proc') || code.includes('current_date()')) {
+    const today = new Date().toISOString().split('T')[0];
+    data = data.map(row => ({ ...row, fecha_proc: today }));
+    if (!schema.includes('fecha_proc')) schema.push('fecha_proc');
+    log.push(`[TRANSFORM] ➤ Agregado: fecha_proc = ${today}`);
+  }
+
+  if (code.includes('.filter(') || code.includes('.where(')) {
+    const filterMatch = code.match(/["'](\w+)["']\s*>\s*(\d+)/);
+    if (filterMatch) {
+      const col = filterMatch[1];
+      const val = Number(filterMatch[2]);
+      const before = data.length;
+      data = data.filter(row => (Number(row[col]) || 0) > val);
+      log.push(`[TRANSFORM] ➤ Filter: ${col} > ${val}: ${before} → ${data.length} filas`);
+    }
+  }
+
+  if (code.includes('.orderBy') || code.includes('.sort(')) {
+    const orderMatch = code.match(/orderBy\(F\.col\(["'](\w+)["']\)\.(asc|desc)\(\)\)/);
+    if (orderMatch) {
+      const col = orderMatch[1];
+      const dir = orderMatch[2];
+      data.sort((a, b) => dir === 'desc' ? (Number(b[col] || 0) - Number(a[col] || 0)) : (Number(a[col] || 0) - Number(b[col] || 0)));
+      log.push(`[TRANSFORM] ➤ Ordenado: ${col} ${dir.toUpperCase()}`);
+    }
+  }
+
+  // JOIN
+  if (code.includes('.join(')) {
+    const joinMatch = code.match(/\.join\(df_\w+,\s*df_\w+\[['"](\w+)['"]\s*==\s*df_\w+\[['"](\w+)['"]/);
+    const secondInputName = Object.values(inputs).slice(-1)[0];
+    if (secondInputName && datasets[secondInputName]) {
+      const ds2 = datasets[secondInputName];
+      const rightData = ds2.rows.map((r: any[]) => {
+        const obj: any = {};
+        ds2.schema.forEach((col: string, j: number) => { obj[col] = r[j]; });
+        return obj;
+      });
+      log.push(`[TRANSFORM] ➤ JOIN con: ${secondInputName} (${rightData.length} filas)`);
+      // Simple merge by cliente==nombre
+      data = data.map((row: any) => {
+        const match = rightData.find((r: any) => r.nombre === row.cliente);
+        return match ? { ...row, ...match, _joined: true } : row;
+      }).filter((r: any) => r._joined).map(({ _joined, ...r }: any) => r);
+      rightData[0] && Object.keys(rightData[0]).forEach(c => { if (!schema.includes(c)) schema.push(c); });
+      log.push(`[TRANSFORM] ➤ JOIN result: ${data.length} filas`);
+    }
+  }
+
+  // Agregación GROUP BY
+  if (code.includes('.agg(') || code.includes('groupBy')) {
+    const groupColMatch = code.match(/groupBy\(["'](\w+)["']/);
+    const aggCols = [...code.matchAll(/F\.(\w+)\(F\.col\(["'](\w+)["']\)\)\.alias\(["'](\w+)["']\)/g)];
+    if (groupColMatch && aggCols.length > 0) {
+      const groupCol = groupColMatch[1];
+      const groups: Record<string, any[]> = {};
+      data.forEach(row => {
+        const key = String(row[groupCol]);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(row);
+      });
+      schema = [groupCol, ...aggCols.map(m => m[3])];
+      data = Object.entries(groups).map(([key, rows]) => {
+        const row: any = { [groupCol]: key };
+        aggCols.forEach(m => {
+          const func = m[1];
+          const col = m[2];
+          const alias = m[3];
+          const vals = rows.map(r => Number(r[col])).filter(v => !isNaN(v));
+          if (func === 'sum') row[alias] = vals.reduce((s, v) => s + v, 0);
+          else if (func === 'avg') row[alias] = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+          else if (func === 'count') row[alias] = vals.length;
+        });
+        return row;
+      });
+      log.push(`[TRANSFORM] ➤ GROUP BY ${groupCol}: ${data.length} grupos`);
+    }
+  }
+
+  log.push(`[TRANSFORM] ✅ Output: ${data.length} filas, ${schema.length} columnas`);
+  return { output: data.map(r => schema.map(c => r[c])), schema, rowCount: data.length, log };
+}
+
+function executeSQLTransform(code: string, datasets: Record<string, any>): { output: any[][]; schema: string[]; rowCount: number; log: string[] } {
+  const log: string[] = [];
+  log.push('[TRANSFORM] Detectado: SQL');
+
+  const fromMatch = code.match(/FROM\s+\/datasets\/(\w+)/i);
+  if (!fromMatch) return { output: [], schema: [], rowCount: 0, log: [...log, '❌ Error: No se encontró dataset en FROM'] };
+  const datasetName = fromMatch[1];
+  const ds = datasets[datasetName];
+  if (!ds) return { output: [], schema: [], rowCount: 0, log: [...log, `❌ Dataset "${datasetName}" no existe`] };
+
+  let data = ds.rows.map((r: any[]) => {
+    const obj: any = {};
+    ds.schema.forEach((col: string, j: number) => { obj[col] = r[j]; });
+    return obj;
+  });
+  log.push(`[TRANSFORM] Cargado: ${datasetName} (${data.length} filas)`);
+
+  // WHERE
+  const whereMatch = code.match(/WHERE\s+(\w+)\s*(=|>|<|>=|<=|!=)\s*(\d+)/i);
+  if (whereMatch) {
+    const col = whereMatch[1], op = whereMatch[2], val = Number(whereMatch[3]);
+    const before = data.length;
+    data = data.filter((row: any) => {
+      switch (op) { case '=': return row[col] == val; case '>': return row[col] > val; case '<': return row[col] < val; default: return true; }
+    });
+    log.push(`[TRANSFORM] ➤ WHERE ${col} ${op} ${val}: ${before} → ${data.length} filas`);
+  }
+
+  // ORDER BY
+  const orderMatch = code.match(/ORDER\s+BY\s+(\w+)\s*(DESC|ASC)?/i);
+  if (orderMatch) {
+    const col = orderMatch[1], dir = (orderMatch[2] || 'ASC').toUpperCase();
+    data.sort((a: any, b: any) => dir === 'DESC' ? (Number(b[col] || 0) - Number(a[col] || 0)) : (Number(a[col] || 0) - Number(b[col] || 0)));
+    log.push(`[TRANSFORM] ➤ ORDER BY ${col} ${dir}`);
+  }
+
+  log.push(`[TRANSFORM] ✅ Output: ${data.length} filas, ${ds.schema.length} columnas`);
+  return { output: data.map((r: any) => ds.schema.map((c: string) => r[c])), schema: ds.schema, rowCount: data.length, log };
+}
+
+export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const [selectedTemplate, setSelectedTemplate] = useState(0);
-  const [nodes, setNodes] = useState<PipelineNode[]>(PIPELINE_TEMPLATES[0].nodes);
-  const [connections, setConnections] = useState<PipelineConnection[]>(PIPELINE_TEMPLATES[0].connections);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string>(TRANSFORMS[0].id);
+  const [code, setCode] = useState(TRANSFORMS[0].code);
+  const [buildResults, setBuildResults] = useState<{ output: any[][]; schema: string[]; rowCount: number; log: string[] } | null>(null);
+  const [tab, setTab] = useState<'editor' | 'preview'>('editor');
+  const [viewingDataset, setViewingDataset] = useState<string | null>(null);
+  const [generatedDatasets, setGeneratedDatasets] = useState<Record<string, any>>({});
 
-  function loadTemplate(idx: number) {
-    setSelectedTemplate(idx);
-    setNodes(PIPELINE_TEMPLATES[idx].nodes.map(n => ({ ...n, status: 'idle', output: undefined, input: undefined, error: undefined })));
-    setConnections(PIPELINE_TEMPLATES[idx].connections);
-    setSelectedNode(null);
-    setLogs([]);
+  const selectedTransform = TRANSFORMS.find(t => t.id === selectedFile);
+
+  function selectFile(id: string) {
+    const t = TRANSFORMS.find(t => t.id === id);
+    if (t) { setSelectedFile(id); setCode(t.code); setBuildResults(null); setTab('editor'); }
   }
 
-  async function runPipeline() {
-    setIsRunning(true);
-    setLogs([]);
-    // Reset
-    const resetNodes = nodes.map(n => ({ ...n, status: 'idle' as NodeStatus, output: undefined, input: undefined, error: undefined }));
-    setNodes(resetNodes);
+  function build() {
+    // Cargar datasets
+    const datasets: Record<string, any> = {};
+    for (const [name, ds] of Object.entries(DATASETS)) datasets[name] = ds;
+    // Cargar datasets generados anteriormente
+    for (const [name, ds] of Object.entries(generatedDatasets)) datasets[name] = ds;
 
-    // Topological sort
-    const nodeMap = new Map<string, PipelineNode>(resetNodes.map(n => [n.id, n as PipelineNode]));
-    const inDegree = new Map(resetNodes.map(n => [n.id, 0]));
-    for (const conn of connections) {
-      inDegree.set(conn.to, (inDegree.get(conn.to) || 0) + 1);
-    }
-    const queue = resetNodes.filter(n => (inDegree.get(n.id) || 0) === 0);
-    const processed = new Set<string>();
-
-    const newLogs: string[] = [];
-
-    for (const startNode of queue) {
-      await processNode(startNode.id);
+    let result;
+    if (selectedTransform?.type === 'python') {
+      result = executePythonTransform(code, datasets);
+    } else {
+      result = executeSQLTransform(code, datasets);
     }
 
-    async function processNode(nodeId: string) {
-      if (processed.has(nodeId)) return;
-      const node = nodeMap.get(nodeId);
-      if (!node) return;
-
-      // Check all inputs are ready
-      const inputConnections = connections.filter(c => c.to === nodeId);
-      for (const ic of inputConnections) {
-        if (!processed.has(ic.from)) return; // Wait for upstream
-      }
-
-      // Set running
-      setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, status: 'running' } : n));
-      newLogs.push(`[${new Date().toLocaleTimeString('es-MX')}] ▶ Ejecutando: ${node.label}`);
-      setLogs([...newLogs]);
-
-      await new Promise(r => setTimeout(r, 300));
-
-      // Get input data
-      let inputData: DataRow[] = [];
-      for (const ic of inputConnections) {
-        const sourceNode = nodeMap.get(ic.from);
-        if (sourceNode?.output) {
-          inputData = [...inputData, ...sourceNode.output];
-        }
-      }
-
-      try {
-        // Execute node
-        const outputData = executeNode({ ...node, input: inputData }, inputData);
-
-        // Update node
-        nodeMap.set(nodeId, { ...node, status: 'completed' as NodeStatus, input: inputData, output: outputData } as PipelineNode);
-        setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, status: 'completed' as NodeStatus, input: inputData, output: outputData } as PipelineNode : n));
-        newLogs.push(`[${new Date().toLocaleTimeString('es-MX')}] ✅ Completado: ${node.label} (${outputData.length} filas)`);
-        setLogs([...newLogs]);
-
-        processed.add(nodeId);
-
-        // Process downstream nodes
-        const downstream = connections.filter(c => c.from === nodeId).map(c => c.to);
-        for (const ds of downstream) {
-          await processNode(ds);
-        }
-      } catch (e: any) {
-        nodeMap.set(nodeId, { ...node, status: 'error', error: e.message });
-        setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, status: 'error', error: e.message } : n));
-        newLogs.push(`[${new Date().toLocaleTimeString('es-MX')}] ❌ Error: ${node.label} - ${e.message}`);
-        setLogs([...newLogs]);
-      }
+    if (result.output.length > 0 && selectedTransform) {
+      const newGenerated = { ...generatedDatasets, [selectedTransform.outputDataset]: result };
+      setGeneratedDatasets(newGenerated);
     }
-
-    newLogs.push(`[${new Date().toLocaleTimeString('es-MX')}] 🏁 Pipeline completado`);
-    setLogs([...newLogs]);
-    setIsRunning(false);
+    setBuildResults(result);
+    setTab('preview');
   }
 
-  function updateNodeConfig(nodeId: string, key: string, value: any) {
-    setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, config: { ...n.config, [key]: value }, status: 'idle', output: undefined } : n));
+  function openDataset(name: string) {
+    setViewingDataset(name);
   }
-
-  function addNode(type: NodeType) {
-    const id = `n${Date.now()}`;
-    const defaultConfigs: Record<NodeType, Record<string, any>> = {
-      source: { source: 'CSV - Ventas' },
-      filter: { column: 'total', operator: '>', value: '0' },
-      transform: { newColumn: 'nueva_col', expression: 'cantidad' },
-      aggregate: { groupBy: 'cliente', aggFunc: 'SUM', aggCol: 'total' },
-      destination: {},
-    };
-    const newNode: PipelineNode = {
-      id, type, label: `${NODE_TYPES[type].label} ${nodes.length + 1}`,
-      status: 'idle', config: defaultConfigs[type],
-    };
-    setNodes([...nodes, newNode]);
-  }
-
-  function removeNode(nodeId: string) {
-    setNodes(nodes.filter(n => n.id !== nodeId));
-    setConnections(connections.filter(c => c.from !== nodeId && c.to !== nodeId));
-    if (selectedNode === nodeId) setSelectedNode(null);
-  }
-
-  function connectNodes(from: string, to: string) {
-    if (from === to) return;
-    if (connections.some(c => c.from === from && c.to === to)) return;
-    setConnections([...connections, { from, to }]);
-  }
-
-  const selectedNodeData = nodes.find(n => n.id === selectedNode);
-  const nodePositions = nodes.map((n, i) => ({ ...n, x: 20 + (i % 3) * 220, y: 30 + Math.floor(i / 3) * 140 }));
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
+      {/* Header - Foundry-style */}
       <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-3" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
         <button onClick={onBack} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
         <span className="text-base">🔀</span>
-        <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Pipeline ETL</span>
-        <button onClick={runPipeline} disabled={isRunning}
-          className="text-[11px] font-bold px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50"
-          style={{ background: isRunning ? '#64748b' : '#22c55e', color: '#fff' }}>
-          {isRunning ? '⏳ Ejecutando...' : '▶ Ejecutar'}
-        </button>
+        <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Palantir Foundry</span>
+        <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: '#3b82f620', color: '#3b82f6' }}>Transforms</span>
         <div className="flex-1" />
-        <span className="text-[9px] font-mono" style={{ color: colors.textMuted }}>{nodes.length} nodos</span>
+        <span className="text-[10px] font-mono" style={{ color: colors.textMuted }}>{selectedTransform?.path}{selectedTransform?.name}.py</span>
+        <button onClick={build}
+          className="text-[11px] font-bold px-4 py-1.5 rounded-lg cursor-pointer transition hover:opacity-90"
+          style={{ background: '#3b82f6', color: '#fff' }}>
+          ⚡ Build
+        </button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-48 shrink-0 border-r-2 overflow-auto" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
+        {/* Left sidebar - Project files */}
+        <div className="w-52 shrink-0 border-r-2 overflow-auto flex flex-col" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <span className="text-[10px] font-bold" style={{ color: colors.text }}>📂 Plantillas</span>
+            <span className="text-[10px] font-bold" style={{ color: colors.text }}>📁 Project</span>
+            <div className="text-[8px] ml-4 mt-0.5" style={{ color: colors.textMuted }}>DataFlow Analytics</div>
           </div>
-          {PIPELINE_TEMPLATES.map((p, i) => (
-            <button key={i} onClick={() => loadTemplate(i)}
-              className="w-full text-left px-3 py-2.5 text-[11px] cursor-pointer hover:opacity-80 transition border-b"
-              style={{ borderColor: colors.border + '30', background: i === selectedTemplate ? colors.primary + '15' : 'transparent', color: i === selectedTemplate ? colors.primary : colors.text }}>
-              {p.name}
-            </button>
-          ))}
+
+          {/* Input Datasets */}
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <span className="text-[10px] font-bold" style={{ color: colors.text }}>➕ Agregar nodo</span>
-          </div>
-          {(Object.keys(NODE_TYPES) as NodeType[]).map(type => (
-            <button key={type} onClick={() => addNode(type)}
-              className="w-full text-left px-3 py-2 text-[10px] cursor-pointer hover:opacity-80 transition border-b"
-              style={{ borderColor: colors.border + '30', color: colors.text }}>
-              {NODE_TYPES[type].icon} {NODE_TYPES[type].label}
-            </button>
-          ))}
-        </div>
-
-        {/* Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto p-6 relative" style={{ background: isDark ? '#0a0f1a' : '#f0f4f8' }}>
-            {/* Connections */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-              {connections.map((conn, i) => {
-                const fromPos = nodePositions.find(n => n.id === conn.from);
-                const toPos = nodePositions.find(n => n.id === conn.to);
-                if (!fromPos || !toPos) return null;
-                return (
-                  <g key={i}>
-                    <line
-                      x1={fromPos.x + 180} y1={fromPos.y + 35}
-                      x2={toPos.x} y2={toPos.y + 35}
-                      stroke={fromPos.status === 'completed' ? '#22c55e' : '#475569'}
-                      strokeWidth="2"
-                      strokeDasharray={fromPos.status === 'completed' ? '' : '5,5'}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* Nodes */}
-            {nodePositions.map(node => (
-              <div key={node.id}
-                onClick={() => setSelectedNode(node.id)}
-                className="absolute cursor-pointer transition-all"
-                style={{ left: node.x, top: node.y, width: 180, zIndex: 2 }}>
-                <div className="rounded-lg border-2 p-2 shadow-lg transition-all"
-                  style={{
-                    borderColor: node.status === 'running' ? '#3b82f6' : node.status === 'completed' ? '#22c55e' : node.status === 'error' ? '#ef4444' : colors.border,
-                    background: isDark ? '#1e293b' : '#fff',
-                    boxShadow: node.status === 'running' ? '0 0 12px #3b82f640' : undefined,
-                  }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">{NODE_TYPES[node.type].icon}</span>
-                    <span className="text-[11px] font-bold flex-1 truncate" style={{ color: colors.text }}>{node.label}</span>
-                    <button onClick={(e) => { e.stopPropagation(); removeNode(node.id); }} className="text-[10px] cursor-pointer opacity-50 hover:opacity-100" style={{ color: '#ef4444' }}>✕</button>
-                  </div>
-                  <div className="text-[8px] font-mono flex items-center gap-1">
-                    <span className="px-1.5 py-0.5 rounded" style={{
-                      background: node.status === 'idle' ? '#64748b20' : node.status === 'running' ? '#3b82f620' : node.status === 'completed' ? '#22c55e20' : '#ef444420',
-                      color: node.status === 'idle' ? '#64748b' : node.status === 'running' ? '#3b82f6' : node.status === 'completed' ? '#22c55e' : '#ef4444',
-                    }}>
-                      {node.status === 'idle' ? '⏳' : node.status === 'running' ? '🔄' : node.status === 'completed' ? '✅' : '❌'} {node.status}
-                    </span>
-                    {node.output && <span style={{ color: colors.textMuted }}>{node.output.length} filas</span>}
-                  </div>
-                  {node.error && <div className="text-[8px] mt-1" style={{ color: '#ef4444' }}>{node.error}</div>}
-                </div>
-                {/* Input connector */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 cursor-pointer"
-                  style={{ borderColor: colors.border, background: colors.cardBg }}
-                  onClick={(e) => { e.stopPropagation(); const fromId = prompt('ID del nodo origen:'); if (fromId) connectNodes(fromId, node.id); }}
-                  title="Conectar desde" />
-                {/* Output connector */}
-                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 cursor-pointer"
-                  style={{ borderColor: colors.border, background: colors.cardBg }}
-                  onClick={(e) => { e.stopPropagation(); const toId = prompt('ID del nodo destino:'); if (toId) connectNodes(node.id, toId); }}
-                  title="Conectar hacia" />
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#22c55e' }}>⬇ Raw Datasets</div>
+            {Object.entries(DATASETS).map(([name, ds]) => (
+              <div key={name} onClick={() => openDataset(name)}
+                className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between"
+                style={{ color: '#22c55e', background: viewingDataset === name ? '#22c55e15' : 'transparent' }}>
+                <span>📋 {name}</span><span style={{ opacity: 0.5 }}>{ds.rows.length}</span>
               </div>
             ))}
           </div>
 
-          {/* Config panel */}
-          {selectedNodeData && (
-            <div className="h-40 border-t-2 overflow-auto p-3" style={{ borderColor: colors.border, background: colors.cardBg }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold" style={{ color: colors.text }}>⚙️ Configuración: {selectedNodeData.label}</span>
-                <button onClick={() => setSelectedNode(null)} className="text-[10px] cursor-pointer" style={{ color: colors.textMuted }}>✕</button>
+          {/* Transforms */}
+          <div className="p-3 border-b" style={{ borderColor: colors.border }}>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#3b82f6' }}>⚙️ Transforms</div>
+            {TRANSFORMS.map(t => (
+              <div key={t.id} onClick={() => selectFile(t.id)}
+                className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between items-center"
+                style={{ color: selectedFile === t.id ? '#fff' : '#3b82f6', background: selectedFile === t.id ? '#3b82f6' : 'transparent' }}>
+                <span>{t.type === 'python' ? '🐍' : '🗃️'} {t.name}</span>
+                {t.type === 'python' && <span className="text-[7px]">.py</span>}
+                {t.type === 'sql' && <span className="text-[7px]">.sql</span>}
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {selectedNodeData.type === 'source' && (
-                  <>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Fuente</label>
-                    <select value={selectedNodeData.config.source || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'source', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }}>
-                      {Object.keys(SAMPLE_DATA).map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </>
-                )}
-                {selectedNodeData.type === 'filter' && (
-                  <>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Columna</label>
-                    <input type="text" value={selectedNodeData.config.column || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'column', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} />
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Operador</label>
-                    <select value={selectedNodeData.config.operator || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'operator', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }}>
-                      <option value="=">=</option><option value=">">&gt;</option><option value="<">&lt;</option>
-                      <option value=">=">&gt;=</option><option value="<=">&lt;=</option><option value="contains">contiene</option>
-                    </select>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Valor</label>
-                    <input type="text" value={selectedNodeData.config.value || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'value', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} />
-                  </>
-                )}
-                {selectedNodeData.type === 'transform' && (
-                  <>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Nueva columna</label>
-                    <input type="text" value={selectedNodeData.config.newColumn || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'newColumn', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} />
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Expresión</label>
-                    <input type="text" value={selectedNodeData.config.expression || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'expression', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} placeholder="cantidad * precio" />
-                  </>
-                )}
-                {selectedNodeData.type === 'aggregate' && (
-                  <>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Agrupar por</label>
-                    <input type="text" value={selectedNodeData.config.groupBy || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'groupBy', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} />
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Función</label>
-                    <select value={selectedNodeData.config.aggFunc || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'aggFunc', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }}>
-                      <option value="SUM">SUM</option><option value="AVG">AVG</option><option value="COUNT">COUNT</option>
-                      <option value="MIN">MIN</option><option value="MAX">MAX</option>
-                    </select>
-                    <label className="text-[9px]" style={{ color: colors.textMuted }}>Columna</label>
-                    <input type="text" value={selectedNodeData.config.aggCol || ''} onChange={e => updateNodeConfig(selectedNodeData.id, 'aggCol', e.target.value)}
-                      className="text-[9px] px-2 py-1 rounded border" style={{ borderColor: colors.border, background: colors.bg, color: colors.text }} />
-                  </>
-                )}
-                {selectedNodeData.type === 'destination' && (
-                  <div className="col-span-2 text-[9px]" style={{ color: colors.textMuted }}>Destino: almacena el resultado final del pipeline</div>
-                )}
-              </div>
+            ))}
+          </div>
 
-              {/* Preview output */}
-              {selectedNodeData.output && selectedNodeData.output.length > 0 && (
-                <div className="mt-3">
-                  <div className="text-[8px] font-bold mb-1" style={{ color: colors.textMuted }}>Vista previa ({selectedNodeData.output.length} filas):</div>
-                  <div className="overflow-auto max-h-16 text-[8px] font-mono">
-                    <table className="w-full">
-                      <thead><tr>{Object.keys(selectedNodeData.output[0]).map(c => <th key={c} className="px-1 text-left" style={{ color: colors.textMuted }}>{c}</th>)}</tr></thead>
-                      <tbody>
-                        {selectedNodeData.output.slice(0, 5).map((row, i) => (
-                          <tr key={i}>{Object.values(row).map((v: any, j: number) => <td key={j} className="px-1" style={{ color: colors.text }}>{String(v)}</td>)}</tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+          {/* Output Datasets */}
+          <div className="p-3 border-b flex-1" style={{ borderColor: colors.border }}>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#f59e0b' }}>⬆ Output Datasets</div>
+            {TRANSFORMS.map(t => (
+              <div key={t.id} onClick={() => openDataset(t.outputDataset)}
+                className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between"
+                style={{ color: '#f59e0b', background: viewingDataset === t.outputDataset ? '#f59e0b15' : 'transparent' }}>
+                <span>📊 {t.outputDataset}</span>
+                {generatedDatasets[t.outputDataset] && <span style={{ opacity: 0.5 }}>{generatedDatasets[t.outputDataset].rowCount}</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* pypi */}
+          <div className="p-3 border-b" style={{ borderColor: colors.border }}>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: colors.textMuted }}>📦 Dependencies</div>
+            <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>pyspark==3.5.0</div>
+            <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>transforms==2.1.0</div>
+          </div>
+        </div>
+
+        {/* Main area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b-2 shrink-0" style={{ borderColor: colors.border }}>
+            <button onClick={() => setTab('editor')} className="px-4 py-2 text-[11px] font-bold cursor-pointer transition"
+              style={{ color: tab === 'editor' ? colors.primary : colors.textMuted, borderBottom: tab === 'editor' ? `2px solid ${colors.primary}` : '2px solid transparent' }}>
+              🐍 {selectedTransform?.type === 'python' ? 'Python' : 'SQL'} Editor
+            </button>
+            <button onClick={() => setTab('preview')} className="px-4 py-2 text-[11px] font-bold cursor-pointer transition"
+              style={{ color: tab === 'preview' ? colors.primary : colors.textMuted, borderBottom: tab === 'preview' ? `2px solid ${colors.primary}` : '2px solid transparent' }}>
+              📊 Dataset Preview
+            </button>
+          </div>
+
+          {/* Editor */}
+          {tab === 'editor' && (
+            <div className="flex-1 overflow-hidden">
+              {/* File info bar */}
+              <div className="px-3 py-1 text-[9px] font-mono flex gap-4" style={{ background: colors.cardBg, color: colors.textMuted }}>
+                <span>{selectedTransform?.path}{selectedTransform?.name}{selectedTransform?.type === 'python' ? '.py' : '.sql'}</span>
+                <span>Inputs: {selectedTransform?.inputDatasets.join(', ')}</span>
+                <span>→ Output: {selectedTransform?.outputDataset}</span>
+              </div>
+              {/* Code editor */}
+              <textarea value={code} onChange={e => setCode(e.target.value)}
+                className="w-full h-full p-4 font-mono text-[11px] outline-none resize-none leading-relaxed"
+                style={{ background: isDark ? '#0f172a' : '#1e293b', color: '#e2e8f0', border: 'none' }}
+                placeholder="Escribe tu transform aquí..."
+                spellCheck={false} />
             </div>
           )}
 
-          {/* Log panel */}
-          <div className="h-24 border-t-2 overflow-auto p-2 font-mono text-[9px]" style={{ borderColor: colors.border, background: isDark ? '#0a0f1a' : '#1e293b', color: '#94a3b8' }}>
-            <div className="text-[8px] font-bold mb-1" style={{ color: '#64748b' }}>📋 Log de ejecución</div>
-            {logs.map((log, i) => <div key={i} className="mb-0.5">{log}</div>)}
-            {!isRunning && logs.length === 0 && <div style={{ color: '#64748b' }}>Presiona "Ejecutar" para procesar el pipeline</div>}
-          </div>
+          {/* Preview */}
+          {tab === 'preview' && buildResults && (
+            <div className="flex-1 overflow-auto p-4">
+              <div className="text-[11px] font-bold mb-3" style={{ color: colors.text }}>
+                📊 Dataset: {selectedTransform?.outputDataset}
+                <span className="text-[10px] font-mono ml-2" style={{ color: colors.textMuted }}>
+                  {buildResults.rowCount} filas · {buildResults.schema.length} columnas
+                </span>
+              </div>
+              <table className="w-full text-[10px] font-mono border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
+                <thead>
+                  <tr style={{ background: isDark ? '#1a1a2e' : '#e5e7eb' }}>
+                    {buildResults.schema.map(col => (
+                      <th key={col} className="px-3 py-2 text-left" style={{ color: colors.textMuted }}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildResults.output.map((row, i) => (
+                    <tr key={i} className="border-b" style={{ borderColor: colors.border + '30', background: i % 2 === 0 ? 'transparent' : (isDark ? '#ffffff05' : '#00000003') }}>
+                      {row.map((cell, j) => (
+                        <td key={j} className="px-3 py-1.5" style={{ color: colors.text }}>
+                          {typeof cell === 'number' && !isNaN(cell) ? cell.toLocaleString('es-MX') : String(cell ?? 'NULL')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Build log */}
+              <div className="mt-4">
+                <div className="text-[10px] font-bold mb-2" style={{ color: colors.text }}>📋 Build Log</div>
+                <div className="rounded-lg p-3 font-mono text-[9px] space-y-0.5" style={{ background: isDark ? '#0a0f1a' : '#1e293b' }}>
+                  {buildResults.log.map((line, i) => (
+                    <div key={i} style={{ color: line.includes('✅') ? '#22c55e' : line.includes('❌') ? '#ef4444' : line.includes('➤') ? '#f59e0b' : '#94a3b8' }}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {tab === 'preview' && !buildResults && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center" style={{ color: colors.textMuted }}>
+                <div className="text-3xl mb-2">⚡</div>
+                <div className="text-xs">Presiona "Build" para ejecutar el transform</div>
+                <div className="text-[10px] mt-1">El dataset generado se mostrará aquí</div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Right sidebar - Dataset details */}
+        <div className="w-52 shrink-0 border-l-2 overflow-auto" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
+          {viewingDataset && (
+            <>
+              <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: colors.border }}>
+                <span className="text-[10px] font-bold" style={{ color: colors.text }}>📋 {viewingDataset}</span>
+                <button onClick={() => setViewingDataset(null)} className="text-[10px] cursor-pointer" style={{ color: colors.textMuted }}>✕</button>
+              </div>
+              {(() => {
+                const ds = DATASETS[viewingDataset] || generatedDatasets[viewingDataset];
+                if (!ds) return <div className="p-3 text-[9px]" style={{ color: colors.textMuted }}>Dataset no disponible aún</div>;
+                return (
+                  <>
+                    <div className="p-3 border-b" style={{ borderColor: colors.border }}>
+                      <div className="text-[8px] font-bold mb-1" style={{ color: colors.textMuted }}>SCHEMA</div>
+                      {(Array.isArray(ds.schema) ? ds.schema : ds.schema || []).map((col: string) => (
+                        <div key={col} className="text-[9px] font-mono py-0.5" style={{ color: colors.text }}>🔹 {col}</div>
+                      ))}
+                    </div>
+                    <div className="p-3 border-b" style={{ borderColor: colors.border }}>
+                      <div className="text-[8px] font-bold mb-1" style={{ color: colors.textMuted }}>LINEAGE</div>
+                      {Object.entries(DATASETS).find(([k]) => k === viewingDataset) && (
+                        <div className="flex items-center gap-1 text-[9px]" style={{ color: '#22c55e' }}>
+                          ⬇ Raw source
+                        </div>
+                      )}
+                      {TRANSFORMS.filter(t => t.outputDataset === viewingDataset).map(t => (
+                        <div key={t.id} className="flex items-center gap-1 text-[9px]" style={{ color: '#3b82f6' }}>
+                          ⚙️ {t.name}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+          {!viewingDataset && (
+            <div className="p-3">
+              <div className="text-[9px] text-center py-8" style={{ color: colors.textMuted }}>
+                📋 Haz clic en un<br/>dataset para ver<br/>detalles y lineage
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status bar */}
+      <div className="px-4 py-1 border-t-2 flex items-center justify-between text-[8px] font-mono shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
+        <span style={{ color: colors.textMuted }}>Palantir Foundry · Transforms v2.1.0</span>
+        <span style={{ color: buildResults ? '#22c55e' : colors.textMuted }}>
+          {buildResults ? `Last build: ${buildResults.rowCount} rows` : 'No builds yet'}
+        </span>
       </div>
     </div>
   );
