@@ -39,7 +39,7 @@ interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => vo
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
-  const [specialty] = useState<'accounting' | 'data_engineering'>(() => (specialtyProp as 'accounting' | 'data_engineering') || 'accounting');
+  const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
   const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial(specialty);
   const { addToast } = useToast();
   const colors = themeColors[theme];
