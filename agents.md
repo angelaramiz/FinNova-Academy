@@ -113,6 +113,7 @@
 ## Stack Tecnológico del Proyecto
 *   **Backend**: Node.js, Express, TypeScript, tsx, MemoryDatabase (`memoryDb.ts`) + Supabase (PostgreSQL).
 *   **Frontend Alumnos**: React 19, Vite, TailwindCSS, **React Three Fiber** (motor 3D web), puerto 3000.
+*   **Reloj de simulación**: `alumnos/src/lib/simTime.ts` — HOY sim = **miércoles 08-jul-2026**. Todas las apps DE/contables usan fechas simuladas (Airflow/DataOps/header escritorio); la hora real solo se muestra junto a la fecha sim. No usar `new Date()` para fechas del mundo simulado.
 *   **Frontend Staff**: React, Vite, TailwindCSS, puerto **3001**.
 *   **Base de Datos**: Supabase (PostgreSQL), migraciones en `supabase/`.
 *   **Infra**: Render (3 servicios: backend, alumnos, staff).
@@ -127,6 +128,20 @@
 | **SimuladorLaboral** | `SimuladorLaboral.tsx` | Escena 3D de oficina + controlador de vistas |
 | **DesktopShell** | `DesktopShell.tsx` | Escritorio virtual con 10 aplicaciones |
 | **OfficeScene** | `SimuladorLaboral.tsx` | Muebles 3D (escritorio, monitor, silla, estantería, lámpara) |
+| **DBTSim** | `DBTSim.tsx` | Clon de dbt (Data Build Tool): models SQL con `{{ ref() }}`/`{{ source() }}`, motor de compilación con JOIN/GROUP BY/ORDER BY, tests (not_null/unique/positive), `dbt build`, docs y lineage |
+| **CatalogSim** | `CatalogSim.tsx` | Data Catalog: búsqueda, filtros por dominio/certificados/míos/favoritos, metadata (owner, tags, freshness), calidad (completitud/validez), lineage reutilizando el DAG de DBTSim |
+| **NotebookSim** | `NotebookSim.tsx` | Jupyter Notebook: celdas code/markdown, kernel Python simulado (pandas: head/tail, describe, dtypes, shape, sort_values, groupby, filtros booleanos, agregaciones, f-strings), variables en memoria, ▶ Run All / ⭮ kernel, datos reales del pipeline dbt |
+| **AirflowSim** | `AirflowSim.tsx` | Orquestador tipo Airflow: DAG `lno_sales_pipeline` (ingesta → dbt run → tests → export Redshift) con grafo SVG, grid de ejecuciones diarias, trigger runs en vivo, vista de código Python del DAG |
+| **CloudSim** | `CloudSim.tsx` | Consola AWS simulada: Dashboard, S3 (buckets raw/staging/logs con objetos reales del pipeline), Redshift (tablas dbt con filas compiladas), IAM (usuarios/políticas), Billing (Cost Explorer mensual) |
+| **GitSim** | `GitSim.tsx` | Cliente Git con NPCs: repo `lno-dbt` (archivos reales de DBTSim), motor de reglas que analiza diffs (SELECT *, refs rotos, tests con columna inexistente, hardcode de datos) → review inline de Ing. Sandra Mora (rechaza/aprueba con línea exacta y mensaje), PRs del equipo para code review con consecuencias |
+| **BiSim** | `BiSim.tsx` | BI estilo Looker Studio sobre el warehouse real (compile dbt): KPIs, barras por cliente, donut por sector, serie diaria SVG, tabla top con filtro por sector, detalle por transacción |
+| **CapstoneSim** | `capstoneSim.tsx` | Proyecto integrador: 7 fases end-to-end (ingesta → transform → calidad → catálogo → orquestación → cloud → BI) con checkpoints, puntaje por intentos, README de arquitectura con datos reales del pipeline |
+| **ApiClientSim** | `ApiClientSim.tsx` | REST/API client estilo Postman: endpoints de ingesta reales (ventas, estado del DAG, ingesta POST), JSON viewer con syntax highlight, historial, códigos HTTP (200/201/404) |
+| **DataOpsSim** | `DataOpsSim.tsx` | Consola DataOps: semáforos de cómputo/costo en Redshift (slots por hora, costo/h, alertas, recomendación de size) + tab de SLAs de calidad consolidados (matriz 7 días 03-08-jul, tests dbt 5/5, incidente 05-jul coherente con AirflowSim) |
+| **PipelineSim** | `PipelineSim.tsx` | Palantir Foundry Transforms (editor Python/SQL, @transform, build, preview, lineage) |
+| **SQLSim** | `SQLSim.tsx` | Motor SQL real (SELECT/INSERT/UPDATE/DELETE/JOIN/GROUP BY/ORDER BY) |
+| **MonitorSim** | `MonitorSim.tsx` | Monitoreo de pipelines: 6 runs del DAG `lno_sales_pipeline` (03/07→08/07), 1 fallido (05/07, dbt_test), datos de `simSlash()` |
+| **WarehouseSim** | `WarehouseSim.tsx` | Visor de modelos dbt reales: 4 tablas (compileModelSql), capas staging/intermediate/marts, lineage, queries con filas golden |
 | **SpreadsheetSim** | `SpreadsheetSim.tsx` | Hoja de cálculo tipo Excel con 40+ fórmulas |
 | **AccountingSystem** | `AccountingSystem.tsx` | Sistema contable tipo Odoo (pólizas, catálogo, reportes) |
 | **AccountingForm** | `AccountingForm.tsx` | Formularios validados con auto-cálculo |
@@ -134,7 +149,7 @@
 | **Dashboard** | `Dashboard.tsx` | Dashboard ejecutivo con KPIs en tiempo real |
 | **ProgressDashboard** | `ProgressDashboard.tsx` | Seguimiento mensual de progreso |
 | **PaymentMatcher** | `PaymentMatcher.tsx` | Matching automático de pagos con facturas |
-| **EmailInbox** | `EmailInbox.tsx` | Bandeja de entrada con correos por tarea |
+| **EmailInbox** | `EmailInbox.tsx` | Bandeja de entrada con correos por tarea (remitentes/previews por especialidad: DE → Sandra Mora/DataFlow; prop `specialty`) |
 | **BankingPortal** | `BankingPortal.tsx` | Portal bancario con CSV |
 | **Calculator** | `Calculator.tsx` | Calculadora con expresiones |
 | **Onboarding** | `Onboarding.tsx` | Wizard de bienvenida |
@@ -239,6 +254,24 @@ GET  /api/health
 | 2 | Pago mal aplicado | Pago de cliente A en factura de B | Saldos incorrectos |
 | 3 | Conciliación no cuadra | Cheque sin cobrar no registrado | Diferencias bancarias |
 | 4 | Nómina con ISR mal calculado | ISR fijo 15% en vez de tabla | demandas laborales |
+
+**Mecanismo de trampas (implementado 12-ago-2026)**: `GET /api/workflows/:taskType?trap=<trapId>` inyecta el error en el email/documento y agrega un campo de detección al form/spreadsheet (ej. `ivaRate`, `applyToClient`, `row_Cheques sin cobrar`, `row_Método ISR aplicado`); la validación premia la detección con feedback explicativo. `GET /api/sim/trap-scenarios` lista los escenarios. **Coherencia GET→validate**: `workflowStore` en memoria (TTL 30 min) — el GET registra el workflow por `taskId` y el POST `/validate` lo recupera vía `workflowId` para que las pistas del formulario (`correct`) coincidan con las reglas (`expected`). `taskPlanner` marca `isTrap`+`trapId` en las tareas (7 plantillas: 4 contables + 3 DE) y `DesktopShell` propaga `?trap=` y envía `workflowId` al validar.
+
+**Trampas DE y validación por resultado real (12-ago-2026)**: 3 trampas DE (`sql_sin_group_by`, `pipeline_datos_perdidos`, `alerta_calidad_ignorada`) inyectan el error en el email y marcan la regla `de` correspondiente. La validación DE usa `backend/src/services/deValidation.ts` (`runDEValidator`) en vez de comparar strings exactos: analiza el código/query/decisión del estudiante (`sql`, `etl_clean`, `quality_decision`, `review`, `incident`) y devuelve feedback técnico de lead (ej. "SUM() sin GROUP BY agrega TODAS las filas", "dropna() pierde 200 registros"). Los workflows DE (`sql_query`, `etl_pipeline`, `data_quality`, `code_review`, `incident_recovery`) usan reglas `type: 'de'` con `validator`; `getDEWorkflow(type, trap?)` aplica la trampa.
+
+**Mundo simulado vivo (12-ago-2026)**: `backend/src/services/simWorld.ts` mantiene el estado global por usuario (`pipeline` del 05-jul, SLAs, registro de acciones) y lo **persiste en Supabase** (tabla `sim_world`, migración `supabase/migrations/20260812083736_persist_sim_world.sql`, RLS por usuario) con fallback a memoria si no hay credenciales o falla la conexión. **La migración está aplicada al proyecto activo `nhcgclqiihvioyqwqjlf` (finnova)**: conexión vía pooler `aws-1-us-east-1.pooler.supabase.com` (5432 session / 6543 transaccional), usuario `postgres.nhcgclqiihvioyqwqjlf`. Endpoints `GET /api/sim/world`, `POST /api/sim/world/action`, `POST /api/sim/world/reset`. El workflow DE `incident_recovery` (semana 4 DE) pide diagnosticar el fallo de `dbt_test`/`positive(total_ventas)`; aprobar en `/validate` llama `recoverIncident` → el pipeline pasa a verde y el SLA a cumplido (side effect observable). DesktopShell (modo DE) muestra un banner con el estado del pipeline que se refresca al completar tareas.
+
+**Integración tarea ↔ herramienta real (12-ago-2026)**: cada workflow DE incluye un paso `type: 'tool'` (entre email y spreadsheet) con `data.app` que mapea a la herramienta real embebida en DesktopShell: `sql→SQLSim`, `notebook→NotebookSim`, `git→GitSim`, `airflow→AirflowSim`, `catalog→CatalogSim`, `bi→BiSim`, `warehouse→WarehouseSim`, `pipeline→PipelineSim`. El paso tool es contexto de trabajo; la respuesta se entrega en el spreadsheet siguiente y se valida con los validadores DE (`runDEValidator`). La trampa no altera el paso tool.
+
+**Jornada guiada DE (12-ago-2026)**: DesktopShell (modo DE) muestra una agenda del día con bloques fijos del rol (09:00 Standup, 09:30 Monitoreo, 12:00 Almuerzo, 16:00 Aprendizaje, 17:30 Cierre) y las tareas del día intercaladas en franjas según su tipo (`DE_SLOTS`: incident→09:30, sql→10:00, etl→10:30, quality→11:00, ontology→13:00, review→13:30, airflow→14:00, soporte→14:30), marcando la hora actual.
+
+**Módulo de aprendizaje (12-ago-2026)**: `LearningSim.tsx` (app en DesktopShell DE, icono "📚 Aprendizaje" y bloque 16:00 de la agenda) — 6 lecciones (SQL, pandas, dbt, Airflow, AWS, Foundry) con intro, puntos clave y mini-quiz de 2 preguntas con explicación; progreso 0-6 persistido en `localStorage('learning_progress')`.
+
+**Staff — seguimiento de alumnos (12-ago-2026)**: `backend/src/routes/staff.ts` → `GET /api/staff/students` devuelve alumnos con progreso agregado y el estado de su mundo simulado (fuente Supabase en producción vía service role; demo en local). `staff/src/App.tsx` (`StaffDashboard`) muestra la tabla "Simulador — Progreso de alumnos" con especialidad, completadas, score, trampas y estado del pipeline.
+
+**Tests de motores DE (12-ago-2026)**: `tests/de-motors.test.ts` importa el motor dbt real del frontend (`compileModelSql`, `SOURCES`, `MODELS`, `topoOrder` de `alumnos/src/components/DBTSim.tsx`) y verifica la compilación staging→intermediate→marts, el total del mart (128350) y el orden topológico. Suite completa: root 79 tests / backend 70 tests.
+
+**Persistencia del progreso (12-ago-2026)**: `backend/src/services/progressTracker.ts` ahora es async y persiste las completaciones en Supabase (tabla `sim_progress`, migración `supabase/migrations/20260812092933_persist_sim_progress.sql`, PK user_id+specialty, RLS, **aplicada al proyecto activo**) con fallback a memoria. Endpoints `/api/sim/progress/*` usan `await`. `staff.ts` lee `sim_progress` para el resumen de alumnos.
 
 ### Ejercicios Excel Puros
 

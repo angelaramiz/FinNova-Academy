@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import TutorialOverlay, { useTutorial } from './Tutorial';
 import { themeColors, Theme } from '../lib/theme';
 import EmailInbox from './EmailInbox';
@@ -17,17 +17,30 @@ import PipelineSim from './PipelineSim'; // Palantir Foundry Transforms
 import SQLSim from './SQLSim';
 import WarehouseSim from './WarehouseSim';
 import MonitorSim from './MonitorSim';
+import DBTSim from './DBTSim';
+import CatalogSim from './CatalogSim';
+import NotebookSim from './NotebookSim';
+import AirflowSim from './AirflowSim';
+import CloudSim from './CloudSim';
+import GitSim from './GitSim';
+import BiSim from './BiSim';
+import CapstoneSim from './capstoneSim';
+import ApiClientSim from './ApiClientSim';
+import DataOpsSim from './DataOpsSim';
+import LearningSim from './LearningSim';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
+import { simHeaderNow } from '../lib/simTime';
 
-interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; }
+interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; isTrap?: boolean; trapId?: string; }
 async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
-  const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial();
+  const [specialty] = useState<'accounting' | 'data_engineering'>(() => (specialtyProp as 'accounting' | 'data_engineering') || 'accounting');
+  const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial(specialty);
   const { addToast } = useToast();
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
@@ -39,15 +52,28 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [validationResult, setValidationResult] = useState<any>(null);
   const [collapsed, setCollapsed] = useState(true);
   const [showMatcher, setShowMatcher] = useState(false);
+  const [world, setWorld] = useState<any>(null);
   const [matcherData, setMatcherData] = useState<{ clientName: string; amount: number } | null>(null);
   const [screenTransition, setScreenTransition] = useState(false);
   const prevScreen = useRef<Screen>('desktop');
-  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>('accounting');
+
+  async function loadWorld() {
+    try {
+      const data = await apiPost('/api/sim/world');
+      setWorld(data);
+    } catch { /* noop */ }
+  }
+
+  useEffect(() => {
+    if (specialty === 'data_engineering') loadWorld();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specialty]);
 
   async function startTask(task: TaskInfo, skipEmailStep = false) {
     setCurrentTask(task); setLoading(true);
     try {
-      const wf: any = await apiPost(`/api/workflows/${task.type}`);
+      const trapQuery = task.isTrap && task.trapId ? `?trap=${encodeURIComponent(task.trapId)}` : '';
+      const wf: any = await apiPost(`/api/workflows/${task.type}${trapQuery}`);
       setWorkflow(wf);
       const firstContentStep = wf.steps.findIndex((s: any) => s.type !== 'email');
       setStepIdx(skipEmailStep ? firstContentStep : 0);
@@ -60,7 +86,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   async function handleFormSubmit(answers: Record<string, any>) {
     if (!currentTask || !workflow) return; setLoading(true);
     try {
-      const result = await apiPost('/api/workflows/validate', { taskType: currentTask.type, answers });
+      const result = await apiPost('/api/workflows/validate', { taskType: currentTask.type, answers, trap: currentTask.isTrap ? currentTask.trapId : undefined, workflowId: workflow.taskId || workflow.id });
       setValidationResult(result);
       setStepIdx(workflow.steps.length - 1);
       await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
@@ -75,6 +101,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
         return;
       }
       if (onTaskComplete) onTaskComplete();
+      if (specialty === 'data_engineering') loadWorld();
     } catch (e: any) { console.error(e); addToast(e.message || 'Error al cargar datos', 'error'); }
     setLoading(false);
   }
@@ -122,6 +149,17 @@ const deApps = [
   { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
   { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
   { label: 'Foundry', icon: '🔀', action: () => setScreen('pipeline'), dataApp: 'pipelines' },
+  { label: 'dbt', icon: '🧱', action: () => setScreen('dbt'), dataApp: 'dbt' },
+  { label: 'Catalog', icon: '📚', action: () => setScreen('catalog'), dataApp: 'catalog' },
+  { label: 'Notebook', icon: '📓', action: () => setScreen('notebook'), dataApp: 'notebook' },
+  { label: 'Airflow', icon: '🛫', action: () => setScreen('airflow'), dataApp: 'airflow' },
+  { label: 'Cloud', icon: '☁️', action: () => setScreen('cloud'), dataApp: 'cloud' },
+  { label: 'Git', icon: '🌿', action: () => setScreen('git'), dataApp: 'git' },
+  { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
+  { label: 'Capstone', icon: '🎓', action: () => setScreen('capstone'), dataApp: 'capstone' },
+  { label: 'API Client', icon: '📡', action: () => setScreen('api'), dataApp: 'api' },
+  { label: 'DataOps', icon: '🧠', action: () => setScreen('dataops'), dataApp: 'dataops' },
+  { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
   { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse'), dataApp: 'warehouse' },
   { label: 'Monitor', icon: '📊', action: () => setScreen('monitor'), dataApp: 'monitor' },
@@ -152,19 +190,8 @@ const deApps = [
           {!collapsed && <span className="text-[12px] font-bold font-mono" style={{ color: colors.text }}>Escritorio de Trabajo</span>}
         </div>
         <div className="flex items-center gap-2.5 text-[13px] font-mono" style={{ color: colors.textMuted }}>
-          {!collapsed && <span>{new Date().toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
-          <div className="flex items-center gap-1 mr-2">
-            <button onClick={() => { setSpecialty('accounting'); onSpecialtyChange?.('accounting'); }} 
-              className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
-              style={{ background: specialty === 'accounting' ? colors.primary : 'transparent', color: specialty === 'accounting' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'accounting' ? colors.primary : colors.border}` }}>
-              📊 Contabilidad
-            </button>
-            <button onClick={() => { setSpecialty('data_engineering'); onSpecialtyChange?.('data_engineering'); }}
-              className="text-[9px] px-2 py-1 rounded cursor-pointer font-bold transition"
-              style={{ background: specialty === 'data_engineering' ? colors.primary : 'transparent', color: specialty === 'data_engineering' ? '#1B2632' : colors.textMuted, border: `1px solid ${specialty === 'data_engineering' ? colors.primary : colors.border}` }}>
-              🔀 Data Engineering
-            </button>
-          </div>
+          {!collapsed && <span>{simHeaderNow()}</span>}
+
           <button onClick={onClose} className="w-4 h-4 rounded flex items-center justify-center text-[11px] cursor-pointer hover:opacity-70" style={{ background: '#ef4444', color: '#fff' }}>✕</button>
         </div>
       </div>
@@ -172,6 +199,14 @@ const deApps = [
       {specialty === 'data_engineering' && (
         <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
           🔀 Modo: Ingeniero de Datos Jr — Palantir Foundry
+        </div>
+      )}
+      {specialty === 'data_engineering' && world && (
+        <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: world.pipeline?.status === 'failed' ? '#ef444410' : '#22c55e10', color: world.pipeline?.status === 'failed' ? '#ef4444' : '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
+          <span>🛫 lno_sales_pipeline · 05-jul:</span>
+          <span>{world.pipeline?.status === 'failed' ? '🔴 en falla (dbt_test)' : '🟢 recuperado'}</span>
+          <span>·</span>
+          <span>SLA mart: {world.slas?.mrtSla === 'breached' ? '🔴 incumplido' : '🟢 cumplido'}</span>
         </div>
       )}
 
@@ -187,6 +222,7 @@ const deApps = [
                 </div>
               ))}
             </div>
+            {specialty === 'data_engineering' && <AgendaDelDia tasks={tasks} onOpen={startTask} onOpenLearning={() => setScreen('learning')} theme={theme} />}
             <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: colors.border }}>
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
@@ -222,7 +258,7 @@ const deApps = [
           </div>
         )}
         {screen === 'banking' && <div className="animate-slide-in h-full"><BankingPortal theme={theme} onClose={() => setScreen('desktop')} /></div>}
-        {screen === 'emailInbox' && <div className="animate-slide-in h-full"><EmailInbox theme={theme} tasks={tasks} onSelectTask={openTaskFromEmail} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'emailInbox' && <div className="animate-slide-in h-full"><EmailInbox theme={theme} tasks={tasks} onSelectTask={openTaskFromEmail} onBack={() => setScreen('desktop')} specialty={specialty} /></div>}
         {screen === 'calendar' && <div className="animate-slide-in h-full"><CalendarWidget theme={theme} tasks={tasks} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'calculadora' && <div className="animate-slide-in h-full"><Calculator theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'spreadsheet' && <div className="animate-slide-in h-full"><SpreadsheetSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
@@ -230,6 +266,17 @@ const deApps = [
         {screen === 'dashboard' && <div className="animate-slide-in h-full"><Dashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'progress' && <div className="animate-slide-in h-full"><ProgressDashboard theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'pipeline' && <div className="animate-slide-in h-full"><PipelineSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'dbt' && <div className="animate-slide-in h-full"><DBTSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'catalog' && <div className="animate-slide-in h-full"><CatalogSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'notebook' && <div className="animate-slide-in h-full"><NotebookSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'airflow' && <div className="animate-slide-in h-full"><AirflowSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'cloud' && <div className="animate-slide-in h-full"><CloudSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'git' && <div className="animate-slide-in h-full"><GitSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'bi' && <div className="animate-slide-in h-full"><BiSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'capstone' && <div className="animate-slide-in h-full"><CapstoneSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'api' && <div className="animate-slide-in h-full"><ApiClientSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'dataops' && <div className="animate-slide-in h-full"><DataOpsSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'learning' && <div className="animate-slide-in h-full"><LearningSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
@@ -258,6 +305,11 @@ const deApps = [
         {screen === 'workflow' && (
           <div className="h-full overflow-auto animate-slide-in">
             {workflow && (<>
+              {workflow.isTrap && (
+                <div className="px-4 py-2 border-b-2 text-[12px] font-bold font-mono animate-slide-in" style={{ borderColor: '#f59e0b', background: '#f59e0b20', color: '#f59e0b' }}>
+                  ⚠ Tarea con posible error: {workflow.trapDescription || 'revisa el documento con atención'}
+                </div>
+              )}
               <div className="px-4 py-2 border-b-2 flex items-center gap-2 shrink-0 sticky top-0 z-10 backdrop-blur-md" style={{ borderColor: colors.border, background: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)' }}>
                 <button onClick={closeWorkflow} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
@@ -273,6 +325,21 @@ const deApps = [
                 <span className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{stepIdx + 1}/{workflow.steps.length}</span>
               </div>
               {workflow.steps[stepIdx].type === 'email' && <EmailClient email={workflow.steps[stepIdx].data} onContinue={() => setStepIdx(stepIdx + 1)} theme={theme} />}
+              {workflow.steps[stepIdx].type === 'tool' && (
+                <div className="h-full flex flex-col animate-slide-in">
+                  <div className="px-4 py-2 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                    <span className="text-[11px] font-bold font-mono" style={{ color: colors.text }}>🔧 {workflow.steps[stepIdx].title}</span>
+                    <span className="text-[9px] font-mono ml-auto" style={{ color: colors.textMuted }}>herramienta real · contexto de la tarea</span>
+                  </div>
+                  <div className="flex-1 overflow-hidden" style={{ background: colors.bg }}>
+                    {renderTool(workflow.steps[stepIdx].data?.app, theme)}
+                  </div>
+                  <div className="px-4 py-3 border-t-2 shrink-0 flex items-center justify-between gap-3" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                    <span className="text-[9px] leading-tight" style={{ color: colors.textMuted }}>💡 {workflow.steps[stepIdx].description || 'Usa esta herramienta para resolver la tarea.'}</span>
+                    <button onClick={() => setStepIdx(stepIdx + 1)} className="px-5 py-2 rounded-xl border-2 text-[10px] font-bold cursor-pointer hover:opacity-85 transition shrink-0" style={{ borderColor: colors.primary, background: colors.primary, color: '#1B2632', boxShadow: `2px 2px 0px 0px ${colors.border}` }}>✅ He terminado — ir a la respuesta</button>
+                  </div>
+                </div>
+              )}
               {workflow.steps[stepIdx].type === 'form' && <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />}
               {workflow.steps[stepIdx].type === 'spreadsheet' && <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
@@ -288,6 +355,93 @@ const deApps = [
             </>)}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function renderTool(app: string, theme: Theme) {
+  const noop = () => {};
+  switch (app) {
+    case 'sql': return <SQLSim theme={theme} onBack={noop} />;
+    case 'notebook': return <NotebookSim theme={theme} onBack={noop} />;
+    case 'git': return <GitSim theme={theme} onBack={noop} />;
+    case 'airflow': return <AirflowSim theme={theme} onBack={noop} />;
+    case 'catalog': return <CatalogSim theme={theme} onBack={noop} />;
+    case 'bi': return <BiSim theme={theme} onBack={noop} />;
+    case 'warehouse': return <WarehouseSim theme={theme} onBack={noop} />;
+    case 'pipeline': return <PipelineSim theme={theme} onBack={noop} />;
+    default: return <div className="p-6 text-xs font-mono" style={{ color: '#64748b' }}>Herramienta no disponible: {app}</div>;
+  }
+}
+
+// ─── Jornada guiada (Ingeniero de Datos) ───────────────────────
+// Franjas del rol según el flujo diario del puesto.
+
+const DE_SLOTS: Record<string, string> = {
+  incident_recovery: '09:30',   // monitoreo matutino: detectar el incidente
+  sql_query: '10:00',           // desarrollo de transforms
+  etl_pipeline: '10:30',
+  data_quality: '11:00',
+  ontology_modeling: '13:00',   // modelado / documentación
+  code_review: '13:30',         // code reviews
+  airflow_dag: '14:00',         // orquestación
+  soporte_datos: '14:30',       // soporte a analistas
+};
+
+interface AgendaBlock {
+  h: string;
+  label: string;
+  task?: TaskInfo;
+  action?: 'learning';
+}
+
+function buildAgendaDE(tasks: TaskInfo[]): AgendaBlock[] {
+  const taskBlocks: AgendaBlock[] = tasks.map(t => ({ h: DE_SLOTS[t.type] || '10:00', label: t.title, task: t }))
+    .sort((a, b) => a.h.localeCompare(b.h));
+  const between = (from: string, to: string) => taskBlocks.filter(b => b.h >= from && b.h < to);
+  return [
+    { h: '09:00', label: '☕ Standup diario con el equipo' },
+    { h: '09:30', label: '🔎 Revisar ejecuciones de pipelines y alertas' },
+    ...between('09:30', '12:00'),
+    { h: '12:00', label: '🍽️ Almuerzo' },
+    ...between('12:00', '16:00'),
+    { h: '16:00', label: '📚 Aprendizaje (Foundry Academy / cloud)', action: 'learning' },
+    { h: '17:30', label: '✅ Revisión final y cierre de tareas' },
+  ];
+}
+
+function AgendaDelDia({ tasks, onOpen, onOpenLearning, theme }: { tasks: TaskInfo[]; onOpen: (t: TaskInfo, skip?: boolean) => void; onOpenLearning: () => void; theme: Theme }) {
+  const colors = themeColors[theme];
+  const isDark = theme === 'dark';
+  const blocks = buildAgendaDE(tasks);
+  const now = new Date();
+  const nowHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const activeIdx = blocks.findIndex((b, i) => b.h <= nowHM && (i + 1 >= blocks.length || blocks[i + 1].h > nowHM));
+  const inRange = nowHM >= '09:00' && nowHM <= '18:00';
+
+  return (
+    <div className="rounded-xl border-2 overflow-hidden mb-4" style={{ borderColor: colors.border }}>
+      <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>
+        📅 Agenda del día
+        <span className="text-[9px] font-mono ml-auto" style={{ color: colors.textMuted }}>ingeniero de datos jr</span>
+      </div>
+      <div className="px-4 py-2 space-y-0.5 max-h-64 overflow-auto">
+        {blocks.map((b, i) => {
+          const isActive = inRange && i === activeIdx;
+          const isDone = inRange && i < activeIdx;
+          const clickable = b.task || b.action;
+          return (
+            <div key={i} className={`flex items-center gap-3 px-2 py-1 rounded-lg ${clickable ? 'cursor-pointer hover:opacity-80' : ''}`}
+              style={{ background: isActive ? colors.primary + '15' : 'transparent', borderLeft: `3px solid ${isActive ? colors.primary : 'transparent'}` }}
+              onClick={clickable ? () => (b.task ? onOpen(b.task!, true) : onOpenLearning()) : undefined}>
+              <span className="text-[10px] font-mono font-bold w-9 shrink-0" style={{ color: isActive ? colors.primary : colors.textMuted }}>{b.h}</span>
+              <span className={`text-[11px] font-mono truncate ${isDone ? 'line-through opacity-50' : ''}`} style={{ color: b.task ? colors.text : colors.textMuted }}>{b.label}</span>
+              {b.task && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold ml-auto shrink-0" style={{ background: colors.primary + '20', color: colors.primary }}>{b.task.time}min</span>}
+              {b.action && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold ml-auto shrink-0" style={{ background: '#8b5cf620', color: '#8b5cf6' }}>abrir</span>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

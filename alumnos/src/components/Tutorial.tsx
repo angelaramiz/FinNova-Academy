@@ -13,7 +13,7 @@ interface TutorialProps {
   onSkip: () => void;
 }
 
-const TUTORIAL_STEPS = [
+const TUTORIAL_STEPS_ACCOUNTING = [
   {
     title: '¡Bienvenido al Simulador!',
     description: 'Esta es tu oficina virtual. Aquí trabajarás como Contador Junior en Logística del Norte S.A. de C.V.',
@@ -52,9 +52,50 @@ const TUTORIAL_STEPS = [
   },
 ];
 
-export function useTutorial() {
+const TUTORIAL_STEPS_DE = [
+  {
+    title: '¡Bienvenido al Simulador!',
+    description: 'Esta es tu oficina virtual. Aquí trabajarás como Ingeniero de Datos Jr en DataFlow Analytics S.A.',
+    highlight: '',
+    position: 'center' as const,
+  },
+  {
+    title: 'Tu escritorio de trabajo',
+    description: 'Haz clic en la pantalla del monitor para abrir tu escritorio virtual con todas las herramientas de Data Engineering.',
+    highlight: '.monitor-glow',
+    position: 'bottom' as const,
+  },
+  {
+    title: 'Bandeja de entrada',
+    description: 'Revisa tus correos aquí. Ing. Sandra Mora te enviará instrucciones y tickets de trabajo.',
+    highlight: '[data-app="correo"]',
+    position: 'bottom' as const,
+  },
+  {
+    title: 'Tareas del día',
+    description: 'Estas son las tareas que debes completar hoy. Haz clic en una para comenzar.',
+    highlight: '[data-task]',
+    position: 'right' as const,
+  },
+  {
+    title: 'Pipeline de datos',
+    description: 'Aquí encontrarás dbt, Airflow, el Data Catalog y todas las herramientas del stack de datos.',
+    highlight: '[data-app="dbt"]',
+    position: 'bottom' as const,
+  },
+  {
+    title: '¡Listo para trabajar!',
+    description: 'Completa las tareas para ganar puntos y mejorar tu ranking. ¡Buena suerte!',
+    highlight: '',
+    position: 'center' as const,
+  },
+];
+
+export function useTutorial(specialty: 'accounting' | 'data_engineering' = 'accounting') {
   const [tutorialStep, setTutorialStep] = useState(-1);
   const [tutorialActive, setTutorialActive] = useState(false);
+
+  const TUTORIAL_STEPS = specialty === 'data_engineering' ? TUTORIAL_STEPS_DE : TUTORIAL_STEPS_ACCOUNTING;
 
   useEffect(() => {
     const hasSeenTutorial = localStorage.getItem('tutorial_completed');

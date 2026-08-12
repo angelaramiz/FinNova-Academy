@@ -5,6 +5,7 @@ interface EmailInboxProps {
   tasks: { id: string; title: string; type: string; difficulty: number; time: number }[];
   onSelectTask: (taskId: string) => void;
   onBack: () => void;
+  specialty?: 'accounting' | 'data_engineering';
 }
 
 function generatePreview(type: string): string {
@@ -19,15 +20,24 @@ function generatePreview(type: string): string {
     payment_scheduling: 'A continuación las facturas de proveedores que vencen esta semana.',
     ap_reconciliation: 'Necesito conciliar las cuentas por pagar del mes.',
     cfdi_reception: 'Se ha recibido un Comprobante Fiscal Digital versión 4.0.',
+    sql_query: 'Necesito el resultado de esta consulta antes del mediodía, por favor.',
+    etl_pipeline: 'El pipeline de la noche se completó, valida los volúmenes antes de publicar.',
+    data_quality: 'Revisa las alertas de calidad del dataset; hay registros sospechosos.',
+    ontology_modeling: 'Revisa el modelado del objeto de ventas para la próxima iteración.',
+    code_review: 'Te asigné una revisión de código, confirma los cambios del equipo.',
+    soporte_datos: 'Un analista pide este dataset, ¿puedes generarlo hoy?',
+    airflow_dag: 'El DAG requiere actualización de schedule, revisa la propuesta.',
   };
   return previews[type] || `Tarea: ${type.replace(/_/g, ' ')}`;
 }
 
-export default function EmailInbox({ theme, tasks, onSelectTask, onBack }: EmailInboxProps) {
+export default function EmailInbox({ theme, tasks, onSelectTask, onBack, specialty = 'accounting' }: EmailInboxProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
 
-  const senders = ['Lic. Gómez', 'María López — RRHH', 'Tesorería', 'Sistema SAT'];
+  const senders = specialty === 'data_engineering'
+    ? ['Ing. Sandra Mora', 'Sistema de Monitoreo', 'DataFlow Analytics', 'Sistema de Calidad']
+    : ['Lic. Gómez', 'María López — RRHH', 'Tesorería', 'Sistema SAT'];
 
   return (
     <div className="flex flex-col flex-1" style={{ background: theme === 'dark' ? '#1B2632' : '#E2DCD0' }}>

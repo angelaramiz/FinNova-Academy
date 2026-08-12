@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import { simSlash } from '../lib/simTime';
 
 interface MonitorSimProps {
   theme: Theme;
@@ -10,19 +11,20 @@ interface PipelineRun {
   id: string;
   name: string;
   status: 'success' | 'running' | 'failed' | 'queued';
+  runDate: string;
   startTime: string;
   duration: string;
   tasks: number;
   progress: number;
 }
 
-const MOCK_RUNS: PipelineRun[] = [
-  { id: 'run-001', name: 'ventas_diarias', status: 'success', startTime: '06:00', duration: '12m 34s', tasks: 5, progress: 100 },
-  { id: 'run-002', name: 'inventario_sync', status: 'running', startTime: '06:15', duration: '8m 12s', tasks: 4, progress: 65 },
-  { id: 'run-003', name: 'nómina_quincenal', status: 'failed', startTime: '06:30', duration: '5m 02s', tasks: 6, progress: 40 },
-  { id: 'run-004', name: 'reportes_mensuales', status: 'queued', startTime: '—', duration: '—', tasks: 8, progress: 0 },
-  { id: 'run-005', name: 'limpieza_datos', status: 'success', startTime: '05:45', duration: '15m 20s', tasks: 3, progress: 100 },
-  { id: 'run-006', name: 'carga_warehouse', status: 'success', startTime: '05:30', duration: '22m 45s', tasks: 7, progress: 100 },
+const LNO_RUNS: PipelineRun[] = [
+  { id: 'scheduled__6', name: 'lno_sales_pipeline', status: 'success', runDate: simSlash(0), startTime: '08:00', duration: '4m 48s', tasks: 7, progress: 100 },
+  { id: 'scheduled__5', name: 'lno_sales_pipeline', status: 'success', runDate: simSlash(1), startTime: '08:00', duration: '4m 55s', tasks: 7, progress: 100 },
+  { id: 'scheduled__4', name: 'lno_sales_pipeline', status: 'success', runDate: simSlash(2), startTime: '08:00', duration: '5m 02s', tasks: 7, progress: 100 },
+  { id: 'scheduled__3', name: 'lno_sales_pipeline', status: 'failed', runDate: simSlash(3), startTime: '08:00', duration: '4m 12s', tasks: 7, progress: 57 },
+  { id: 'scheduled__2', name: 'lno_sales_pipeline', status: 'success', runDate: simSlash(4), startTime: '08:00', duration: '6m 10s', tasks: 7, progress: 100 },
+  { id: 'scheduled__1', name: 'lno_sales_pipeline', status: 'success', runDate: simSlash(5), startTime: '08:00', duration: '4m 38s', tasks: 7, progress: 100 },
 ];
 
 const STATUS_CONFIG: Record<string, { color: string; icon: string; label: string }> = {
@@ -35,22 +37,8 @@ const STATUS_CONFIG: Record<string, { color: string; icon: string; label: string
 export default function MonitorSim({ theme, onBack }: MonitorSimProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const [runs, setRuns] = useState<PipelineRun[]>(MOCK_RUNS);
+  const [runs] = useState<PipelineRun[]>(LNO_RUNS);
   const [selectedRun, setSelectedRun] = useState<PipelineRun | null>(null);
-
-  // Simulate running pipeline progress
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRuns(prev => prev.map(run => {
-        if (run.status === 'running' && run.progress < 100) {
-          const newProgress = Math.min(100, run.progress + Math.random() * 10);
-          return { ...run, progress: newProgress, status: newProgress >= 100 ? 'success' : 'running' };
-        }
-        return run;
-      }));
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   const stats = {
     total: runs.length,
@@ -66,7 +54,7 @@ export default function MonitorSim({ theme, onBack }: MonitorSimProps) {
         <button onClick={onBack} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
         <span className="text-base">📊</span>
         <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Monitor de Pipelines</span>
-        <span className="text-[10px] font-mono ml-auto" style={{ color: colors.textMuted }}>Airflow Dashboard</span>
+        <span className="text-[10px] font-mono ml-auto" style={{ color: colors.textMuted }}>Airflow · DAG lno_sales_pipeline</span>
       </div>
 
       <div className="flex-1 overflow-auto p-5 space-y-4">
@@ -108,7 +96,10 @@ export default function MonitorSim({ theme, onBack }: MonitorSimProps) {
                 <tr key={run.id} onClick={() => setSelectedRun(run)}
                   className="cursor-pointer hover:opacity-80 transition border-b"
                   style={{ borderColor: colors.border + '30', background: selectedRun?.id === run.id ? colors.primary + '10' : 'transparent' }}>
-                  <td className="px-4 py-2.5 font-bold" style={{ color: colors.text }}>{run.name}</td>
+                  <td className="px-4 py-2.5 font-bold" style={{ color: colors.text }}>
+                    <div>{run.name}</div>
+                    <div className="text-[8px] font-mono font-normal" style={{ color: colors.textMuted }}>{run.id} · {run.runDate}</div>
+                  </td>
                   <td className="px-4 py-2.5">
                     <span className="px-2 py-0.5 rounded text-[9px] font-bold" style={{ background: STATUS_CONFIG[run.status].color + '20', color: STATUS_CONFIG[run.status].color }}>
                       {STATUS_CONFIG[run.status].icon} {STATUS_CONFIG[run.status].label}
@@ -148,9 +139,14 @@ export default function MonitorSim({ theme, onBack }: MonitorSimProps) {
               </div>
               <div>
                 <span className="block mb-1" style={{ color: colors.textMuted }}>Última ejecución</span>
-                <span className="font-bold" style={{ color: colors.text }}>{selectedRun.startTime}</span>
+                <span className="font-bold" style={{ color: colors.text }}>{selectedRun.runDate} · {selectedRun.startTime}</span>
               </div>
             </div>
+            {selectedRun.status === 'failed' && (
+              <div className="mt-2 text-[9px] rounded-md px-2 py-1.5 font-mono" style={{ background: '#ef444410', color: '#ef4444' }}>
+                ⚠ Tarea fallida: dbt_test · logs en s3://lno-logs-airflow ({selectedRun.runDate})
+              </div>
+            )}
           </div>
         )}
       </div>

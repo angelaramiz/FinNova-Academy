@@ -3,9 +3,11 @@ import { themeColors, Theme } from '../lib/theme';
 
 interface SpreadsheetRow {
   label: string;
-  value: number | null;
-  editable: boolean;
-  correct?: number;
+  value?: number | string | null;
+  cell_B?: number | string;
+  cell_C?: number;
+  editable?: boolean;
+  correct?: number | string;
   formula?: string;
 }
 
@@ -17,8 +19,19 @@ interface SpreadsheetProps {
   loading?: boolean;
 }
 
-export default function SpreadsheetWidget({ rows, onSubmit, theme, title, loading }: SpreadsheetProps) {
+function isTextValue(v: number | string | null | undefined): boolean {
+  return typeof v === 'string' && isNaN(Number(v));
+}
+
+export default function SpreadsheetWidget({ rows: rawRows, onSubmit, theme, title, loading }: SpreadsheetProps) {
   const colors = themeColors[theme];
+  // Normaliza las filas del backend ({ label, cell_B, formula }) al formato del widget
+  const rows = rawRows.map(r => ({
+    label: r.label,
+    value: r.cell_B !== undefined ? r.cell_B : (r.value ?? null),
+    editable: r.editable ?? !r.formula,
+    formula: r.formula,
+  }));
   const [values, setValues] = useState<Record<string, string>>({});
 
   function handleChange(label: string, val: string) {
@@ -28,7 +41,8 @@ export default function SpreadsheetWidget({ rows, onSubmit, theme, title, loadin
   function handleSubmit() {
     const answers: Record<string, any> = {};
     rows.filter(r => r.editable).forEach(r => {
-      answers[`row_${r.label}`] = Number(values[r.label]) || 0;
+      const raw = values[r.label] ?? '';
+      answers[`row_${r.label}`] = isTextValue(r.value) ? raw : (Number(raw) || 0);
     });
     onSubmit(answers);
   }
@@ -65,18 +79,30 @@ export default function SpreadsheetWidget({ rows, onSubmit, theme, title, loadin
                   </td>
                   <td className="px-4 py-2.5" style={{ borderBottom: `1px solid ${colors.border}40` }}>
                     {row.editable ? (
-                      <input type="number" step="any" value={values[row.label] ?? ''} onChange={e => handleChange(row.label, e.target.value)}
-                        className="w-full px-2 py-1 rounded-lg border text-[10px] font-mono outline-none text-right"
-                        style={{
-                          borderColor: colors.border,
-                          background: isDark ? 'rgba(0,0,0,0.3)' : '#fff',
-                          color: colors.text,
-                        }}
-                        placeholder="___"
-                      />
+                      isTextValue(row.value) ? (
+                        <input type="text" value={values[row.label] ?? ''} onChange={e => handleChange(row.label, e.target.value)}
+                          className="w-full px-2 py-1 rounded-lg border text-[10px] font-mono outline-none"
+                          style={{
+                            borderColor: colors.border,
+                            background: isDark ? 'rgba(0,0,0,0.3)' : '#fff',
+                            color: colors.text,
+                          }}
+                          placeholder="___"
+                        />
+                      ) : (
+                        <input type="number" step="any" value={values[row.label] ?? ''} onChange={e => handleChange(row.label, e.target.value)}
+                          className="w-full px-2 py-1 rounded-lg border text-[10px] font-mono outline-none text-right"
+                          style={{
+                            borderColor: colors.border,
+                            background: isDark ? 'rgba(0,0,0,0.3)' : '#fff',
+                            color: colors.text,
+                          }}
+                          placeholder="___"
+                        />
+                      )
                     ) : (
                       <div className="text-[10px] font-mono font-bold text-right" style={{ color: colors.primary }}>
-                        {row.value !== null ? `$${row.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                        {typeof row.value === 'number' ? `$${row.value.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : (row.value !== null && row.value !== undefined ? String(row.value) : '—')}
                       </div>
                     )}
                   </td>

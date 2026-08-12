@@ -1,90 +1,72 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import { SOURCES, MODELS, compileModelSql } from './DBTSim';
 
 interface WarehouseSimProps {
   theme: Theme;
   onBack: () => void;
 }
 
-const SCHEMA: Record<string, { type: string; columns: { name: string; type: string; pk?: boolean; fk?: string }[] }> = {
-  dim_cliente: {
-    type: 'dimensión',
-    columns: [
-      { name: 'cliente_key', type: 'INT', pk: true },
-      { name: 'cliente_id', type: 'VARCHAR(50)' },
-      { name: 'nombre', type: 'VARCHAR(100)' },
-      { name: 'rfc', type: 'VARCHAR(13)' },
-      { name: 'ciudad', type: 'VARCHAR(50)' },
-      { name: 'sector', type: 'VARCHAR(50)' },
-      { name: 'fecha_registro', type: 'DATE' },
-    ],
-  },
-  dim_producto: {
-    type: 'dimensión',
-    columns: [
-      { name: 'producto_key', type: 'INT', pk: true },
-      { name: 'producto_id', type: 'VARCHAR(50)' },
-      { name: 'nombre', type: 'VARCHAR(100)' },
-      { name: 'categoria', type: 'VARCHAR(50)' },
-      { name: 'precio_unitario', type: 'DECIMAL(10,2)' },
-      { name: 'proveedor', type: 'VARCHAR(100)' },
-    ],
-  },
-  dim_fecha: {
-    type: 'dimensión',
-    columns: [
-      { name: 'fecha_key', type: 'INT', pk: true },
-      { name: 'fecha', type: 'DATE' },
-      { name: 'anio', type: 'INT' },
-      { name: 'mes', type: 'INT' },
-      { name: 'dia', type: 'INT' },
-      { name: 'trimestre', type: 'INT' },
-      { name: 'dia_semana', type: 'VARCHAR(10)' },
-    ],
-  },
-  fact_ventas: {
-    type: 'hecho',
-    columns: [
-      { name: 'venta_key', type: 'INT', pk: true },
-      { name: 'cliente_key', type: 'INT', fk: 'dim_cliente' },
-      { name: 'producto_key', type: 'INT', fk: 'dim_producto' },
-      { name: 'fecha_key', type: 'INT', fk: 'dim_fecha' },
-      { name: 'cantidad', type: 'INT' },
-      { name: 'precio_unitario', type: 'DECIMAL(10,2)' },
-      { name: 'subtotal', type: 'DECIMAL(10,2)' },
-      { name: 'iva', type: 'DECIMAL(10,2)' },
-      { name: 'total', type: 'DECIMAL(10,2)' },
-    ],
-  },
-  fact_inventario: {
-    type: 'hecho',
-    columns: [
-      { name: 'inventario_key', type: 'INT', pk: true },
-      { name: 'producto_key', type: 'INT', fk: 'dim_producto' },
-      { name: 'fecha_key', type: 'INT', fk: 'dim_fecha' },
-      { name: 'stock_inicial', type: 'INT' },
-      { name: 'stock_final', type: 'INT' },
-      { name: 'unidades_vendidas', type: 'INT' },
-      { name: 'rotacion', type: 'DECIMAL(10,2)' },
-    ],
-  },
+interface WhTable {
+  type: string;
+  columns: { name: string; type: string }[];
+  rows: Record<string, any>[];
+}
+
+const WH_ORDER = ['stg_ventas', 'stg_clientes', 'int_ventas_cliente', 'mrt_ventas_por_cliente'];
+
+const layerOf = (p: string): string => (p.includes('staging') ? 'staging' : p.includes('intermediate') ? 'intermediate' : 'marts');
+
+const colType = (rows: Record<string, any>[], col: string): string => {
+  const v = rows[0]?.[col];
+  if (v === undefined) return '?';
+  if (typeof v === 'number') return Number.isInteger(v) ? 'INT' : 'NUM';
+  if (/^\d{4}-\d{2}-\d{2}/.test(String(v))) return 'DATE';
+  return 'STR';
 };
 
+function buildSchema(): Record<string, WhTable> {
+  const out: Record<string, WhTable> = {};
+  const tables: Record<string, { schema: string[]; rows: Record<string, any>[] }> = {};
+  for (const name of WH_ORDER) {
+    const model = MODELS.find(m => m.name === name);
+    if (!model) continue;
+    const compiled = compileModelSql(model.sql, { ...SOURCES, ...tables });
+    tables[name] = compiled;
+    out[name] = {
+      type: layerOf(model.path),
+      columns: compiled.schema.map(c => ({ name: c, type: colType(compiled.rows, c) })),
+      rows: compiled.rows,
+    };
+  }
+  return out;
+}
+
 const QUERIES = [
-  { name: 'Ventas por cliente', sql: 'SELECT c.nombre, SUM(f.total) as total_ventas\nFROM fact_ventas f\nJOIN dim_cliente c ON f.cliente_key = c.cliente_key\nGROUP BY c.nombre\nORDER BY total_ventas DESC' },
-  { name: 'Top productos', sql: 'SELECT p.nombre, SUM(f.cantidad) as unidades\nFROM fact_ventas f\nJOIN dim_producto p ON f.producto_key = p.producto_key\nGROUP BY p.nombre\nORDER BY unidades DESC\nLIMIT 5' },
-  { name: 'Ventas por trimestre', sql: 'SELECT d.trimestre, SUM(f.total) as total\nFROM fact_ventas f\nJOIN dim_fecha d ON f.fecha_key = d.fecha_key\nGROUP BY d.trimestre\nORDER BY d.trimestre' },
+  { name: 'Top clientes por ventas (mart)', model: 'mrt_ventas_por_cliente', sql: 'SELECT cliente, total_ventas FROM mrt_ventas_por_cliente\nORDER BY total_ventas DESC' },
+  { name: 'Ventas con sector (intermediate)', model: 'int_ventas_cliente', sql: 'SELECT fecha, cliente, sector, total FROM int_ventas_cliente\nORDER BY fecha' },
+  { name: 'Últimas ventas registradas (staging)', model: 'stg_ventas', sql: 'SELECT fecha, cliente, total FROM stg_ventas\nORDER BY fecha DESC' },
+];
+
+interface QueryResult {
+  name: string;
+  sql: string;
+  schema: string[];
+  rows: Record<string, any>[];
+}
+
+const LAYERS: Array<{ key: string; label: string; color: string }> = [
+  { key: 'staging', label: 'Staging · raw (1:1 con fuentes)', color: '#22c55e' },
+  { key: 'intermediate', label: 'Intermediate · joins y lógica de negocio', color: '#3b82f6' },
+  { key: 'marts', label: 'Marts · agregaciones para BI', color: '#f59e0b' },
 ];
 
 export default function WarehouseSim({ theme, onBack }: WarehouseSimProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [queryResult, setQueryResult] = useState<any>(null);
-
-  const tableEntries = Object.entries(SCHEMA);
-  const dimTables = tableEntries.filter(([_, t]) => t.type === 'dimensión');
-  const factTables = tableEntries.filter(([_, t]) => t.type === 'hecho');
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const schema = useMemo(buildSchema, []);
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -93,108 +75,76 @@ export default function WarehouseSim({ theme, onBack }: WarehouseSimProps) {
         <button onClick={onBack} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
         <span className="text-base">🏗️</span>
         <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Data Warehouse</span>
-        <span className="text-[10px] font-mono ml-auto" style={{ color: colors.textMuted }}>Esquema dimensional</span>
+        <span className="text-[10px] font-mono ml-auto" style={{ color: colors.textMuted }}>dbt lno_dbt · compile real</span>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Schema visualization */}
         <div className="flex-1 overflow-auto p-6">
-          {/* Dimension tables */}
-          <div className="mb-6">
-            <div className="text-[11px] font-bold mb-3 flex items-center gap-2" style={{ color: colors.text }}>
-              <span className="w-3 h-3 rounded" style={{ background: '#3b82f6' }} />
-              Dimensiones
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              {dimTables.map(([name, table]) => (
-                <div key={name} onClick={() => setSelectedTable(name)}
-                  className="rounded-xl border-2 p-3 cursor-pointer transition-all hover:scale-[1.02]"
-                  style={{ borderColor: selectedTable === name ? '#3b82f6' : colors.border, background: colors.cardBg }}>
-                  <div className="text-[11px] font-bold font-mono mb-2" style={{ color: '#3b82f6' }}>{name}</div>
-                  <div className="space-y-1">
-                    {table.columns.map(col => (
-                      <div key={col.name} className="flex items-center gap-2 text-[9px] font-mono">
-                        <span style={{ color: col.pk ? '#f59e0b' : col.fk ? '#8b5cf6' : colors.textMuted }}>
-                          {col.pk ? '🔑' : col.fk ? '🔗' : '•'}
-                        </span>
-                        <span style={{ color: colors.text }}>{col.name}</span>
-                        <span className="ml-auto" style={{ color: colors.textMuted }}>{col.type}</span>
-                      </div>
-                    ))}
+          {LAYERS.map(layer => (
+            <div key={layer.key} className="mb-6">
+              <div className="text-[11px] font-bold mb-3 flex items-center gap-2" style={{ color: colors.text }}>
+                <span className="w-3 h-3 rounded" style={{ background: layer.color }} />
+                {layer.label}
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {Object.entries(schema).filter(([, t]) => t.type === layer.key).map(([name, table]) => (
+                  <div key={name} onClick={() => setSelectedTable(name)}
+                    className="rounded-xl border-2 p-3 cursor-pointer transition-all hover:scale-[1.02]"
+                    style={{ borderColor: selectedTable === name ? layer.color : colors.border, background: colors.cardBg }}>
+                    <div className="text-[11px] font-bold font-mono mb-2" style={{ color: layer.color }}>{name}</div>
+                    <div className="space-y-1">
+                      {table.columns.map(col => (
+                        <div key={col.name} className="flex items-center gap-2 text-[9px] font-mono">
+                          <span style={{ color: colors.textMuted }}>•</span>
+                          <span style={{ color: colors.text }}>{col.name}</span>
+                          <span className="ml-auto" style={{ color: colors.textMuted }}>{col.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-[8px] font-mono" style={{ color: colors.textMuted }}>
+                      {table.rows.length} filas · {table.columns.length} cols
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
-          {/* Fact tables */}
-          <div className="mb-6">
-            <div className="text-[11px] font-bold mb-3 flex items-center gap-2" style={{ color: colors.text }}>
-              <span className="w-3 h-3 rounded" style={{ background: '#f59e0b' }} />
-              Hechos
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {factTables.map(([name, table]) => (
-                <div key={name} onClick={() => setSelectedTable(name)}
-                  className="rounded-xl border-2 p-3 cursor-pointer transition-all hover:scale-[1.02]"
-                  style={{ borderColor: selectedTable === name ? '#f59e0b' : colors.border, background: colors.cardBg }}>
-                  <div className="text-[11px] font-bold font-mono mb-2" style={{ color: '#f59e0b' }}>{name}</div>
-                  <div className="space-y-1">
-                    {table.columns.map(col => (
-                      <div key={col.name} className="flex items-center gap-2 text-[9px] font-mono">
-                        <span style={{ color: col.pk ? '#f59e0b' : col.fk ? '#8b5cf6' : colors.textMuted }}>
-                          {col.pk ? '🔑' : col.fk ? '🔗' : '•'}
-                        </span>
-                        <span style={{ color: colors.text }}>{col.name}</span>
-                        <span className="ml-auto" style={{ color: colors.textMuted }}>{col.type}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Relationships diagram */}
+          {/* Lineage (DAG dbt) */}
           <div className="rounded-xl p-4" style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}>
-            <div className="text-[11px] font-bold mb-3" style={{ color: colors.text }}>📊 Relaciones</div>
+            <div className="text-[11px] font-bold mb-3" style={{ color: colors.text }}>📊 Lineage (DAG dbt)</div>
             <div className="space-y-2 text-[9px] font-mono">
               <div className="flex items-center gap-2">
-                <span style={{ color: '#3b82f6' }}>dim_cliente</span>
-                <span style={{ color: colors.textMuted }}>←──</span>
-                <span style={{ color: '#f59e0b' }}>fact_ventas</span>
-                <span style={{ color: '#8b5cf6' }}>(cliente_key)</span>
+                <span style={{ color: '#22c55e' }}>stg_ventas</span>
+                <span style={{ color: colors.textMuted }}>──▶</span>
+                <span style={{ color: '#3b82f6' }}>int_ventas_cliente</span>
+                <span style={{ color: colors.textMuted }}>──▶</span>
+                <span style={{ color: '#f59e0b' }}>mrt_ventas_por_cliente</span>
               </div>
               <div className="flex items-center gap-2">
-                <span style={{ color: '#3b82f6' }}>dim_producto</span>
-                <span style={{ color: colors.textMuted }}>←──</span>
-                <span style={{ color: '#f59e0b' }}>fact_ventas</span>
-                <span style={{ color: '#8b5cf6' }}>(producto_key)</span>
+                <span style={{ color: '#22c55e' }}>stg_clientes</span>
+                <span style={{ color: colors.textMuted }}>──▶</span>
+                <span style={{ color: '#3b82f6' }}>int_ventas_cliente</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span style={{ color: '#3b82f6' }}>dim_fecha</span>
-                <span style={{ color: colors.textMuted }}>←──</span>
-                <span style={{ color: '#f59e0b' }}>fact_ventas</span>
-                <span style={{ color: '#8b5cf6' }}>(fecha_key)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span style={{ color: '#3b82f6' }}>dim_producto</span>
-                <span style={{ color: colors.textMuted }}>←──</span>
-                <span style={{ color: '#f59e0b' }}>fact_inventario</span>
-                <span style={{ color: '#8b5cf6' }}>(producto_key)</span>
+              <div className="text-[8px]" style={{ color: colors.textMuted }}>
+                staging (raw 1:1) → intermediate (joins/lógica) → marts (agregaciones para BI)
               </div>
             </div>
           </div>
         </div>
 
         {/* Query panel */}
-        <div className="w-72 shrink-0 border-l-2 flex flex-col" style={{ borderColor: colors.border }}>
+        <div className="w-80 shrink-0 border-l-2 flex flex-col" style={{ borderColor: colors.border }}>
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
             <span className="text-[10px] font-bold" style={{ color: colors.text }}>📝 Consultas de ejemplo</span>
           </div>
           <div className="flex-1 overflow-auto p-3 space-y-2">
             {QUERIES.map((q, i) => (
-              <button key={i} onClick={() => setQueryResult({ sql: q.sql, name: q.name })}
+              <button key={i} onClick={() => {
+                const t = schema[q.model];
+                if (t) setQueryResult({ name: q.name, sql: q.sql, schema: t.columns.map(c => c.name), rows: t.rows });
+              }}
                 className="w-full text-left p-2 rounded-lg text-[9px] font-mono cursor-pointer hover:opacity-80 transition"
                 style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, color: colors.text }}>
                 {q.name}
@@ -204,9 +154,32 @@ export default function WarehouseSim({ theme, onBack }: WarehouseSimProps) {
           {queryResult && (
             <div className="p-3 border-t" style={{ borderColor: colors.border }}>
               <div className="text-[9px] font-bold mb-2" style={{ color: colors.text }}>{queryResult.name}</div>
-              <pre className="text-[8px] font-mono p-2 rounded-lg overflow-auto max-h-40" style={{ background: isDark ? '#0a0f1a' : '#1e293b', color: '#94a3b8' }}>
+              <pre className="text-[8px] font-mono p-2 rounded-lg overflow-auto max-h-24" style={{ background: isDark ? '#0a0f1a' : '#1e293b', color: '#94a3b8' }}>
                 {queryResult.sql}
               </pre>
+              <div className="mt-2 rounded-lg overflow-auto max-h-44" style={{ border: `1px solid ${colors.border}` }}>
+                <table className="w-full text-[8px] font-mono">
+                  <thead>
+                    <tr style={{ background: isDark ? '#1a1a2e' : '#e5e7eb' }}>
+                      {queryResult.schema.map(c => (
+                        <th key={c} className="px-2 py-1 text-left" style={{ color: colors.textMuted }}>{c}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {queryResult.rows.slice(0, 8).map((r, i) => (
+                      <tr key={i} style={{ borderTop: `1px solid ${colors.border}40` }}>
+                        {queryResult.schema.map(c => (
+                          <td key={c} className="px-2 py-1" style={{ color: colors.text }}>{String(r[c])}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-2 py-1 text-[8px]" style={{ color: colors.textMuted }}>
+                  {queryResult.rows.length} filas · preview
+                </div>
+              </div>
             </div>
           )}
         </div>

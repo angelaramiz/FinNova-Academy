@@ -9,6 +9,7 @@ import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
 import { NotificationToast, NotificationInbox, useNotifications } from './Notifications';
 import { useToast } from './Toast';
+import { simToday } from '../lib/simTime';
 
 function getToken(): string {
   return localStorage.getItem('supabase_auth_token') || '';
@@ -28,7 +29,7 @@ async function apiGetHtml(path: string): Promise<string> {
 }
 
 interface SimJob { id: string; title: string; description: string; difficulty: number; category?: string; }
-interface SimTask { id: string; jobId: string; title: string; description: string; taskType: string; difficulty: number; estimatedMinutes: number; sequenceOrder: number; }
+interface SimTask { id: string; jobId: string; title: string; description: string; taskType: string; difficulty: number; estimatedMinutes: number; sequenceOrder: number; isTrap?: boolean; trapId?: string; }
 type ViewMode = 'office' | 'workspace' | 'document';
 
 // ─── DUST PARTICLES ───────────────────────────────────────────
@@ -1066,13 +1067,26 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   useEffect(() => {
     checkOnboarding();
-    fetchJobs();
     loadStats();
   }, []);
+
+  useEffect(() => {
+    fetchJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specialty]);
+
+  useEffect(() => {
+    if (profile?.specialty) {
+      setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+    }
+  }, [profile?.specialty]);
 
   async function checkOnboarding() {
     try {
       const profile = await apiFetch<any>('/api/sim/my-profile');
+      if (profile.specialty) {
+        setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      }
       if (!profile.onboardingCompleted) {
         setNeedsOnboarding(true);
       } else {
@@ -1094,14 +1108,14 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   async function fetchJobs() {
     try {
       setApiError(null);
-      // Usar TaskPlanner para obtener tareas del mes actual
-      const now = new Date();
+      // Usar TaskPlanner para obtener tareas de la fecha de simulación
+      const now = simToday(); // 08-jul-2026 (miércoles, semana 2, día 3 del plan)
       const month = now.getMonth();
       const year = now.getFullYear();
       
-      // Para DE, usar semanas 5-8; para accounting, 1-4
+      // Semanas del generador: 1-4 para ambas especialidades
       const calendarWeek = Math.ceil(now.getDate() / 7) || 1;
-      const week = specialty === 'data_engineering' ? calendarWeek + 4 : calendarWeek;
+      const week = calendarWeek;
       
       // Si es fin de semana (6=Sat, 0=Sun), usar viernes (5)
       // Si es lunes-viernes, usar el día actual
@@ -1139,19 +1153,24 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         difficulty: t.difficulty,
         estimatedMinutes: t.time || 10,
         sequenceOrder: 0,
+        isTrap: !!t.isTrap,
+        trapId: t.trapId,
       }));
 
       // Crear "jobs" virtuales basados en categorías del plan
       const categories = [...new Set(formattedTasks.map((t: any) => t.category || 'general').filter(Boolean))] as string[];
-      const virtualJobs = categories.map((cat: string) => ({
+      let virtualJobs = categories.map((cat: string) => ({
         id: `job-${cat}`,
         title: cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' '),
         description: `Tareas de ${cat}`,
         difficulty: 1,
         category: cat,
       }));
+      if (specialty === 'data_engineering') {
+        virtualJobs = [{ id: 'job-de', title: 'Ingeniero de Datos Jr', description: 'Soporte de pipelines, SQL y calidad de datos', difficulty: 1, category: 'data_engineering' }];
+      }
 
-      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
+      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: specialty === 'data_engineering' ? 'Ingeniero de Datos Jr' : 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
       setTasks(formattedTasks);
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
@@ -1283,7 +1302,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
           }}>
             <div>
               <p className="text-[13px] font-bold font-mono" style={{ color: colors.text }}>🏢 OFICINA VIRTUAL</p>
-              {selectedJob && (
+              {specialty === 'data_engineering' ? (
+                <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
+                  Ingeniero de Datos Jr · DataFlow Analytics
+                </p>
+              ) : selectedJob && (
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
                   {selectedJob.title}
                 </p>
@@ -1328,7 +1351,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         <div className="absolute inset-0 z-30">
           <DesktopShell
             theme={theme}
-            tasks={tasks.map(t => ({ id: t.id, title: t.title, type: (t as any).taskType || (t as any).task_type, difficulty: t.difficulty, time: t.estimatedMinutes }))}
+            tasks={tasks.map(t => ({ id: t.id, title: t.title, type: (t as any).taskType || (t as any).task_type, difficulty: t.difficulty, time: t.estimatedMinutes, isTrap: t.isTrap, trapId: t.trapId }))}
             onClose={() => {
               setViewMode('office');
               setTasks([]);
