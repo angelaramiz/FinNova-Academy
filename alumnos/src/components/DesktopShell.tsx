@@ -28,15 +28,27 @@ import CapstoneSim from './capstoneSim';
 import ApiClientSim from './ApiClientSim';
 import DataOpsSim from './DataOpsSim';
 import LearningSim from './LearningSim';
+import StatsSim from './StatsSim';
+import MLSim from './MLSim';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
 
 interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; isTrap?: boolean; trapId?: string; }
-async function apiPost(path: string, body?: any) { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
+async function apiPost(path: string, body?: any): Promise<any> { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
+
+interface CareerPathState {
+  currentNode: 'analyst' | 'data_engineering' | 'data_science';
+  chosenBranch: 'data_engineering' | 'data_science' | null;
+  practicePct: number;
+  unlocked: { data_engineering: boolean; data_science: boolean };
+  demoOverride: { enabled: boolean };
+  history: { ts: string; event: string }[];
+  breakdown?: { tasks: { done: number; total: number }; sims: { validated: number; total: number }; cases: { done: number; total: number } };
+}
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
@@ -55,7 +67,15 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [world, setWorld] = useState<any>(null);
   const [matcherData, setMatcherData] = useState<{ clientName: string; amount: number } | null>(null);
   const [screenTransition, setScreenTransition] = useState(false);
+  const [careerPath, setCareerPath] = useState<CareerPathState | null>(null);
+  const [showRoutes, setShowRoutes] = useState(false);
   const prevScreen = useRef<Screen>('desktop');
+
+  const isData = specialty === 'data_engineering';
+  const appSet = isData ? (careerPath?.chosenBranch === 'data_science' ? 'science' : careerPath?.chosenBranch === 'data_engineering' ? 'engineering' : 'analyst') : 'accounting';
+  const roleTitle = isData
+    ? (careerPath?.chosenBranch === 'data_engineering' ? 'Ingeniero de Datos Jr' : careerPath?.chosenBranch === 'data_science' ? 'Científico de Datos Jr' : 'Analista de Datos')
+    : 'Contador General Jr';
 
   async function loadWorld() {
     try {
@@ -64,10 +84,37 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
     } catch { /* noop */ }
   }
 
+  async function loadCareerPath() {
+    if (!isData) return;
+    try {
+      const data = await apiPost('/api/sim/career-path');
+      setCareerPath(data.careerPath);
+    } catch { /* noop */ }
+  }
+
   useEffect(() => {
-    if (specialty === 'data_engineering') loadWorld();
+    if (isData) { loadWorld(); loadCareerPath(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [specialty]);
+
+  async function toggleDemoOverride(enabled: boolean) {
+    try {
+      const data = await apiPost('/api/sim/career-path/demo-override', { enabled });
+      setCareerPath(data.careerPath);
+      localStorage.setItem('demo_routes_override', enabled ? '1' : '0');
+      addToast(enabled ? 'Rutas DEMO activadas (vista, no afecta progreso)' : 'Rutas DEMO desactivadas — vuelve a regir el progreso real', enabled ? 'info' : 'info');
+    } catch (e: any) { console.error(e); addToast(e.message || 'Error al cambiar rutas demo', 'error'); }
+  }
+
+  async function chooseBranch(branch: 'data_engineering' | 'data_science') {
+    try {
+      const data = await apiPost('/api/sim/career-path/choose', { branch });
+      setCareerPath(data.careerPath);
+      setShowRoutes(false);
+      addToast(`Ruta elegida: ${branch === 'data_engineering' ? 'Ingeniería de Datos' : 'Ciencia de Datos'}`, 'success');
+      if (onTaskComplete) onTaskComplete();
+    } catch (e: any) { console.error(e); addToast(e.message || 'Error al elegir ruta', 'error'); }
+  }
 
   async function startTask(task: TaskInfo, skipEmailStep = false) {
     setCurrentTask(task); setLoading(true);
@@ -145,7 +192,20 @@ const accountingApps = [
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
 ];
 
-const deApps = [
+const analystApps = [
+  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+  { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
+  { label: 'Notebook', icon: '📓', action: () => setScreen('notebook'), dataApp: 'notebook' },
+  { label: 'Catalog', icon: '📚', action: () => setScreen('catalog'), dataApp: 'catalog' },
+  { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
+  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
+  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
+  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+];
+
+const engineeringApps = [
   { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
   { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
   { label: 'Foundry', icon: '🔀', action: () => setScreen('pipeline'), dataApp: 'pipelines' },
@@ -166,7 +226,23 @@ const deApps = [
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
 ];
 
-  const appIcons = specialty === 'accounting' ? accountingApps : deApps;
+const scienceApps = [
+  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+  { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
+  { label: 'Notebook', icon: '📓', action: () => setScreen('notebook'), dataApp: 'notebook' },
+  { label: 'Catalog', icon: '📚', action: () => setScreen('catalog'), dataApp: 'catalog' },
+  { label: 'Stats', icon: '📈', action: () => setScreen('stats'), dataApp: 'stats' },
+  { label: 'ML', icon: '🤖', action: () => setScreen('ml'), dataApp: 'ml' },
+  { label: 'Experimentos', icon: '🧪', action: () => setScreen('ml'), dataApp: 'experimentos' },
+  { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
+  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
+  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
+  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+];
+
+  const appIcons = !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -196,9 +272,24 @@ const deApps = [
         </div>
       </div>
 
-      {specialty === 'data_engineering' && (
-        <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
-          🔀 Modo: Ingeniero de Datos Jr — Palantir Foundry
+      {specialty === 'data_engineering' ? (
+        <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2 flex-wrap" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
+          <span>{careerPath?.chosenBranch === 'data_engineering' ? '🔀' : careerPath?.chosenBranch === 'data_science' ? '🧪' : '🧭'} {roleTitle}</span>
+          <button onClick={() => setShowRoutes(true)} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#3b82f650', color: '#3b82f6', background: 'transparent' }} title="Abrir panel de rutas">🧭 Rutas</button>
+          <span className="text-[7px] px-1 py-0.5 rounded-full" style={{ background: careerPath?.practicePct && careerPath.practicePct >= 40 ? '#22c55e30' : '#64748b30', color: careerPath?.practicePct && careerPath.practicePct >= 40 ? '#22c55e' : '#94a3b8' }}>
+            práctica {careerPath?.practicePct ?? 0}%
+          </span>
+          <button onClick={() => toggleDemoOverride(!careerPath?.demoOverride?.enabled)}
+            className={`px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80 ${careerPath?.demoOverride?.enabled ? 'border-amber-500 bg-amber-500/20' : 'border-slate-600'}`}
+            style={{ color: careerPath?.demoOverride?.enabled ? '#f59e0b' : '#94a3b8' }}
+            title="Atajo DEMO: no afecta el progreso real">
+            {careerPath?.demoOverride?.enabled ? 'Rutas DEMO: ⬤' : 'Rutas DEMO: ○'}
+          </button>
+          {careerPath?.demoOverride?.enabled && <span className="text-[7px] px-1 py-0.5 rounded-full bg-amber-500/20 text-amber-400">DEMO</span>}
+        </div>
+      ) : (
+        <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#22c55e10', color: '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
+          📊 Modo: Contador General Jr — Logística del Norte S.A.
         </div>
       )}
       {specialty === 'data_engineering' && world && (
@@ -222,7 +313,7 @@ const deApps = [
                 </div>
               ))}
             </div>
-            {specialty === 'data_engineering' && <AgendaDelDia tasks={tasks} onOpen={startTask} onOpenLearning={() => setScreen('learning')} theme={theme} />}
+            {isData && <AgendaDelDia tasks={tasks} onOpen={startTask} onOpenLearning={() => setScreen('learning')} theme={theme} phase={appSet === 'engineering' ? 'engineering' : appSet === 'science' ? 'science' : 'analyst'} />}
             <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: colors.border }}>
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
@@ -277,6 +368,11 @@ const deApps = [
         {screen === 'api' && <div className="animate-slide-in h-full"><ApiClientSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'dataops' && <div className="animate-slide-in h-full"><DataOpsSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'learning' && <div className="animate-slide-in h-full"><LearningSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'stats' && <div className="animate-slide-in h-full"><StatsSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'ml' && <div className="animate-slide-in h-full"><MLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'routes' && careerPath && (
+          <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setShowRoutes(false)} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
+        )}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
@@ -375,8 +471,8 @@ function renderTool(app: string, theme: Theme) {
   }
 }
 
-// ─── Jornada guiada (Ingeniero de Datos) ───────────────────────
-// Franjas del rol según el flujo diario del puesto.
+// ─── Jornada guiada (especialidad Data) ────────────────────────
+// Franjas del rol según la fase del árbol de rutas (analista / ing / ciencia).
 
 const DE_SLOTS: Record<string, string> = {
   incident_recovery: '09:30',   // monitoreo matutino: detectar el incidente
@@ -389,6 +485,19 @@ const DE_SLOTS: Record<string, string> = {
   soporte_datos: '14:30',       // soporte a analistas
 };
 
+const ANALYST_SLOTS: Record<string, string> = {
+  sql_query: '10:00',           // SQL exploratorio
+  data_quality: '11:00',        // alerta de calidad
+  soporte_datos: '14:30',
+};
+
+const DS_SLOTS: Record<string, string> = {
+  eda_churn: '10:00',           // EDA
+  modelo_baseline: '10:30',     // entrenamiento
+  eval_metricas: '11:00',       // evaluación
+  data_quality: '11:30',
+};
+
 interface AgendaBlock {
   h: string;
   label: string;
@@ -396,10 +505,33 @@ interface AgendaBlock {
   action?: 'learning';
 }
 
-function buildAgendaDE(tasks: TaskInfo[]): AgendaBlock[] {
-  const taskBlocks: AgendaBlock[] = tasks.map(t => ({ h: DE_SLOTS[t.type] || '10:00', label: t.title, task: t }))
+function buildAgendaDE(tasks: TaskInfo[], phase: 'analyst' | 'engineering' | 'science'): AgendaBlock[] {
+  const slots = phase === 'science' ? DS_SLOTS : phase === 'engineering' ? DE_SLOTS : ANALYST_SLOTS;
+  const taskBlocks: AgendaBlock[] = tasks.map(t => ({ h: slots[t.type] || '10:00', label: t.title, task: t }))
     .sort((a, b) => a.h.localeCompare(b.h));
   const between = (from: string, to: string) => taskBlocks.filter(b => b.h >= from && b.h < to);
+  if (phase === 'analyst') {
+    return [
+      { h: '09:00', label: '☕ Standup diario con el equipo' },
+      { h: '09:30', label: '🔎 Revisar calidad y alertas' },
+      ...between('09:30', '12:00'),
+      { h: '12:00', label: '🍽️ Almuerzo' },
+      ...between('12:00', '16:00'),
+      { h: '16:00', label: '📚 Aprendizaje (Foundry Academy / cloud)', action: 'learning' },
+      { h: '17:30', label: '✅ Revisión final y cierre de tareas' },
+    ];
+  }
+  if (phase === 'science') {
+    return [
+      { h: '09:00', label: '☕ Standup diario con el equipo' },
+      { h: '09:30', label: '🔎 Revisar datos del caso churn' },
+      ...between('09:30', '12:00'),
+      { h: '12:00', label: '🍽️ Almuerzo' },
+      ...between('12:00', '16:00'),
+      { h: '16:00', label: '📚 Aprendizaje (ML / experimentos)', action: 'learning' },
+      { h: '17:30', label: '✅ Revisión final y cierre de tareas' },
+    ];
+  }
   return [
     { h: '09:00', label: '☕ Standup diario con el equipo' },
     { h: '09:30', label: '🔎 Revisar ejecuciones de pipelines y alertas' },
@@ -411,20 +543,21 @@ function buildAgendaDE(tasks: TaskInfo[]): AgendaBlock[] {
   ];
 }
 
-function AgendaDelDia({ tasks, onOpen, onOpenLearning, theme }: { tasks: TaskInfo[]; onOpen: (t: TaskInfo, skip?: boolean) => void; onOpenLearning: () => void; theme: Theme }) {
+function AgendaDelDia({ tasks, onOpen, onOpenLearning, theme, phase = 'engineering' }: { tasks: TaskInfo[]; onOpen: (t: TaskInfo, skip?: boolean) => void; onOpenLearning: () => void; theme: Theme; phase?: 'analyst' | 'engineering' | 'science' }) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const blocks = buildAgendaDE(tasks);
+  const blocks = buildAgendaDE(tasks, phase);
   const now = new Date();
   const nowHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const activeIdx = blocks.findIndex((b, i) => b.h <= nowHM && (i + 1 >= blocks.length || blocks[i + 1].h > nowHM));
   const inRange = nowHM >= '09:00' && nowHM <= '18:00';
+  const phaseLabel = phase === 'engineering' ? 'ingeniero de datos jr' : phase === 'science' ? 'científico de datos jr' : 'analista de datos';
 
   return (
     <div className="rounded-xl border-2 overflow-hidden mb-4" style={{ borderColor: colors.border }}>
       <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>
         📅 Agenda del día
-        <span className="text-[9px] font-mono ml-auto" style={{ color: colors.textMuted }}>ingeniero de datos jr</span>
+        <span className="text-[9px] font-mono ml-auto" style={{ color: colors.textMuted }}>{phaseLabel}</span>
       </div>
       <div className="px-4 py-2 space-y-0.5 max-h-64 overflow-auto">
         {blocks.map((b, i) => {
@@ -464,6 +597,92 @@ function ResultView({ data, validation, taskTitle, onFinish, theme }: { data: an
         </div>
       )}
       <button onClick={onFinish} className="w-full py-3 rounded-xl border-2 text-xs font-bold cursor-pointer hover:opacity-85 transition" style={{ borderColor: colors.primary, background: colors.primary, color: '#1B2632', boxShadow: `3px 3px 0px 0px ${colors.border}` }}>📋 Volver al escritorio</button>
+    </div>
+  );
+}
+
+// ─── Panel de Rutas (Árbol Analista → Ingeniería/Ciencia) ─────
+
+function RoutesPanel({ careerPath, onClose, onChoose, onToggleDemo, theme }: {
+  careerPath: CareerPathState;
+  onClose: () => void;
+  onChoose: (branch: 'data_engineering' | 'data_science') => void;
+  onToggleDemo: (enabled: boolean) => void;
+  theme: Theme;
+}) {
+  const colors = themeColors[theme];
+  const isDark = theme === 'dark';
+  const { practicePct, unlocked, chosenBranch, demoOverride, breakdown } = careerPath;
+  const demo = demoOverride?.enabled;
+
+  const nodes: { id: string; label: string; icon: string; desc: string; state: 'current' | 'unlocked' | 'locked' | 'chosen' }[] = [
+    { id: 'analyst', label: 'Analista de Datos', icon: '🧭', desc: 'SQL, profiling, reportes y calidad', state: 'current' },
+    { id: 'data_engineering', label: 'Ingeniería de Datos', icon: '🔀', desc: 'Pipelines, dbt, Airflow, Foundry', state: chosenBranch === 'data_engineering' ? 'chosen' : unlocked.data_engineering ? 'unlocked' : 'locked' },
+    { id: 'data_science', label: 'Ciencia de Datos', icon: '🧪', desc: 'EDA, modelos, experimentos, churn', state: chosenBranch === 'data_science' ? 'chosen' : unlocked.data_science ? 'unlocked' : 'locked' },
+  ];
+
+  const pendingTasks = breakdown ? Math.max(0, breakdown.tasks.total - breakdown.tasks.done) : 0;
+  const pendingSims = breakdown ? Math.max(0, breakdown.sims.total - breakdown.sims.validated) : 0;
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden animate-slide-in" style={{ background: colors.bg }}>
+      <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.4)' : colors.bg }}>
+        <button onClick={onClose} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
+        <span className="text-base">🧭</span>
+        <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Árbol de Rutas · Especialidad Data</span>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full ml-auto" style={{ background: '#f59e0b20', color: '#f59e0b' }}>DEMO: no afecta progreso</span>
+      </div>
+
+      <div className="flex-1 overflow-auto p-5">
+        {/* Progreso */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-mono uppercase" style={{ color: colors.textMuted }}>Práctica acumulada</span>
+            <span className="text-sm font-bold font-mono" style={{ color: practicePct >= 40 ? '#22c55e' : colors.primary }}>{practicePct}%</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
+            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(practicePct, 100)}%`, background: practicePct >= 40 ? '#22c55e' : colors.primary }} />
+          </div>
+          <div className="flex gap-4 mt-2 text-[9px] font-mono" style={{ color: colors.textMuted }}>
+            <span>tareas {breakdown ? `${breakdown.tasks.done}/${breakdown.tasks.total}` : '0/12'}</span>
+            <span>sims {breakdown ? `${breakdown.sims.validated}/${breakdown.sims.total}` : '0/8'}</span>
+            <span>casos {breakdown ? `${breakdown.cases.done}/${breakdown.cases.total}` : '0/3'}</span>
+            <span>desbloqueo ≥ 40%</span>
+          </div>
+          {practicePct < 40 && !demo && (
+            <p className="text-[10px] mt-2 px-3 py-2 rounded-lg" style={{ background: '#f59e0b10', color: '#f59e0b' }}>
+              Te faltan {pendingTasks} tarea{pendingTasks !== 1 ? 's' : ''} y {pendingSims} simulación{pendingSims !== 1 ? 'es' : ''} para desbloquear las rutas.
+            </p>
+          )}
+          {demo && <p className="text-[10px] mt-2 px-3 py-2 rounded-lg" style={{ background: '#f59e0b20', color: '#f59e0b' }}>⚠ Atajo DEMO activo: rutas desbloqueadas en vista. No modifica tu progreso real.</p>}
+        </div>
+
+        {/* Nodos */}
+        <div className="space-y-3">
+          {nodes.map((n, i) => (
+            <div key={n.id} className="flex items-center gap-3">
+              <div className="flex-1 p-3 rounded-xl border-2" style={{
+                borderColor: n.state === 'current' ? colors.primary : n.state === 'chosen' ? '#8b5cf6' : n.state === 'unlocked' ? '#22c55e' : colors.border,
+                background: n.state === 'unlocked' || n.state === 'chosen' ? (n.state === 'chosen' ? '#8b5cf615' : '#22c55e10') : colors.cardBg,
+              }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{n.icon}</span>
+                  <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>{n.label}</span>
+                  {n.state === 'current' && <span className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: colors.primary + '25', color: colors.primary }}>actual</span>}
+                  {n.state === 'chosen' && <span className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: '#8b5cf625', color: '#8b5cf6' }}>elegida</span>}
+                  {n.state === 'unlocked' && <span className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: '#22c55e20', color: '#22c55e' }}>desbloqueada</span>}
+                  {n.state === 'locked' && <span className="text-[8px] px-1.5 py-0.5 rounded-full" style={{ background: colors.bg, color: colors.textMuted }}>bloqueada</span>}
+                  {n.id !== 'analyst' && (n.state === 'unlocked' || demo) && chosenBranch === null && (
+                    <button onClick={() => onChoose(n.id as 'data_engineering' | 'data_science')} className="ml-auto text-[9px] font-bold px-2.5 py-1 rounded-lg border-2 cursor-pointer" style={{ borderColor: '#8b5cf6', background: '#8b5cf6', color: '#fff' }}>Elegir ruta</button>
+                  )}
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: colors.textMuted }}>{n.desc}</p>
+              </div>
+              {i < nodes.length - 1 && <span className="text-slate-500 text-[10px]">▼</span>}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

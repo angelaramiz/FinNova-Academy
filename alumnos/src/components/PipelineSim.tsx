@@ -1,9 +1,9 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
 interface FoundrySimProps { theme: Theme; onBack: () => void; }
 
-// â”€â”€â”€ Datos de prueba (datasets) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Datos de prueba (datasets) ────────────────────────────────
 
 const DATASETS: Record<string, { schema: string[]; rows: any[][]; description: string }> = {
   'raw_ventas': {
@@ -23,17 +23,17 @@ const DATASETS: Record<string, { schema: string[]; rows: any[][]; description: s
   'raw_clientes': {
     schema: ['id', 'nombre', 'rfc', 'ciudad', 'sector'],
     rows: [
-      [1, 'TechCorp SA', 'TEC-990101', 'CDMX', 'Tecnología'],
+      [1, 'TechCorp SA', 'TEC-990101', 'CDMX', 'Tecnolog�a'],
       [2, 'Distribuidora Luna', 'DLU-880202', 'Guadalajara', 'Retail'],
-      [3, 'Constructora Norte', 'CNO-770303', 'Monterrey', 'ConstrucciÃ³n'],
+      [3, 'Constructora Norte', 'CNO-770303', 'Monterrey', 'Construcción'],
       [4, 'Comercial Valle', 'CVA-660404', 'Puebla', 'Comercio'],
       [5, 'Inversiones Trust', 'ITR-550505', 'CDMX', 'Finanzas'],
     ],
-    description: 'CatÃ¡logo de clientes desde la API de CRM',
+    description: 'Catálogo de clientes desde la API de CRM',
   },
 };
 
-// â”€â”€â”€ Transform files (como en Foundry) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Transform files (como en Foundry) ─────────────────────────
 
 interface TransformFile {
   id: string;
@@ -129,11 +129,11 @@ SELECT
 FROM /datasets/ventas_limpias
 WHERE total > 10000
 ORDER BY total DESC`,
-    description: 'Filtra ventas de alto valor (> $10,000) para anÃ¡lisis ejecutivo',
+    description: 'Filtra ventas de alto valor (> $10,000) para análisis ejecutivo',
   },
 ];
 
-// â”€â”€â”€ EjecuciÃ³n de transforms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Ejecución de transforms ──────────────────────────────────
 
 function executePythonTransform(code: string, datasets: Record<string, any>): { output: any[][]; schema: string[]; rowCount: number; log: string[] } {
   const log: string[] = [];
@@ -151,10 +151,10 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
     for (const m of inputMatches) inputs[m[1]] = m[2];
   }
 
-  log.push(`[TRANSFORM] Detectado: Python â†’ ${outputName}`);
+  log.push(`[TRANSFORM] Detectado: Python → ${outputName}`);
   log.push(`[TRANSFORM] Inputs: ${Object.values(inputs).join(', ')}`);
 
-  // Parsear las operaciones del cÃ³digo
+  // Parsear las operaciones del código
   let data: any[] = [];
   let schema: string[] = [];
 
@@ -171,11 +171,11 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
     log.push(`[TRANSFORM] Cargado: ${firstInputName} (${data.length} filas)`);
   }
 
-  // Parsear cÃ³digo para operaciones
+  // Parsear código para operaciones
   if (code.includes('.dropna()')) {
     const before = data.length;
     data = data.filter(row => !Object.values(row).some(v => v === null || v === undefined));
-    log.push(`[TRANSFORM] âž¤ dropna(): ${before} â†’ ${data.length} filas`);
+    log.push(`[TRANSFORM] ➤ dropna(): ${before} → ${data.length} filas`);
   }
 
   if (code.includes('total') && code.includes('withColumn')) {
@@ -184,14 +184,14 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
       total: (Number(row.cantidad) || 0) * (Number(row.precio_unit) || 0),
     }));
     if (!schema.includes('total')) schema.push('total');
-    log.push('[TRANSFORM] âž¤ Calculado: total = cantidad Ã— precio_unit');
+    log.push('[TRANSFORM] ➤ Calculado: total = cantidad × precio_unit');
   }
 
   if (code.includes('fecha_proc') || code.includes('current_date()')) {
     const today = new Date().toISOString().split('T')[0];
     data = data.map(row => ({ ...row, fecha_proc: today }));
     if (!schema.includes('fecha_proc')) schema.push('fecha_proc');
-    log.push(`[TRANSFORM] âž¤ Agregado: fecha_proc = ${today}`);
+    log.push(`[TRANSFORM] ➤ Agregado: fecha_proc = ${today}`);
   }
 
   if (code.includes('.filter(') || code.includes('.where(')) {
@@ -201,7 +201,7 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
       const val = Number(filterMatch[2]);
       const before = data.length;
       data = data.filter(row => (Number(row[col]) || 0) > val);
-      log.push(`[TRANSFORM] âž¤ Filter: ${col} > ${val}: ${before} â†’ ${data.length} filas`);
+      log.push(`[TRANSFORM] ➤ Filter: ${col} > ${val}: ${before} → ${data.length} filas`);
     }
   }
 
@@ -211,7 +211,7 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
       const col = orderMatch[1];
       const dir = orderMatch[2];
       data.sort((a, b) => dir === 'desc' ? (Number(b[col] || 0) - Number(a[col] || 0)) : (Number(a[col] || 0) - Number(b[col] || 0)));
-      log.push(`[TRANSFORM] âž¤ Ordenado: ${col} ${dir.toUpperCase()}`);
+      log.push(`[TRANSFORM] ➤ Ordenado: ${col} ${dir.toUpperCase()}`);
     }
   }
 
@@ -226,18 +226,18 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
         ds2.schema.forEach((col: string, j: number) => { obj[col] = r[j]; });
         return obj;
       });
-      log.push(`[TRANSFORM] âž¤ JOIN con: ${secondInputName} (${rightData.length} filas)`);
+      log.push(`[TRANSFORM] ➤ JOIN con: ${secondInputName} (${rightData.length} filas)`);
       // Simple merge by cliente==nombre
       data = data.map((row: any) => {
         const match = rightData.find((r: any) => r.nombre === row.cliente);
         return match ? { ...row, ...match, _joined: true } : row;
       }).filter((r: any) => r._joined).map(({ _joined, ...r }: any) => r);
       rightData[0] && Object.keys(rightData[0]).forEach(c => { if (!schema.includes(c)) schema.push(c); });
-      log.push(`[TRANSFORM] âž¤ JOIN result: ${data.length} filas`);
+      log.push(`[TRANSFORM] ➤ JOIN result: ${data.length} filas`);
     }
   }
 
-  // AgregaciÃ³n GROUP BY
+  // Agregación GROUP BY
   if (code.includes('.agg(') || code.includes('groupBy')) {
     const groupColMatch = code.match(/groupBy\(["'](\w+)["']/);
     const aggCols = [...code.matchAll(/F\.(\w+)\(F\.col\(["'](\w+)["']\)\)\.alias\(["'](\w+)["']\)/g)];
@@ -263,11 +263,11 @@ function executePythonTransform(code: string, datasets: Record<string, any>): { 
         });
         return row;
       });
-      log.push(`[TRANSFORM] âž¤ GROUP BY ${groupCol}: ${data.length} grupos`);
+      log.push(`[TRANSFORM] ➤ GROUP BY ${groupCol}: ${data.length} grupos`);
     }
   }
 
-  log.push(`[TRANSFORM] âœ… Output: ${data.length} filas, ${schema.length} columnas`);
+  log.push(`[TRANSFORM] ✅ Output: ${data.length} filas, ${schema.length} columnas`);
   return { output: data.map(r => schema.map(c => r[c])), schema, rowCount: data.length, log };
 }
 
@@ -276,10 +276,10 @@ function executeSQLTransform(code: string, datasets: Record<string, any>): { out
   log.push('[TRANSFORM] Detectado: SQL');
 
   const fromMatch = code.match(/FROM\s+\/datasets\/(\w+)/i);
-  if (!fromMatch) return { output: [], schema: [], rowCount: 0, log: [...log, 'âŒ Error: No se encontrÃ³ dataset en FROM'] };
+  if (!fromMatch) return { output: [], schema: [], rowCount: 0, log: [...log, '❌ Error: No se encontró dataset en FROM'] };
   const datasetName = fromMatch[1];
   const ds = datasets[datasetName];
-  if (!ds) return { output: [], schema: [], rowCount: 0, log: [...log, `âŒ Dataset "${datasetName}" no existe`] };
+  if (!ds) return { output: [], schema: [], rowCount: 0, log: [...log, `❌ Dataset "${datasetName}" no existe`] };
 
   let data = ds.rows.map((r: any[]) => {
     const obj: any = {};
@@ -296,7 +296,7 @@ function executeSQLTransform(code: string, datasets: Record<string, any>): { out
     data = data.filter((row: any) => {
       switch (op) { case '=': return row[col] == val; case '>': return row[col] > val; case '<': return row[col] < val; default: return true; }
     });
-    log.push(`[TRANSFORM] âž¤ WHERE ${col} ${op} ${val}: ${before} â†’ ${data.length} filas`);
+    log.push(`[TRANSFORM] ➤ WHERE ${col} ${op} ${val}: ${before} → ${data.length} filas`);
   }
 
   // ORDER BY
@@ -304,10 +304,10 @@ function executeSQLTransform(code: string, datasets: Record<string, any>): { out
   if (orderMatch) {
     const col = orderMatch[1], dir = (orderMatch[2] || 'ASC').toUpperCase();
     data.sort((a: any, b: any) => dir === 'DESC' ? (Number(b[col] || 0) - Number(a[col] || 0)) : (Number(a[col] || 0) - Number(b[col] || 0)));
-    log.push(`[TRANSFORM] âž¤ ORDER BY ${col} ${dir}`);
+    log.push(`[TRANSFORM] ➤ ORDER BY ${col} ${dir}`);
   }
 
-  log.push(`[TRANSFORM] âœ… Output: ${data.length} filas, ${ds.schema.length} columnas`);
+  log.push(`[TRANSFORM] ✅ Output: ${data.length} filas, ${ds.schema.length} columnas`);
   return { output: data.map((r: any) => ds.schema.map((c: string) => r[c])), schema: ds.schema, rowCount: data.length, log };
 }
 
@@ -358,8 +358,8 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
       {/* Header - Foundry-style */}
       <div className="px-4 py-3 border-b-2 shrink-0 flex items-center gap-3" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
-        <button onClick={onBack} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>â†</button>
-        <span className="text-base">ðŸ”€</span>
+        <button onClick={onBack} className="text-[13px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
+        <span className="text-base">🔀</span>
         <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Palantir Foundry</span>
         <span className="text-[10px] font-mono px-2 py-1 rounded" style={{ background: '#3b82f620', color: '#3b82f6' }}>Transforms</span>
         <div className="flex-1" />
@@ -367,7 +367,7 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
         <button onClick={build}
           className="text-[11px] font-bold px-4 py-1.5 rounded-lg cursor-pointer transition hover:opacity-90"
           style={{ background: '#3b82f6', color: '#fff' }}>
-          âš¡ Build
+          ⚡ Build
         </button>
       </div>
 
@@ -375,30 +375,30 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
         {/* Left sidebar - Project files */}
         <div className="w-52 shrink-0 border-r-2 overflow-auto flex flex-col" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#f8fafc' }}>
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <span className="text-[10px] font-bold" style={{ color: colors.text }}>ðŸ“ Project</span>
+            <span className="text-[10px] font-bold" style={{ color: colors.text }}>📁 Project</span>
             <div className="text-[8px] ml-4 mt-0.5" style={{ color: colors.textMuted }}>DataFlow Analytics</div>
           </div>
 
           {/* Input Datasets */}
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#22c55e' }}>â¬‡ Raw Datasets</div>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#22c55e' }}>⬇ Raw Datasets</div>
             {Object.entries(DATASETS).map(([name, ds]) => (
               <div key={name} onClick={() => openDataset(name)}
                 className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between"
                 style={{ color: '#22c55e', background: viewingDataset === name ? '#22c55e15' : 'transparent' }}>
-                <span>ðŸ“‹ {name}</span><span style={{ opacity: 0.5 }}>{ds.rows.length}</span>
+                <span>📋 {name}</span><span style={{ opacity: 0.5 }}>{ds.rows.length}</span>
               </div>
             ))}
           </div>
 
           {/* Transforms */}
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#3b82f6' }}>âš™ï¸ Transforms</div>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#3b82f6' }}>⚙️ Transforms</div>
             {TRANSFORMS.map(t => (
               <div key={t.id} onClick={() => selectFile(t.id)}
                 className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between items-center"
                 style={{ color: selectedFile === t.id ? '#fff' : '#3b82f6', background: selectedFile === t.id ? '#3b82f6' : 'transparent' }}>
-                <span>{t.type === 'python' ? 'ðŸ' : 'ðŸ—ƒï¸'} {t.name}</span>
+                <span>{t.type === 'python' ? '🐍' : '🗃️'} {t.name}</span>
                 {t.type === 'python' && <span className="text-[7px]">.py</span>}
                 {t.type === 'sql' && <span className="text-[7px]">.sql</span>}
               </div>
@@ -407,12 +407,12 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
 
           {/* Output Datasets */}
           <div className="p-3 border-b flex-1" style={{ borderColor: colors.border }}>
-            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#f59e0b' }}>â¬† Output Datasets</div>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: '#f59e0b' }}>⬆ Output Datasets</div>
             {TRANSFORMS.map(t => (
               <div key={t.id} onClick={() => openDataset(t.outputDataset)}
                 className="text-[9px] font-mono py-1 px-2 cursor-pointer rounded mb-0.5 flex justify-between"
                 style={{ color: '#f59e0b', background: viewingDataset === t.outputDataset ? '#f59e0b15' : 'transparent' }}>
-                <span>ðŸ“Š {t.outputDataset}</span>
+                <span>📊 {t.outputDataset}</span>
                 {generatedDatasets[t.outputDataset] && <span style={{ opacity: 0.5 }}>{generatedDatasets[t.outputDataset].rowCount}</span>}
               </div>
             ))}
@@ -420,7 +420,7 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
 
           {/* pypi */}
           <div className="p-3 border-b" style={{ borderColor: colors.border }}>
-            <div className="text-[9px] font-bold mb-1.5" style={{ color: colors.textMuted }}>ðŸ“¦ Dependencies</div>
+            <div className="text-[9px] font-bold mb-1.5" style={{ color: colors.textMuted }}>📦 Dependencies</div>
             <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>pyspark==3.5.0</div>
             <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>transforms==2.1.0</div>
           </div>
@@ -432,11 +432,11 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
           <div className="flex border-b-2 shrink-0" style={{ borderColor: colors.border }}>
             <button onClick={() => setTab('editor')} className="px-4 py-2 text-[11px] font-bold cursor-pointer transition"
               style={{ color: tab === 'editor' ? colors.primary : colors.textMuted, borderBottom: tab === 'editor' ? `2px solid ${colors.primary}` : '2px solid transparent' }}>
-              ðŸ {selectedTransform?.type === 'python' ? 'Python' : 'SQL'} Editor
+              🐍 {selectedTransform?.type === 'python' ? 'Python' : 'SQL'} Editor
             </button>
             <button onClick={() => setTab('preview')} className="px-4 py-2 text-[11px] font-bold cursor-pointer transition"
               style={{ color: tab === 'preview' ? colors.primary : colors.textMuted, borderBottom: tab === 'preview' ? `2px solid ${colors.primary}` : '2px solid transparent' }}>
-              ðŸ“Š Dataset Preview
+              📊 Dataset Preview
             </button>
           </div>
 
@@ -447,13 +447,13 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
               <div className="px-3 py-1 text-[9px] font-mono flex gap-4" style={{ background: colors.cardBg, color: colors.textMuted }}>
                 <span>{selectedTransform?.path}{selectedTransform?.name}{selectedTransform?.type === 'python' ? '.py' : '.sql'}</span>
                 <span>Inputs: {selectedTransform?.inputDatasets.join(', ')}</span>
-                <span>â†’ Output: {selectedTransform?.outputDataset}</span>
+                <span>→ Output: {selectedTransform?.outputDataset}</span>
               </div>
               {/* Code editor */}
               <textarea value={code} onChange={e => setCode(e.target.value)}
                 className="w-full h-full p-4 font-mono text-[11px] outline-none resize-none leading-relaxed"
                 style={{ background: isDark ? '#0f172a' : '#1e293b', color: '#e2e8f0', border: 'none' }}
-                placeholder="Escribe tu transform aquÃ­..."
+                placeholder="Escribe tu transform aquí..."
                 spellCheck={false} />
             </div>
           )}
@@ -462,9 +462,9 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
           {tab === 'preview' && buildResults && (
             <div className="flex-1 overflow-auto p-4">
               <div className="text-[11px] font-bold mb-3" style={{ color: colors.text }}>
-                ðŸ“Š Dataset: {selectedTransform?.outputDataset}
+                📊 Dataset: {selectedTransform?.outputDataset}
                 <span className="text-[10px] font-mono ml-2" style={{ color: colors.textMuted }}>
-                  {buildResults.rowCount} filas Â· {buildResults.schema.length} columnas
+                  {buildResults.rowCount} filas · {buildResults.schema.length} columnas
                 </span>
               </div>
               <table className="w-full text-[10px] font-mono border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
@@ -490,10 +490,10 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
 
               {/* Build log */}
               <div className="mt-4">
-                <div className="text-[10px] font-bold mb-2" style={{ color: colors.text }}>ðŸ“‹ Build Log</div>
+                <div className="text-[10px] font-bold mb-2" style={{ color: colors.text }}>📋 Build Log</div>
                 <div className="rounded-lg p-3 font-mono text-[9px] space-y-0.5" style={{ background: isDark ? '#0a0f1a' : '#1e293b' }}>
                   {buildResults.log.map((line, i) => (
-                    <div key={i} style={{ color: line.includes('âœ…') ? '#22c55e' : line.includes('âŒ') ? '#ef4444' : line.includes('âž¤') ? '#f59e0b' : '#94a3b8' }}>
+                    <div key={i} style={{ color: line.includes('✅') ? '#22c55e' : line.includes('❌') ? '#ef4444' : line.includes('➤') ? '#f59e0b' : '#94a3b8' }}>
                       {line}
                     </div>
                   ))}
@@ -504,9 +504,9 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
           {tab === 'preview' && !buildResults && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center" style={{ color: colors.textMuted }}>
-                <div className="text-3xl mb-2">âš¡</div>
+                <div className="text-3xl mb-2">⚡</div>
                 <div className="text-xs">Presiona "Build" para ejecutar el transform</div>
-                <div className="text-[10px] mt-1">El dataset generado se mostrarÃ¡ aquÃ­</div>
+                <div className="text-[10px] mt-1">El dataset generado se mostrará aquí</div>
               </div>
             </div>
           )}
@@ -517,30 +517,30 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
           {viewingDataset && (
             <>
               <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: colors.border }}>
-                <span className="text-[10px] font-bold" style={{ color: colors.text }}>ðŸ“‹ {viewingDataset}</span>
-                <button onClick={() => setViewingDataset(null)} className="text-[10px] cursor-pointer" style={{ color: colors.textMuted }}>âœ•</button>
+                <span className="text-[10px] font-bold" style={{ color: colors.text }}>📋 {viewingDataset}</span>
+                <button onClick={() => setViewingDataset(null)} className="text-[10px] cursor-pointer" style={{ color: colors.textMuted }}>✕</button>
               </div>
               {(() => {
                 const ds = DATASETS[viewingDataset] || generatedDatasets[viewingDataset];
-                if (!ds) return <div className="p-3 text-[9px]" style={{ color: colors.textMuted }}>Dataset no disponible aÃºn</div>;
+                if (!ds) return <div className="p-3 text-[9px]" style={{ color: colors.textMuted }}>Dataset no disponible aún</div>;
                 return (
                   <>
                     <div className="p-3 border-b" style={{ borderColor: colors.border }}>
                       <div className="text-[8px] font-bold mb-1" style={{ color: colors.textMuted }}>SCHEMA</div>
                       {(Array.isArray(ds.schema) ? ds.schema : ds.schema || []).map((col: string) => (
-                        <div key={col} className="text-[9px] font-mono py-0.5" style={{ color: colors.text }}>ðŸ”¹ {col}</div>
+                        <div key={col} className="text-[9px] font-mono py-0.5" style={{ color: colors.text }}>🔹 {col}</div>
                       ))}
                     </div>
                     <div className="p-3 border-b" style={{ borderColor: colors.border }}>
                       <div className="text-[8px] font-bold mb-1" style={{ color: colors.textMuted }}>LINEAGE</div>
                       {Object.entries(DATASETS).find(([k]) => k === viewingDataset) && (
                         <div className="flex items-center gap-1 text-[9px]" style={{ color: '#22c55e' }}>
-                          â¬‡ Raw source
+                          ⬇ Raw source
                         </div>
                       )}
                       {TRANSFORMS.filter(t => t.outputDataset === viewingDataset).map(t => (
                         <div key={t.id} className="flex items-center gap-1 text-[9px]" style={{ color: '#3b82f6' }}>
-                          âš™ï¸ {t.name}
+                          ⚙️ {t.name}
                         </div>
                       ))}
                     </div>
@@ -552,7 +552,7 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
           {!viewingDataset && (
             <div className="p-3">
               <div className="text-[9px] text-center py-8" style={{ color: colors.textMuted }}>
-                ðŸ“‹ Haz clic en un<br/>dataset para ver<br/>detalles y lineage
+                📋 Haz clic en un<br/>dataset para ver<br/>detalles y lineage
               </div>
             </div>
           )}
@@ -561,7 +561,7 @@ export default function FoundrySim({ theme, onBack }: FoundrySimProps) {
 
       {/* Status bar */}
       <div className="px-4 py-1 border-t-2 flex items-center justify-between text-[8px] font-mono shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
-        <span style={{ color: colors.textMuted }}>Palantir Foundry Â· Transforms v2.1.0</span>
+        <span style={{ color: colors.textMuted }}>Palantir Foundry · Transforms v2.1.0</span>
         <span style={{ color: buildResults ? '#22c55e' : colors.textMuted }}>
           {buildResults ? `Last build: ${buildResults.rowCount} rows` : 'No builds yet'}
         </span>

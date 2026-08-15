@@ -20,13 +20,21 @@ const COMPANIES = [
 ];
 
 const JOBS = [
-  { id: 'b0000000-0000-0000-0000-000000000001', title: 'Auxiliar Contable', desc: 'Registro de operaciones diarias, facturación, conciliación bancaria', difficulty: 1 },
-  { id: 'b0000000-0000-0000-0000-000000000002', title: 'Analista de Cuentas por Pagar', desc: 'Gestión de proveedores, programación de pagos, conciliación CxP', difficulty: 2 },
+  { id: 'b0000000-0000-0000-0000-000000000001', title: 'Auxiliar Contable', desc: 'Registro de operaciones diarias, facturación, conciliación bancaria', difficulty: 1, specialty: 'accounting' },
+  { id: 'b0000000-0000-0000-0000-000000000002', title: 'Analista de Cuentas por Pagar', desc: 'Gestión de proveedores, programación de pagos, conciliación CxP', difficulty: 2, specialty: 'accounting' },
+  { id: 'b0000000-0000-0000-0000-000000000003', title: 'Analista de Datos', desc: 'SQL, Python, profiling, calidad de datos — desbloquea Ingeniería o Ciencia con tu práctica', difficulty: 1, specialty: 'data_engineering' },
 ];
+
+function jobForSpecialty(specialty: string, difficulty: number): typeof JOBS[0] {
+  if (specialty === 'data_engineering') {
+    return JOBS.find(j => j.specialty === 'data_engineering') || JOBS[0];
+  }
+  return JOBS.find(j => j.specialty === 'accounting' && j.difficulty === difficulty) || JOBS[0];
+}
 
 const SPECIALTIES = [
   { id: 'accounting', label: 'Contabilidad', desc: 'Contador General Junior — Facturación, impuestos, reportes financieros', icon: '📊' },
-  { id: 'data_engineering', label: 'Data Engineering', desc: 'Ingeniero de Datos Jr — SQL, Python, pipelines, Palantir Foundry', icon: '🔀' },
+  { id: 'data_engineering', label: 'Data Engineering', desc: 'Analista de Datos (ruta inicial) — Desbloquea Ingeniería o Ciencia de Datos con tu práctica', icon: '🔀' },
 ];
 
 const LEVELS = [
@@ -116,7 +124,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
       <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>¿Qué especialidad?</h2>
       <p className="text-xs text-center" style={{ color: colors.textMuted }}>Selecciona el área en la que quieres trabajar</p>
       {SPECIALTIES.map(s => (
-        <button key={s.id} onClick={() => setSelectedSpecialty(s.id)}
+        <button key={s.id} onClick={() => { setSelectedSpecialty(s.id); setSelectedJob(jobForSpecialty(s.id, 1)); }}
           className="w-full text-left p-5 rounded-xl border-2 transition cursor-pointer hover:scale-[1.01]"
           style={{
             borderColor: selectedSpecialty === s.id ? colors.primary : colors.border,
@@ -139,7 +147,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
     <div key="experience" className="space-y-5 animate-fade-in">
       <h2 className="text-lg font-bold text-center" style={{ color: colors.text }}>¿Cuál es tu nivel de experiencia?</h2>
       {LEVELS.map(l => (
-        <button key={l.id} onClick={() => { setExperience(l.id); setSelectedJob(JOBS.find(j => j.difficulty === (l.id === 'beginner' ? 1 : 2)) || JOBS[0]); }}
+        <button key={l.id} onClick={() => { setExperience(l.id); setSelectedJob(jobForSpecialty(selectedSpecialty, l.id === 'beginner' ? 1 : 2)); }}
           className="w-full text-left p-5 rounded-xl border-2 transition cursor-pointer hover:scale-[1.01]"
           style={{
             borderColor: experience === l.id ? colors.primary : colors.border,

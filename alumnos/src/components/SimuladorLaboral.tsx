@@ -1093,9 +1093,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         setNeedsOnboarding(false);
         if (profile.assignedJob) setSelectedJob(profile.assignedJob);
       }
+      return profile;
     } catch (e) {
       console.error(e);
       setNeedsOnboarding(true);
+      return null;
     }
   }
 
@@ -1105,7 +1107,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  async function fetchJobs() {
+  async function fetchJobs(overriddenSpecialty?: string) {
+    const activeSpecialty = overriddenSpecialty || specialty;
     try {
       setApiError(null);
       // Usar TaskPlanner para obtener tareas de la fecha de simulación
@@ -1124,11 +1127,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
       let todayTasks: any[] = [];
       try {
-        todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}?specialty=${specialty}`);
+        todayTasks = await apiGet(`/api/sim/today-tasks/${month}/${year}/${week}/${day}?specialty=${activeSpecialty}`);
       } catch (e) {
         console.warn('TaskPlanner no disponible, usando tareas por defecto');
         // Fallback: crear tareas de ejemplo si el TaskPlanner falla
-        if (specialty === 'data_engineering') {
+        if (activeSpecialty === 'data_engineering') {
           todayTasks = [
             { id: 'task-1', title: 'Consulta SQL — Análisis de datos', type: 'sql_query', difficulty: 1, time: 15, category: 'sql', description: 'Escribir consulta SQL para análisis', priority: 'alta' },
             { id: 'task-2', title: 'Pipeline ETL — Transformación', type: 'etl_pipeline', difficulty: 1, time: 20, category: 'etl', description: 'Crear pipeline ETL', priority: 'alta' },
@@ -1166,11 +1169,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         difficulty: 1,
         category: cat,
       }));
-      if (specialty === 'data_engineering') {
+      if (activeSpecialty === 'data_engineering') {
         virtualJobs = [{ id: 'job-de', title: 'Ingeniero de Datos Jr', description: 'Soporte de pipelines, SQL y calidad de datos', difficulty: 1, category: 'data_engineering' }];
       }
 
-      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: specialty === 'data_engineering' ? 'Ingeniero de Datos Jr' : 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
+      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: activeSpecialty === 'data_engineering' ? 'Ingeniero de Datos Jr' : 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
       setTasks(formattedTasks);
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
@@ -1285,9 +1288,14 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   }
 
   if (needsOnboarding) {
-    return <Onboarding theme={theme} onComplete={() => {
+    return <Onboarding theme={theme} onComplete={async () => {
+      // Tras completar el onboarding, recargar el perfil para propagar la
+      // especialidad elegida (Contabilidad o Data Engineering) al workspace.
       setNeedsOnboarding(false);
-      fetchJobs();
+      const profile = await checkOnboarding();
+      const spec = (profile?.specialty === 'data_engineering') ? 'data_engineering' : 'accounting';
+      setSpecialty(spec);
+      fetchJobs(spec);
     }} />;
   }
 
@@ -1306,9 +1314,9 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
                   Ingeniero de Datos Jr · DataFlow Analytics
                 </p>
-              ) : selectedJob && (
+              ) : (
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
-                  {selectedJob.title}
+                  {selectedJob ? selectedJob.title : 'Contador General Jr'} · Logística del Norte S.A.
                 </p>
               )}
             </div>
