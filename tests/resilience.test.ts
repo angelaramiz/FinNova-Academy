@@ -38,9 +38,15 @@ describe('resiliencia producción — anti-reset y estabilización WebGL', () =>
     expect(simSrc).toContain('fallback={<OfficeScene2D');
   });
 
-  it('checkOnboarding reanuda desde localStorage si la API no responde (anti-reset)', () => {
+  it('checkOnboarding reanuda desde localStorage solo si sim_visited está marcado (anti-reset sin saltar onboarding nuevo)', () => {
+    expect(simSrc).toContain("localStorage.getItem('sim_visited')");
     expect(simSrc).toContain("localStorage.getItem('sim_specialty')");
     expect(simSrc).toContain("localStorage.setItem('sim_specialty'");
+  });
+
+  it('la bienvenida NO se salta: un usuario sin sim_visited ve el onboarding aunque la API no responda', () => {
+    // El resume solo ocurre si sim_visited === '1'; en caso contrario setNeedsOnboarding(true).
+    expect(simSrc).toContain("if (!resumeFromLocal()) setNeedsOnboarding(true)");
   });
 
   it('Onboarding persiste perfil en localStorage ANTES de ¡Empezar!', () => {

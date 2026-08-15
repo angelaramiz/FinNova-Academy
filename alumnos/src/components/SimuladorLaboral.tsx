@@ -1183,44 +1183,45 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   }, [profile?.specialty]);
 
   async function checkOnboarding() {
+    const resumeFromLocal = () => {
+      // Solo reanuda si el usuario completó el onboarding localmente
+      // (sim_visited lo escribe Onboarding.handleStart al pulsar ¡Empezar!).
+      if (localStorage.getItem('sim_visited') !== '1') return false;
+      const savedSpecialty = localStorage.getItem('sim_specialty');
+      if (!savedSpecialty) return false;
+      setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      setNeedsOnboarding(false);
+      const savedJob = localStorage.getItem('sim_assigned_job');
+      if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
+      return true;
+    };
+
     try {
       const profile = await apiFetch<any>('/api/sim/my-profile');
       if (profile.specialty) {
         setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
-        localStorage.setItem('sim_specialty', profile.specialty);
       }
       if (profile.assignedJob) {
         setSelectedJob(profile.assignedJob);
-        localStorage.setItem('sim_assigned_job', JSON.stringify(profile.assignedJob));
       }
       if (!profile.onboardingCompleted) {
-        // Anti-reset: si localStorage ya tiene el perfil completado (onboarding
-        // persiste en local tras ¡Empezar!), no regresar a la bienvenida.
-        const savedSpecialty = localStorage.getItem('sim_specialty');
-        if (savedSpecialty) {
-          setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
-          setNeedsOnboarding(false);
-          const savedJob = localStorage.getItem('sim_assigned_job');
-          if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
-        } else {
-          setNeedsOnboarding(true);
-        }
+        // Solo reanudar si ya completó el onboarding en una sesión previa.
+        if (!resumeFromLocal()) setNeedsOnboarding(true);
       } else {
+        // Onboarding completado en el servidor: persistir localmente para el
+        // anti-reset y NO mostrar la bienvenida nunca más.
         setNeedsOnboarding(false);
+        localStorage.setItem('sim_visited', '1');
+        const finalSpecialty = profile.specialty || (localStorage.getItem('sim_specialty') || 'accounting');
+        localStorage.setItem('sim_specialty', finalSpecialty);
+        if (profile.assignedJob) localStorage.setItem('sim_assigned_job', JSON.stringify(profile.assignedJob));
       }
       return profile;
     } catch (e) {
       console.error(e);
-      // Si la API no responde pero ya guardamos el perfil localmente, reanudar.
-      const savedSpecialty = localStorage.getItem('sim_specialty');
-      if (savedSpecialty) {
-        setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
-        setNeedsOnboarding(false);
-        const savedJob = localStorage.getItem('sim_assigned_job');
-        if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
-      } else {
-        setNeedsOnboarding(true);
-      }
+      // Si la API no responde pero el usuario ya completó el onboarding,
+      // reanudar desde localStorage en vez de regresar a la bienvenida.
+      if (!resumeFromLocal()) setNeedsOnboarding(true);
       return null;
     }
   }
@@ -1413,13 +1414,18 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   if (needsOnboarding) {
     return <Onboarding theme={theme} onComplete={async () => {
-      // Tras completar el onboarding, recargar el perfil para propagar la
-      // especialidad elegida (Contabilidad o Data Engineering) al workspace.
+      // Tras completar el onboarding, propagar la especialidad elegida al
+      // workspace. Usar lo ya persistido en localStorage por handleStart
+      // (Onboarding guarda sim_specialty/sim_assigned_job ANTES de la API).
       setNeedsOnboarding(false);
-      const profile = await checkOnboarding();
-      const spec = (profile?.specialty === 'data_engineering') ? 'data_engineering' : 'accounting';
+      localStorage.setItem('sim_visited', '1');
+      const savedSpecialty = localStorage.getItem('sim_specialty');
+      const spec = savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting';
       setSpecialty(spec);
+      const savedJob = localStorage.getItem('sim_assigned_job');
+      if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
       fetchJobs(spec);
+      checkOnboarding(); // re-sync silencioso con el servidor
     }} />;
   }
 
