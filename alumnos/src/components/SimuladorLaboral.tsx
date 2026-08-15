@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useState, useEffect, useRef } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { themeColors, Theme } from '../lib/theme';
 import { apiFetch } from '../lib/api';
@@ -7,6 +7,7 @@ import { VERSION, BUILD_HASH } from '../version';
 import Onboarding from './Onboarding';
 import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
+import { ErrorBoundary } from './ErrorBoundary';
 import { NotificationToast, NotificationInbox, useNotifications } from './Notifications';
 import { useToast } from './Toast';
 import { simToday } from '../lib/simTime';
@@ -1026,6 +1027,106 @@ function TaskCard({ task, onClick, colors }: { task: SimTask; onClick: () => voi
   );
 }
 
+// ─── FALLBACK 2D (sin WebGL) ─────────────────────────────────
+// Se muestra si el contexto WebGL muere o no está disponible, para
+// que el flujo del simulador NO se reinicie (anti-reset, FALLA prod).
+
+function OfficeScene2D({ onMonitorClick, roleLabel, isDark }: { onMonitorClick: () => void; roleLabel: string; isDark: boolean }) {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-5 select-none"
+      style={{ background: isDark ? '#0a1628' : '#E2DCD0' }}>
+      <div className="text-6xl mb-2">🖥️</div>
+      <p className="text-[13px] font-bold font-mono" style={{ color: isDark ? '#EEE9DF' : '#1B2632' }}>
+        Oficina Virtual — {roleLabel}
+      </p>
+      <button onClick={onMonitorClick}
+        className="px-8 py-3 rounded-xl border-2 text-[13px] font-bold font-mono cursor-pointer hover:opacity-85 transition"
+        style={{ borderColor: '#FFB162', background: '#FFB162', color: '#1B2632', boxShadow: '4px 4px 0px 0px rgba(0,0,0,0.3)' }}>
+        🖥️ Haz clic en el monitor para comenzar a trabajar
+      </button>
+      <p className="text-[10px] font-mono" style={{ color: isDark ? '#64748b' : '#2C3B4D' }}>
+        Modo sin 3D · el simulador sigue funcionando
+      </p>
+    </div>
+  );
+}
+
+// ─── STABLE CANVAS ────────────────────────────────────────────
+// Envuelve el Canvas R3F con:
+//  - shadowMap PCFShadowMap (elimina el warn deprecado por frame)
+//  - manejo de webglcontextlost / webglcontextrestored
+//  - dispose() + forceContextLoss() controlado al desmontar
+//  - ErrorBoundary que degrada a 2D en vez de reiniciar la app
+
+function StableCanvas({ isDark, roleLabel, onMonitorClick, children, cameraResetTrigger }: {
+  isDark: boolean;
+  roleLabel: string;
+  onMonitorClick: () => void;
+  children: React.ReactNode;
+  cameraResetTrigger: number;
+}) {
+  const [ctxLost, setCtxLost] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const glRef = useRef<THREE.WebGLRenderer | null>(null);
+
+  const onCreated = useCallback(({ gl }: { gl: THREE.WebGLRenderer }) => {
+    glRef.current = gl;
+    gl.shadowMap.type = THREE.PCFShadowMap; // elimina PCFSoftShadowMap deprecado
+    gl.setClearColor(new THREE.Color(isDark ? '#0a1628' : '#E2DCD0'));
+    const canvas = gl.domElement;
+
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      setCtxLost(true);
+    };
+    const onRestored = () => setCtxLost(false);
+    canvas.addEventListener('webglcontextlost', onLost, false);
+    canvas.addEventListener('webglcontextrestored', onRestored, false);
+  }, [isDark]);
+
+  useEffect(() => {
+    return () => {
+      const gl = glRef.current;
+      if (gl) {
+        try { gl.forceContextLoss(); } catch { /* noop */ }
+        try { gl.dispose(); } catch { /* noop */ }
+        glRef.current = null;
+      }
+    };
+  }, []);
+
+  if (hasError || ctxLost) {
+    return <OfficeScene2D onMonitorClick={onMonitorClick} roleLabel={roleLabel} isDark={isDark} />;
+  }
+
+  return (
+    <ErrorBoundary fallback={<OfficeScene2D onMonitorClick={onMonitorClick} roleLabel={roleLabel} isDark={isDark} />}>
+      <Canvas
+        camera={{ position: [0, 1.5, 2], fov: 50, near: 0.1, far: 100 }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: 'high-performance',
+          failIfMajorPerformanceCaveat: false,
+          preserveDrawingBuffer: false,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.1,
+        }}
+        shadows
+        onCreated={onCreated}
+      >
+        <Suspense fallback={null}>
+          <ambientLight intensity={0.4} color="#F0F0F0" />
+          <directionalLight position={[5, 8, 3]} intensity={0.8} color="#FFF5E6" castShadow shadow-mapSize={[2048, 2048]} />
+          <directionalLight position={[-3, 4, 2]} intensity={0.3} color="#E6F0FF" />
+          {children}
+          <CameraController viewMode={'office'} cameraResetTrigger={cameraResetTrigger} />
+        </Suspense>
+      </Canvas>
+    </ErrorBoundary>
+  );
+}
+
 // ─── MAIN ─────────────────────────────────────────────────────
 interface SimProps { theme: Theme; profile?: any; }
 
@@ -1086,17 +1187,40 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
       const profile = await apiFetch<any>('/api/sim/my-profile');
       if (profile.specialty) {
         setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+        localStorage.setItem('sim_specialty', profile.specialty);
+      }
+      if (profile.assignedJob) {
+        setSelectedJob(profile.assignedJob);
+        localStorage.setItem('sim_assigned_job', JSON.stringify(profile.assignedJob));
       }
       if (!profile.onboardingCompleted) {
-        setNeedsOnboarding(true);
+        // Anti-reset: si localStorage ya tiene el perfil completado (onboarding
+        // persiste en local tras ¡Empezar!), no regresar a la bienvenida.
+        const savedSpecialty = localStorage.getItem('sim_specialty');
+        if (savedSpecialty) {
+          setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+          setNeedsOnboarding(false);
+          const savedJob = localStorage.getItem('sim_assigned_job');
+          if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
+        } else {
+          setNeedsOnboarding(true);
+        }
       } else {
         setNeedsOnboarding(false);
-        if (profile.assignedJob) setSelectedJob(profile.assignedJob);
       }
       return profile;
     } catch (e) {
       console.error(e);
-      setNeedsOnboarding(true);
+      // Si la API no responde pero ya guardamos el perfil localmente, reanudar.
+      const savedSpecialty = localStorage.getItem('sim_specialty');
+      if (savedSpecialty) {
+        setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+        setNeedsOnboarding(false);
+        const savedJob = localStorage.getItem('sim_assigned_job');
+        if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
+      } else {
+        setNeedsOnboarding(true);
+      }
       return null;
     }
   }
@@ -1312,7 +1436,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
               <p className="text-[13px] font-bold font-mono" style={{ color: colors.text }}>🏢 OFICINA VIRTUAL</p>
               {specialty === 'data_engineering' ? (
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
-                  Ingeniero de Datos Jr · DataFlow Analytics
+                  Analista de Datos · DataFlow Analytics
                 </p>
               ) : (
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
@@ -1340,19 +1464,14 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         </div>
       )}
 
-      <Canvas camera={{ position: [0, 1.5, 2], fov: 50, near: 0.1, far: 100 }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
-        shadows
-        onCreated={({ gl }) => gl.setClearColor(new THREE.Color(isDark ? '#0a1628' : '#E2DCD0'))}
+      <StableCanvas
+        isDark={isDark}
+        roleLabel={specialty === 'data_engineering' ? 'Analista de Datos' : (selectedJob ? selectedJob.title : 'Contador General Jr')}
+        onMonitorClick={handleMonitorClick}
+        cameraResetTrigger={cameraResetTrigger}
       >
-        <Suspense fallback={null}>
-          <ambientLight intensity={0.4} color="#F0F0F0" />
-          <directionalLight position={[5, 8, 3]} intensity={0.8} color="#FFF5E6" castShadow shadow-mapSize={[2048, 2048]} />
-          <directionalLight position={[-3, 4, 2]} intensity={0.3} color="#E6F0FF" />
-          <OfficeScene onMonitorClick={handleMonitorClick} hovered={monitorHovered} setHovered={setMonitorHovered} />
-          <CameraController viewMode={viewMode} cameraResetTrigger={cameraResetTrigger} />
-        </Suspense>
-      </Canvas>
+        <OfficeScene onMonitorClick={handleMonitorClick} hovered={monitorHovered} setHovered={setMonitorHovered} />
+      </StableCanvas>
 
       {/* DESKTOP SHELL — escritorio de trabajo */}
       {(viewMode === 'workspace' || viewMode === 'document') && (

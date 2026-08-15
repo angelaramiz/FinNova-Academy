@@ -56,6 +56,11 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
   async function handleStart() {
     setSaving(true);
     try {
+      // Persistir localmente ANTES de la llamada API para que un remount
+      // posterior no reinicie a la bienvenida (anti-reset, FALLA prod).
+      localStorage.setItem('sim_specialty', selectedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      localStorage.setItem('sim_assigned_job', JSON.stringify(selectedJob));
+      localStorage.setItem('sim_visited', '1');
       await api('/api/sim/subscribe', {});
       await api('/api/sim/onboarding', {
         simulationProfile: simProfile,
