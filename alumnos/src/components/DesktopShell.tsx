@@ -30,6 +30,7 @@ import DataOpsSim from './DataOpsSim';
 import LearningSim from './LearningSim';
 import StatsSim from './StatsSim';
 import MLSim from './MLSim';
+import CvBuilderSim from './CvBuilderSim';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -48,7 +49,7 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
@@ -69,12 +70,25 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [screenTransition, setScreenTransition] = useState(false);
   const [careerPath, setCareerPath] = useState<CareerPathState | null>(null);
   const [showRoutes, setShowRoutes] = useState(false);
+  const [demoPreview, setDemoPreview] = useState<'analyst' | 'engineering' | 'science'>('analyst');
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
-  const appSet = isData ? (careerPath?.chosenBranch === 'data_science' ? 'science' : careerPath?.chosenBranch === 'data_engineering' ? 'engineering' : 'analyst') : 'accounting';
+  const demoActive = !!careerPath?.demoOverride?.enabled;
+  // En demo, se puede previsualizar cada fase sin elegir irreversiblemente.
+  // Si ya eligió rama, esa rama manda; si no, usa demoPreview.
+  const appSet = isData
+    ? (careerPath?.chosenBranch === 'data_science' ? 'science'
+      : careerPath?.chosenBranch === 'data_engineering' ? 'engineering'
+      : demoActive ? demoPreview
+      : 'analyst')
+    : 'accounting';
   const roleTitle = isData
-    ? (careerPath?.chosenBranch === 'data_engineering' ? 'Ingeniero de Datos Jr' : careerPath?.chosenBranch === 'data_science' ? 'Científico de Datos Jr' : 'Analista de Datos')
+    ? (careerPath?.chosenBranch === 'data_engineering' ? 'Ingeniero de Datos Jr'
+      : careerPath?.chosenBranch === 'data_science' ? 'Científico de Datos Jr'
+      : demoActive && demoPreview === 'engineering' ? 'Ingeniero de Datos Jr'
+      : demoActive && demoPreview === 'science' ? 'Científico de Datos Jr'
+      : 'Analista de Datos')
     : 'Contador General Jr';
 
   async function loadWorld() {
@@ -190,6 +204,7 @@ const accountingApps = [
   { label: 'Archivo', icon: '📁', action: () => setScreen('archivo'), dataApp: 'archivo' },
   { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
 ];
 
 const analystApps = [
@@ -203,6 +218,7 @@ const analystApps = [
   { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
 ];
 
 const engineeringApps = [
@@ -224,6 +240,7 @@ const engineeringApps = [
   { label: 'Warehouse', icon: '🏗️', action: () => setScreen('warehouse'), dataApp: 'warehouse' },
   { label: 'Monitor', icon: '📊', action: () => setScreen('monitor'), dataApp: 'monitor' },
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
 ];
 
 const scienceApps = [
@@ -240,6 +257,7 @@ const scienceApps = [
   { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
 ];
 
   const appIcons = !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
@@ -276,6 +294,21 @@ const scienceApps = [
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2 flex-wrap" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
           <span>{careerPath?.chosenBranch === 'data_engineering' ? '🔀' : careerPath?.chosenBranch === 'data_science' ? '🧪' : '🧭'} {roleTitle}</span>
           <button onClick={() => setShowRoutes(true)} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#3b82f650', color: '#3b82f6', background: 'transparent' }} title="Abrir panel de rutas">🧭 Rutas</button>
+          {demoActive && !careerPath?.chosenBranch && (
+            <span className="flex items-center gap-1 ml-1" style={{ background: '#f59e0b15', border: `1px solid #f59e0b40`, borderRadius: 6, padding: '1px 3px' }}>
+              {([
+                { id: 'analyst' as const, label: 'Analista', icon: '🧭' },
+                { id: 'engineering' as const, label: 'Ingeniería', icon: '🔀' },
+                { id: 'science' as const, label: 'Ciencia', icon: '🧪' },
+              ]).map(t => (
+                <button key={t.id} onClick={() => setDemoPreview(t.id)} title={`Vista previa DEMO: ${t.label} de Datos`}
+                  className="px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80"
+                  style={{ background: demoPreview === t.id ? '#f59e0b' : 'transparent', color: demoPreview === t.id ? '#1B2632' : '#f59e0b', fontWeight: demoPreview === t.id ? 700 : 400 }}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </span>
+          )}
           <span className="text-[7px] px-1 py-0.5 rounded-full" style={{ background: careerPath?.practicePct && careerPath.practicePct >= 40 ? '#22c55e30' : '#64748b30', color: careerPath?.practicePct && careerPath.practicePct >= 40 ? '#22c55e' : '#94a3b8' }}>
             práctica {careerPath?.practicePct ?? 0}%
           </span>
@@ -373,6 +406,7 @@ const scienceApps = [
         {screen === 'routes' && careerPath && (
           <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setShowRoutes(false)} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
         )}
+        {screen === 'cv' && <div className="animate-slide-in h-full"><CvBuilderSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
