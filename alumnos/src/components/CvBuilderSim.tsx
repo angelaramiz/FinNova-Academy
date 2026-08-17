@@ -37,13 +37,16 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
   const [tex, setTex] = useState('');
   const [saved, setSaved] = useState(false);
   const [demoRole, setDemoRole] = useState<'none' | 'analyst' | 'engineering' | 'science' | 'accounting'>('none');
-  const demoActive = localStorage.getItem('demo_routes_override') === '1';
+  // El selector de perfil demo SIEMPRE está disponible (es previsualización,
+  // no afecta el progreso real). Permite generar el CV "como si completado"
+  // para cualquier especialidad, incluyendo Contabilidad.
+  const demoActive = true;
 
   const load = async () => {
     setLoading(true);
     try {
       const specialty = localStorage.getItem('sim_specialty') === 'data_engineering' ? 'data_engineering' : 'accounting';
-      const q = demoActive && demoRole !== 'none' ? `&demo=${demoRole}` : '';
+      const q = demoRole !== 'none' ? `&demo=${demoRole}` : '';
       const p = await apiGet(`/api/sim/cv-profile?specialty=${specialty}${q}`);
       setProfile(p);
     } catch (e) { console.error(e); }
@@ -95,7 +98,7 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
   const download = async (kind: 'pdf' | 'tex') => {
     if (!profile) return;
     const specialty = localStorage.getItem('sim_specialty') === 'data_engineering' ? 'data_engineering' : 'accounting';
-    const demoQ = demoActive && demoRole !== 'none' ? `&demo=${demoRole}` : '';
+    const demoQ = demoRole !== 'none' ? `&demo=${demoRole}` : '';
     try {
       const token = localStorage.getItem('supabase_auth_token') || '';
       const base = import.meta.env.VITE_API_URL || '';
@@ -142,24 +145,22 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
         {saved && <span className="text-[10px]" style={{ color: '#22c55e' }}>✓ guardado</span>}
       </div>
 
-      {demoActive && (
-        <div className="px-4 py-2 border-b-2 flex items-center gap-2 flex-wrap" style={{ borderColor: colors.border, background: '#f59e0b10' }}>
-          <span className="text-[9px] font-mono font-bold uppercase" style={{ color: '#f59e0b' }}>⚡ Modo DEMO — generar CV como si completado:</span>
-          {([
-            { id: 'none' as const, label: 'Mis datos reales' },
-            { id: 'analyst' as const, label: '🧭 Analista de Datos' },
-            { id: 'engineering' as const, label: '🔀 Ingeniero de Datos' },
-            { id: 'science' as const, label: '🧪 Científico de Datos' },
-            { id: 'accounting' as const, label: '📊 Contador General' },
-          ]).map(o => (
-            <button key={o.id} onClick={() => { setDemoRole(o.id); setTex(''); setShowTex(false); }}
-              className="px-2 py-1 rounded-lg border text-[10px] font-mono cursor-pointer hover:opacity-80"
-              style={{ borderColor: demoRole === o.id ? '#f59e0b' : '#f59e0b40', background: demoRole === o.id ? '#f59e0b' : 'transparent', color: demoRole === o.id ? '#1B2632' : '#f59e0b' }}>
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="px-4 py-2 border-b-2 flex items-center gap-2 flex-wrap" style={{ borderColor: colors.border, background: '#f59e0b10' }}>
+        <span className="text-[9px] font-mono font-bold uppercase" style={{ color: '#f59e0b' }}>⚡ Vista previa DEMO — genera el CV como si completaras una especialidad:</span>
+        {([
+          { id: 'none' as const, label: 'Mis datos reales' },
+          { id: 'analyst' as const, label: '🧭 Analista de Datos' },
+          { id: 'engineering' as const, label: '🔀 Ingeniero de Datos' },
+          { id: 'science' as const, label: '🧪 Científico de Datos' },
+          { id: 'accounting' as const, label: '📊 Contador General' },
+        ]).map(o => (
+          <button key={o.id} onClick={() => { setDemoRole(o.id); setTex(''); setShowTex(false); }}
+            className="px-2 py-1 rounded-lg border text-[10px] font-mono cursor-pointer hover:opacity-80"
+            style={{ borderColor: demoRole === o.id ? '#f59e0b' : '#f59e0b40', background: demoRole === o.id ? '#f59e0b' : 'transparent', color: demoRole === o.id ? '#1B2632' : '#f59e0b' }}>
+            {o.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex-1 overflow-auto p-4">
         {loading && !profile ? (
