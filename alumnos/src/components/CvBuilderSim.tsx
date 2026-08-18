@@ -41,6 +41,7 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
   const [expediente, setExpediente] = useState<{ logros: any[]; resumen: any; link: any } | null>(null);
   const [linkBusy, setLinkBusy] = useState(false);
   const [expError, setExpError] = useState<string | null>(null);
+  const [planRefuerzo, setPlanRefuerzo] = useState<any>(null);
   // El selector de perfil demo SIEMPRE está disponible (es previsualización,
   // no afecta el progreso real). Permite generar el CV "como si completado"
   // para cualquier especialidad, incluyendo Contabilidad.
@@ -55,7 +56,16 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
     } catch (e: any) { console.error(e); setExpError(e.message || 'No se pudo cargar el expediente'); }
   };
 
-  useEffect(() => { loadExpediente(); }, []);
+  useEffect(() => {
+    loadExpediente();
+    (async () => {
+      try {
+        const specialty = localStorage.getItem('sim_specialty') === 'data_engineering' ? 'data_engineering' : 'accounting';
+        const plan = await apiGet(`/api/sim/refuerzo?specialty=${specialty}`);
+        setPlanRefuerzo(plan);
+      } catch (e) { console.error(e); }
+    })();
+  }, []);
 
   const createLink = async () => {
     setLinkBusy(true);
@@ -397,6 +407,28 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
                 </div>
               )}
             </div>
+
+            {/* Práctica a la medida (R-08 Fase 3) */}
+            {planRefuerzo && planRefuerzo.recomendaciones && planRefuerzo.recomendaciones.length > 0 && (
+              <div className="rounded-xl border-2 p-4" style={{ borderColor: '#f59e0b40', background: colors.cardBg }}>
+                <h3 className="text-[11px] font-bold font-mono uppercase mb-3" style={{ color: '#f59e0b' }}>🎯 Práctica a la medida</h3>
+                <p className="text-[10px] mb-3" style={{ color: colors.textMuted }}>
+                  Detectamos habilidades que puedes reforzar. Completa estos micro-ejercicios para subir tu perfil:
+                </p>
+                <div className="space-y-2">
+                  {planRefuerzo.recomendaciones.map((r: any) => (
+                    <div key={r.id} className="p-3 rounded-lg" style={{ background: '#f59e0b08', border: `1px solid #f59e0b30` }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-bold" style={{ color: colors.text }}>{r.titulo}</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-full" style={{ background: '#f59e0b20', color: '#f59e0b' }}>{r.label} · {r.scoreActual}%</span>
+                      </div>
+                      <p className="text-[10px]" style={{ color: colors.textMuted }}>{r.instrucciones}</p>
+                      <p className="text-[9px] mt-1 font-mono" style={{ color: '#f59e0b' }}>evidencia: {r.evidenciaEsperada}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className="text-[9px] text-center pb-4" style={{ color: colors.textMuted }}>
               Documento con marca {brandName} · validación académica simulada · no constituye experiencia laboral real.
