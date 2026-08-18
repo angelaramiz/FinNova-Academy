@@ -1,0 +1,56 @@
+{
+  "$schema": "https://finnova/schemas/roadmap.schema.json",
+  "roadmap_version": "2.0",
+  "schema_desc": "Formato avanzado de roadmap de alineación para el simulador (R-08). Estructura lista para: generación de expediente verificable, entrevista entrenada y mapa de habilidades. Los campos `evidence` y `evidence_interview` alimentan el CV y la entrevista con hechos reales.",
+
+  "roadmap_alineacion": {
+    "id": "unique-slug-ejemplo",
+    "version": 1,
+    "owner": {
+      "email": "angelaramiz95@gmail.com",
+      "role": "student"
+    },
+    "puesto": "Nombre del puesto objetivo",
+    "empresa": "Empresa objetivo",
+    "fecha_creacion": "2026-08-17",
+    "fecha_objetivo": "2026-09-07",
+    "estado": "activo | pausado | completado | archivado",
+    "objetivo_general": "Descripción en una línea del objetivo de la ruta",
+    "nivel_actual": "Diagnóstico honesto de lo que ya dominas y lo que falta",
+    "duracion_dias_total": 21,
+
+    "ruta_tecnica": [
+      {
+        "requerimiento": "Nombre de la habilidad técnica",
+        "brecha": "diagnóstico de la brecha",
+        "nivel_objetivo": "Basico | Intermedio | Avanzado",
+        "depende_de": ["id de otro requerimiento si aplica"],
+        "temas_clave": ["tema 1", "tema 2"],
+        "practica": "Ejercicio práctico concreto",
+        "evidencia": "Qué entregable demuestra el dominio",
+        "dias": 3,
+        "metricas_esperadas": "Cómo se medirá el resultado (opcional)"
+      }
+    ],
+
+    "ruta_blanda": [
+      {
+        "competencia": "Habilidad blanda",
+        "como_alinearla": "Cómo tu experiencia la demuestra",
+        "evidencia_entrevista": "Historia o dato concreto para la entrevista"
+      }
+    ],
+
+    "proyecto_integrador": {
+      "descripcion": "Proyecto final que cubre varias habilidades",
+      "cubre": ["habilidad 1", "habilidad 2"],
+      "entregables": ["entregable 1", "entregable 2"],
+      "demo": "Formato de presentación (video / 5 min / en vivo)"
+    },
+
+    "criterios_de_exito": [
+      "Criterio medible 1",
+      "Criterio medible 2"
+    ]
+  }
+}

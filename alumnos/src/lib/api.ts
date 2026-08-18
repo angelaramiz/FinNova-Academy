@@ -210,7 +210,7 @@ export const api = {
   }),
 
   // Account Ingestion & Management / Authentication
-  submitRegisterRequest: (payload: { fullName: string; email: string; role: string; specialty?: string }) => apiFetch<any>('/api/auth/register-requests', {
+  submitRegisterRequest: (payload: { fullName: string; email: string; role: string; specialty?: string; careerBranch?: string }) => apiFetch<any>('/api/auth/register-requests', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),

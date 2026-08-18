@@ -1,0 +1,140 @@
+{
+  "$schema": "https://finnova/schemas/roadmap.schema.json",
+  "roadmap_version": "2.0",
+  "roadmap_alineacion": {
+    "id": "christus-analista-datos",
+    "version": 1,
+    "owner": {
+      "email": "angelaramiz95@gmail.com",
+      "role": "student"
+    },
+    "puesto": "Analista de Datos",
+    "empresa": "CHRISTUS Muguerza Corporativo",
+    "fecha_creacion": "2026-08-17",
+    "fecha_objetivo": "2026-09-14",
+    "estado": "activo",
+    "objetivo_general": "Cerrar la brecha de Excel avanzado y Power BI en 3-4 semanas, y formalizar tu experiencia con indicadores y pronósticos para el sector salud.",
+    "nivel_actual": "SQL y bases de datos fuertes, Excel básico, Python básico, experiencia real con indicadores operativos. Faltan: Excel avanzado, Power BI y vocabulario hospitalario.",
+    "duracion_dias_total": 21,
+
+    "ruta_tecnica": [
+      {
+        "requerimiento": "Excel intermedio-avanzado",
+        "brecha": "de básico a avanzado",
+        "nivel_objetivo": "Avanzado",
+        "depende_de": [],
+        "temas_clave": ["tablas dinámicas", "XLOOKUP", "SUMIFS y COUNTIFS", "formato condicional", "gráficos dinámicos", "limpieza de datos"],
+        "practica": "Dashboard de tus inventarios exportados de Supabase",
+        "evidencia": "archivo Excel con tablas dinámicas y 3 gráficos",
+        "dias": 5
+      },
+      {
+        "requerimiento": "Power BI",
+        "brecha": "desde cero",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": ["christus-analista-datos|excel-avanzado"],
+        "temas_clave": ["conexión a Excel y Postgres", "modelado de datos", "DAX básico: CALCULATE y SUMX", "visuales y publicación", "reportes para presentación"],
+        "practica": "Reporte de inventarios y discrepancias con 4 visuales y 3 medidas",
+        "evidencia": "archivo .pbix funcional",
+        "dias": 5
+      },
+      {
+        "requerimiento": "Manejo de base de datos (desarrollo para proyectos)",
+        "brecha": "ya fuerte; formalizar diseño",
+        "nivel_objetivo": "Avanzado",
+        "depende_de": [],
+        "temas_clave": ["normalización", "índices", "documentación de esquemas", "JOINs y agregaciones para indicadores"],
+        "practica": "Documentar el esquema de tu sistema Supabase",
+        "evidencia": "diagrama y diccionario de datos",
+        "dias": 2
+      },
+      {
+        "requerimiento": "Análisis de indicadores operativos y áreas de oportunidad",
+        "brecha": "lo haces en almacén; traducirlo a lenguaje de analista",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["definición de KPIs", "variaciones y tendencias", "Pareto", "análisis de causa raíz"],
+        "practica": "Analizar tus discrepancias de inventario y detectar 3 áreas de oportunidad",
+        "evidencia": "análisis de una página con hallazgos",
+        "dias": 3
+      },
+      {
+        "requerimiento": "Planeación y pronóstico",
+        "brecha": "nuevo",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["media móvil", "tendencia lineal", "función PRONOSTICO en Excel", "estacionalidad básica"],
+        "practica": "Pronosticar 4 semanas con tus inventarios semanales y medir error",
+        "evidencia": "pronóstico con precisión calculada",
+        "dias": 3
+      },
+      {
+        "requerimiento": "Informes y presentaciones",
+        "brecha": "formalizar comunicación de datos",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["estructura problema-análisis-propuesta", "storytelling con datos", "presentación ejecutiva"],
+        "practica": "Presentar tu dashboard en 5 minutos",
+        "evidencia": "grabación de tu presentación",
+        "dias": 2
+      },
+      {
+        "requerimiento": "Contexto hospitalario",
+        "brecha": "nuevo",
+        "nivel_objetivo": "Basico",
+        "depende_de": [],
+        "temas_clave": ["ocupación", "tiempos de espera", "estancia media", "satisfacción del paciente"],
+        "practica": "Leer y resumir 2 artículos de indicadores hospitalarios",
+        "evidencia": "poder opinar del sector en entrevista",
+        "dias": 1
+      }
+    ],
+
+    "ruta_blanda": [
+      {
+        "competencia": "Proactivo al cambio y transformación",
+        "como_alinearla": "Construiste sistemas sin que nadie los pidiera",
+        "evidencia_entrevista": "Historia del sistema Soriana y el de cortes de caja"
+      },
+      {
+        "competencia": "Capacidad analítica",
+        "como_alinearla": "Detección de discrepancias y áreas de oportunidad",
+        "evidencia_entrevista": "Caso real con datos y resultado"
+      },
+      {
+        "competencia": "Atención al detalle",
+        "como_alinearla": "Exactitud por conteos cíclicos diarios",
+        "evidencia_entrevista": "Métricas de exactitud y mermas"
+      },
+      {
+        "competencia": "Comunicación",
+        "como_alinearla": "Explicar datos a equipos no técnicos",
+        "evidencia_entrevista": "Tu presentación de 5 minutos"
+      },
+      {
+        "competencia": "Orientación a resultados",
+        "como_alinearla": "Fórmula XYZ en cada logro",
+        "evidencia_entrevista": "Logré X, medido por Y, haciendo Z"
+      },
+      {
+        "competencia": "Facilidad de aprendizaje",
+        "como_alinearla": "Roadmap completado en 4 semanas",
+        "evidencia_entrevista": "Tu línea de tiempo 2023-2026 autodidacta"
+      }
+    ],
+
+    "proyecto_integrador": {
+      "descripcion": "Tablero operativo integral: exporta datos de Supabase, límpialos en Excel avanzado, modélalos en Power BI, calcula indicadores y pronóstico con SQL y Excel, y cierra con un informe de una página con áreas de oportunidad.",
+      "cubre": ["Excel", "Power BI", "Base de datos", "Indicadores", "Pronóstico", "Informes"],
+      "entregables": ["Dashboard Excel", "Reporte .pbix", "Informe de una página"],
+      "demo": "Presentación ejecutiva de 5 minutos sin leer"
+    },
+
+    "criterios_de_exito": [
+      "Dashboard Excel y .pbix funcionando",
+      "Pronóstico defendible con error calculado",
+      "Presentación ejecutiva de 5 minutos sin leer",
+      "Explicar cada indicador en lenguaje de negocio"
+    ]
+  }
+}

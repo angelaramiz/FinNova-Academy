@@ -1,0 +1,160 @@
+{
+  "$schema": "https://finnova/schemas/roadmap.schema.json",
+  "roadmap_version": "2.0",
+  "roadmap_alineacion": {
+    "id": "brick-walling-ia-automatizacion",
+    "version": 1,
+    "owner": {
+      "email": "angelaramiz95@gmail.com",
+      "role": "student"
+    },
+    "puesto": "Auxiliar de Inteligencia Artificial y Automatización",
+    "empresa": "Brick Walling",
+    "fecha_creacion": "2026-08-17",
+    "fecha_objetivo": "2026-09-07",
+    "estado": "activo",
+    "objetivo_general": "Formalizar tu experiencia práctica con IA y sumar herramientas de automatización y agentes en 3 semanas, para pasar de usuario avanzado a integrador.",
+    "nivel_actual": "Uso diario de IA generativa desde 2023, proyectos reales de automatización con Python y bases de datos. Faltan: n8n/Power Automate, APIs de modelos como integrador, agentes formales y documentación de resultados.",
+    "duracion_dias_total": 20,
+
+    "ruta_tecnica": [
+      {
+        "requerimiento": "Herramientas de IA generativa (ChatGPT, Copilot, Gemini, Claude)",
+        "brecha": "ya las usas; formalizar comparación",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["fortalezas y límites de cada herramienta", "cuál usar por tipo de tarea", "buenas prácticas"],
+        "practica": "Tabla comparativa propia con casos reales tuyos",
+        "evidencia": "poder recomendar herramienta según necesidad en entrevista",
+        "dias": 2
+      },
+      {
+        "requerimiento": "Prompt engineering",
+        "brecha": "lo usas; documentarlo",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["contexto e instrucciones claras", "few-shot", "formato de salida", "iteración"],
+        "practica": "Mini guía propia con ejemplos de tus proyectos",
+        "evidencia": "guía de prompts con antes/después",
+        "dias": 1
+      },
+      {
+        "requerimiento": "Automatización con Python",
+        "brecha": "reforzar reducción de tareas manuales",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["scripts que eliminan trabajo repetitivo", "lectura de Excel y APIs", "programación de tareas"],
+        "practica": "Automatizar un reporte semanal de inventarios",
+        "evidencia": "script funcionando con métrica de tiempo ahorrado",
+        "dias": 3
+      },
+      {
+        "requerimiento": "Herramientas de automatización (n8n, Make, Power Automate)",
+        "brecha": "nuevo",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["nodos, triggers y workflows", "webhooks", "conexión con APIs y con IA"],
+        "practica": "Flujo: dato recibido, guardado en Postgres y notificación",
+        "evidencia": "workflow exportado y explicado",
+        "dias": 3
+      },
+      {
+        "requerimiento": "APIs de modelos de IA (OpenAI, Anthropic, Gemini)",
+        "brecha": "pasar de usuario a integrador",
+        "nivel_objetivo": "Avanzado",
+        "depende_de": ["brick-walling-ia-automatizacion|prompt-engineering"],
+        "temas_clave": ["llamadas chat completions", "system prompts", "parámetros y costos", "manejo de errores"],
+        "practica": "Asistente de consultas conectado a tu inventario",
+        "evidencia": "demo respondiendo con datos reales",
+        "dias": 3
+      },
+      {
+        "requerimiento": "Agentes, asistentes y flujos con LLMs",
+        "brecha": "concepto y construcción básica",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": ["brick-walling-ia-automatizacion|apis-modelos"],
+        "temas_clave": ["agente: percepción, decisión, acción", "tools y funciones", "memoria básica"],
+        "practica": "Agente que consulta tu API de inventarios como herramienta",
+        "evidencia": "demo en vivo o en video",
+        "dias": 3
+      },
+      {
+        "requerimiento": "Análisis de procesos de negocio",
+        "brecha": "lo haces en almacén; formalizar método",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["mapeo de procesos con diagramas", "detección de cuellos y tareas repetitivas", "priorización por impacto"],
+        "practica": "Mapear un proceso real de almacén y proponer su automatización",
+        "evidencia": "diagrama con propuesta y ahorro estimado",
+        "dias": 2
+      },
+      {
+        "requerimiento": "Documentar soluciones y medir resultados",
+        "brecha": "nuevo como hábito formal",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["documentación técnica simple", "manuales de usuario", "métricas antes/después"],
+        "practica": "Documentar tu sistema de inventarios con métricas de tiempo ahorrado",
+        "evidencia": "documento de una página por proyecto",
+        "dias": 2
+      },
+      {
+        "requerimiento": "Capacitar y acompañar usuarios",
+        "brecha": "lo hiciste informalmente; nombrarlo",
+        "nivel_objetivo": "Intermedio",
+        "depende_de": [],
+        "temas_clave": ["explicar a no técnicos", "guías rápidas", "paciencia y seguimiento"],
+        "practica": "Guiar a un familiar o amigo a usar tu sistema",
+        "evidencia_entrevista": "Historia de adopción de nuevos conteos en Guess",
+        "dias": 1
+      }
+    ],
+
+    "ruta_blanda": [
+      {
+        "competencia": "Curiosidad tecnológica",
+        "como_alinearla": "Aprendes con IA desde 2023, antes de la carrera",
+        "evidencia_entrevista": "Tu línea de tiempo de proyectos 2023-2026"
+      },
+      {
+        "competencia": "Mentalidad de automatización",
+        "como_alinearla": "Cada sistema tuyo elimina trabajo manual",
+        "evidencia_entrevista": "Ejemplos con horas ahorradas"
+      },
+      {
+        "competencia": "Iniciativa para proponer e implementar",
+        "como_alinearla": "Proyectos construidos sin que nadie los pidiera",
+        "evidencia_entrevista": "Soriana y restaurante"
+      },
+      {
+        "competencia": "Capacidad para analizar procesos",
+        "como_alinearla": "Mapeo de almacén y detección de optimizables",
+        "evidencia_entrevista": "Diagrama con propuesta de automatización"
+      },
+      {
+        "competencia": "Facilidad para aprender",
+        "como_alinearla": "Roadmap de 3 semanas completado",
+        "evidencia_entrevista": "Tecnologías nuevas adoptadas por cuenta propia"
+      },
+      {
+        "competencia": "Comunicación",
+        "como_alinearla": "Explicar IA y sistemas a no técnicos",
+        "evidencia_entrevista": "Demo del asistente en lenguaje de negocio"
+      }
+    ],
+
+    "proyecto_integrador": {
+      "descripcion": "Asistente de IA para inventarios: agente conectado a tu API de Supabase que responde en lenguaje natural, más un flujo n8n que genera el reporte diario automático, todo documentado con métricas antes/después y presentado en demo de 5 minutos.",
+      "cubre": ["Agentes", "APIs", "Automatización", "Documentación", "Medición", "Comunicación"],
+      "entregables": ["Agente funcionando", "Workflow n8n exportado", "Documento con métricas"],
+      "demo": "Demo en vivo de 5 minutos"
+    },
+
+    "criterios_de_exito": [
+      "Demo del asistente respondiendo con datos reales",
+      "Workflow n8n funcionando y exportado",
+      "Métricas de tiempo ahorrado por automatización",
+      "Explicar el mapeo de un proceso y su propuesta de IA"
+    ]
+  }
+}

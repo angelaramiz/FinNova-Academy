@@ -37,10 +37,47 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
   const [tex, setTex] = useState('');
   const [saved, setSaved] = useState(false);
   const [demoRole, setDemoRole] = useState<'none' | 'analyst' | 'engineering' | 'science' | 'accounting'>('none');
+  // Expediente verificable (R-08)
+  const [expediente, setExpediente] = useState<{ logros: any[]; resumen: any; link: any } | null>(null);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [expError, setExpError] = useState<string | null>(null);
   // El selector de perfil demo SIEMPRE está disponible (es previsualización,
   // no afecta el progreso real). Permite generar el CV "como si completado"
   // para cualquier especialidad, incluyendo Contabilidad.
   const demoActive = true;
+
+  const loadExpediente = async () => {
+    try {
+      const specialty = localStorage.getItem('sim_specialty') === 'data_engineering' ? 'data_engineering' : 'accounting';
+      const data = await apiGet(`/api/sim/expediente?specialty=${specialty}`);
+      setExpediente(data);
+      setExpError(null);
+    } catch (e: any) { console.error(e); setExpError(e.message || 'No se pudo cargar el expediente'); }
+  };
+
+  useEffect(() => { loadExpediente(); }, []);
+
+  const createLink = async () => {
+    setLinkBusy(true);
+    setExpError(null);
+    try {
+      const specialty = localStorage.getItem('sim_specialty') === 'data_engineering' ? 'data_engineering' : 'accounting';
+      const data = await apiPost(`/api/sim/expediente/link?specialty=${specialty}`);
+      await loadExpediente();
+      return data.link;
+    } catch (e: any) { setExpError(e.message || 'Error al generar el link'); return null; }
+    finally { setLinkBusy(false); }
+  };
+
+  const revokeLink = async () => {
+    setLinkBusy(true);
+    setExpError(null);
+    try {
+      await apiPost('/api/sim/expediente/link/revoke');
+      await loadExpediente();
+    } catch (e: any) { setExpError(e.message || 'Error al revocar el link'); }
+    finally { setLinkBusy(false); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -286,6 +323,78 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
                 <pre className="mt-3 p-3 rounded-xl font-mono text-[9px] overflow-auto max-h-64" style={{ background: isDark ? '#0a0f1a' : '#1e293b', color: '#e2e8f0' }}>
                   {tex || 'Genera el .tex primero (botón Descargar .tex).'}
                 </pre>
+              )}
+            </div>
+
+            {/* Expediente verificable (R-08) */}
+            <div className="rounded-xl border-2 p-4" style={{ borderColor: '#22c55e40', background: colors.cardBg }}>
+              <h3 className="text-[11px] font-bold font-mono uppercase mb-3" style={{ color: '#22c55e' }}>🔗 Expediente Verificable</h3>
+              <p className="text-[10px] mb-3" style={{ color: colors.textMuted }}>
+                Comparte un link público con sello de verificación: el reclutador ve tu trayectoria real (tareas, incidentes resueltos, score). Puedes revocarlo cuando quieras.
+              </p>
+
+              {expError && <p className="text-[10px] mb-2" style={{ color: '#ef4444' }}>{expError}</p>}
+
+              {expediente && (
+                <div className="mb-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <div className="text-center p-2 rounded-lg" style={{ background: colors.bg }}>
+                      <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{expediente.resumen?.totalTareas || 0}</div>
+                      <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>tareas</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg" style={{ background: colors.bg }}>
+                      <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{expediente.resumen?.scorePromedio || 0}%</div>
+                      <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>score</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg" style={{ background: colors.bg }}>
+                      <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{expediente.resumen?.horasInvertidas || 0}h</div>
+                      <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>práctica</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg" style={{ background: colors.bg }}>
+                      <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{expediente.resumen?.incidentesResueltos || 0}</div>
+                      <div className="text-[8px] font-mono" style={{ color: colors.textMuted }}>incidentes</div>
+                    </div>
+                  </div>
+
+                  {expediente.logros && expediente.logros.length > 0 && (
+                    <div className="mb-3 space-y-1.5">
+                      {expediente.logros.slice(0, 5).map((l, i) => (
+                        <div key={i} className="p-2 rounded-lg" style={{ background: colors.bg }}>
+                          <div className="text-[10px] font-bold" style={{ color: colors.text }}>✓ {l.titulo}</div>
+                          <div className="text-[9px] mt-0.5" style={{ color: colors.textMuted }}>{l.datos}</div>
+                        </div>
+                      ))}
+                      {expediente.logros.length > 5 && (
+                        <div className="text-[9px] font-mono" style={{ color: colors.textMuted }}>+ {expediente.logros.length - 5} logros más</div>
+                      )}
+                    </div>
+                  )}
+
+                  {expediente.link?.active ? (
+                    <div className="p-3 rounded-xl border-2" style={{ borderColor: '#22c55e40', background: '#22c55e10' }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: '#22c55e', color: '#1B2632' }}>SELLO ✓</span>
+                        <span className="text-[10px] font-mono" style={{ color: '#22c55e' }}>Link activo</span>
+                      </div>
+                      <div className="text-[10px] font-mono break-all mb-2" style={{ color: colors.text }}>
+                        {window.location.origin}/api/sim/expediente/{expediente.link.slug}
+                      </div>
+                      <button onClick={async () => {
+                        const link = expediente.link?.slug;
+                        if (link) await navigator.clipboard.writeText(`${window.location.origin}/api/sim/expediente/${link}`);
+                        alert('Link copiado al portapapeles');
+                      }} className="px-3 py-1.5 rounded-lg border-2 text-[10px] font-bold cursor-pointer hover:opacity-80 mr-2" style={{ borderColor: '#22c55e', color: '#22c55e' }}>📋 Copiar</button>
+                      <button onClick={revokeLink} disabled={linkBusy} className="px-3 py-1.5 rounded-lg border-2 text-[10px] font-bold cursor-pointer hover:opacity-80 disabled:opacity-50" style={{ borderColor: '#ef4444', color: '#ef4444' }}>{linkBusy ? 'Revocando...' : '🚫 Revocar'}</button>
+                    </div>
+                  ) : (
+                    <button onClick={async () => {
+                      const link = await createLink();
+                      if (link) alert('Link de verificación generado');
+                    }} disabled={linkBusy} className="px-4 py-2 rounded-xl border-2 text-[11px] font-bold cursor-pointer hover:opacity-85 disabled:opacity-50" style={{ borderColor: '#22c55e', background: '#22c55e', color: '#1B2632' }}>
+                      {linkBusy ? 'Generando...' : '🔗 Generar link de verificación'}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

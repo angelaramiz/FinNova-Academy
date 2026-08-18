@@ -6,6 +6,7 @@ export default function RegisterRequest() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [specialty, setSpecialty] = useState('');
+  const [careerBranch, setCareerBranch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -45,6 +46,10 @@ export default function RegisterRequest() {
       setError('Por favor completa todos los campos requeridos.');
       return;
     }
+    if (!specialty) {
+      setError('Selecciona la especialidad que te interesa.');
+      return;
+    }
 
     setError(null);
     setLoading(true);
@@ -53,13 +58,15 @@ export default function RegisterRequest() {
       await api.submitRegisterRequest({
         fullName: fullName.trim(),
         email: email.trim(),
-        role: 'student', // Strictly Alumno/Student
-        specialty: specialty.trim() || undefined,
-      });
+        role: 'student',
+        specialty: specialty,
+        careerBranch: specialty === 'data_engineering' ? (careerBranch || 'analyst') : undefined,
+      } as any);
       setSuccess(true);
       setFullName('');
       setEmail('');
       setSpecialty('');
+      setCareerBranch('');
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error al enviar tu solicitud.');
     } finally {
@@ -178,21 +185,46 @@ export default function RegisterRequest() {
 
               <div>
                 <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5">
-                  Carrera / Interés de Especialización (Opcional)
+                  Especialidad del Simulador
                 </label>
                 <select
                   value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
+                  onChange={(e) => { setSpecialty(e.target.value); setCareerBranch(''); }}
                   className="block w-full bg-slate-950/50 border border-slate-850 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/20 transition"
                 >
                   <option value="">Selecciona una Especialidad...</option>
-                  <option value="Finanzas Corporativas">Finanzas Corporativas</option>
-                  <option value="Inversión y Mercados de Capitales">Inversión y Mercados de Capitales</option>
-                  <option value="Tecnología Financiera (FinTech)">Tecnología Financiera (FinTech)</option>
-                  <option value="Banca y Gestión Patrimonial">Banca y Gestión Patrimonial</option>
-                  <option value="Análisis de Datos y Modelación Cuantitativa">Análisis de Datos y Modelación Cuantitativa</option>
+                  <option value="accounting">📊 Contabilidad — Contador General Junior</option>
+                  <option value="data_engineering">🔀 Data Engineering — Analista de Datos (ruta inicial)</option>
                 </select>
+                <p className="text-[9px] text-slate-500 mt-1">
+                  Data Engineering desbloquea Ingeniería o Ciencia de Datos con tu práctica.
+                </p>
               </div>
+
+              {specialty === 'data_engineering' && (
+                <div>
+                  <label className="block text-[10px] font-mono uppercase text-slate-400 mb-1.5">
+                    Ruta del Árbol de Datos
+                  </label>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'analyst', label: '🧭 Analista de Datos', desc: 'SQL, profiling, reportes y calidad — ruta inicial' },
+                      { id: 'engineering', label: '🔀 Ingeniería de Datos', desc: 'Pipelines, dbt, Airflow, Foundry' },
+                      { id: 'science', label: '🧪 Ciencia de Datos', desc: 'EDA, modelos, experimentos, churn' },
+                    ].map(b => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setCareerBranch(b.id)}
+                        className={`w-full text-left p-3 rounded-xl border transition cursor-pointer ${careerBranch === b.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'}`}
+                      >
+                        <span className="block text-[11px] font-bold" style={{ color: careerBranch === b.id ? '#2dd4bf' : '#e2e8f0' }}>{b.label}</span>
+                        <span className="block text-[9px] text-slate-500 mt-0.5">{b.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2">
                 <button
