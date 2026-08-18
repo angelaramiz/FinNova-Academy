@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS public.verification_links (
     slug TEXT PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    specialty TEXT NOT NULL DEFAULT 'accounting',
     active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     revoked_at TIMESTAMPTZ
