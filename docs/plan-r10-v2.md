@@ -1,15 +1,17 @@
 # R-10 v2 — Sistema de 3 Etapas: Diagnóstico → Seguimiento de Vacante con Simulador → Experiencia Comprobable
 
-> Estado: **EN CURSO (19-ago-2026)** — T1-T3 implementados; T4-T7 pendientes.
+> Estado: **EN CURSO (19-ago-2026)** — T1-T6 implementados; T7 (gates finales) pendiente.
 > Fuente de trazabilidad: `agents.md` (sección R-10 v2). Regla de oro R-09 se mantiene:
 > números/match/densidad salen de motores o reglas; solo el texto de la vacante usa IA con fallback determinístico.
 
-## Implementado (T1-T3, 19-ago-2026)
+## Implementado (19-ago-2026)
 
-- **T1** — Migración `20260819010235_auth_plans.sql` (aplicada a Supabase): columna `plan` (free|pro) y `experience_density` en `profiles`; tablas `vacancy_tracking` y `stage1_assessments` con RLS por usuario.
-- **T2** — Etapa 1: `vacancyAnalyzer.ts` (IA Gemini con fallback determinístico por cláusula), `matchScorer.ts` (match ponderado, gaps/covered), `stageRouter.ts` (routing puro). `stage1Service.ts` orquesta analyze/submit/reevaluate. Endpoints: `POST /api/stage1/analyze`, `/submit`, `/reevaluate` (router `stage1.ts`).
-- **T3** — Tracking: `vacancyTracker.ts` (límite free = 2 activas, 402/409), `vacancies.ts` router (`GET /`, `POST /track`, `POST /:id/status`), UI `VacancyTracker.tsx` (app "🎯 Vacantes" en DesktopShell, todas las fases).
-- **Tests**: `stage-routing.test.ts` (12) + `free-limit.test.ts` (5). Suite root 186 tests / backend 70 / audit 68.
+- **T1-T3** — ver `agents.md` (embudo funcional: auth_plans, Etapa 1, tracking).
+- **T4** — Modo A: `careerCenter.ts` (kit de postulación: CV a la medida, checklist, entrevista STAR, evidencia R-08) + `POST /api/stage1/kit`.
+- **T5** — Modo B: `simBlocks.ts` (registry skill→herramienta real) + `intensivePlanner.ts` (casos aplicados con 5 reglas obligatorias + encadenamiento) + `POST /api/stage1/intensive`.
+- **T6** — Etapa 3: `experienceDensity.ts` (density = f(casos, complejidad, variedad, incidentes, resultados)) + `POST /api/stage1/density`.
+- **Tests**: `intensive-cases` (8) + `density` (6) + `reevaluation` (5). Suite root 205 / backend 70 / audit 104.
+
 
 
 ## Arquitectura (3 Etapas)

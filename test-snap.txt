@@ -1,0 +1,335 @@
+uid=1_0 RootWebArea "FinNova Academy" url="http://localhost:3000/student"
+  uid=28_0 ignored
+    uid=28_1 ignored
+      uid=28_2 generic
+        uid=28_3 ignored
+          uid=1_5 banner
+            uid=28_4 ignored
+              uid=28_5 generic
+                uid=28_6 ignored
+                  uid=1_9 StaticText "SL"
+                    uid=28_7 InlineTextBox "SL"
+                uid=28_8 ignored
+                  uid=1_12 StaticText "SIMULADOR LABORAL"
+                    uid=28_7 InlineTextBox "SIMULADOR LABORAL"
+                uid=28_9 ignored
+                  uid=1_14 StaticText "v"
+                    uid=28_7 InlineTextBox "v"
+                  uid=1_15 StaticText "0.1.107"
+                    uid=28_7 InlineTextBox "0.1.107"
+              uid=28_10 ignored
+                uid=28_11 ignored
+                  uid=2_0 image "Avatar" url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"
+                uid=2_1 button "Cerrar Sesión"
+          uid=1_16 main
+            uid=28_12 ignored
+              uid=28_13 ignored
+                uid=28_14 ignored
+                uid=28_15 ignored
+                  uid=2_2 StaticText "SIMULADOR LABORAL"
+                    uid=28_7 InlineTextBox "SIMULADOR LABORAL"
+                uid=28_16 ignored
+                  uid=28_17 ignored
+                  uid=28_18 ignored
+                    uid=2_3 StaticText "En línea"
+                      uid=28_7 InlineTextBox "En línea"
+              uid=28_19 ignored
+                uid=28_20 generic
+                  uid=28_21 generic
+                    uid=28_22 ignored
+                      uid=28_23 Canvas
+                  uid=28_24 generic
+                    uid=28_25 ignored
+                      uid=28_26 ignored
+                        uid=28_27 ignored
+                          uid=8_26 button "▶"
+                            uid=28_28 StaticText "▶"
+                              uid=28_7 InlineTextBox "▶"
+                        uid=28_29 ignored
+                          uid=28_30 ignored
+                            uid=8_30 button "📊 Contabilidad"
+                              uid=28_31 StaticText "📊 Contabilidad"
+                                uid=28_7 InlineTextBox "📊 Contabilidad"
+                            uid=8_32 button "🔀 Data Engineering"
+                              uid=28_32 StaticText "🔀 Data Engineering"
+                                uid=28_7 InlineTextBox "🔀 Data Engineering"
+                          uid=8_34 button "✕"
+                            uid=28_33 StaticText "✕"
+                              uid=28_7 InlineTextBox "✕"
+                      uid=28_34 generic
+                        uid=9_1 StaticText "🔀 Modo: Ingeniero de Datos Jr — Palantir Foundry"
+                          uid=28_7 InlineTextBox "🔀 Modo: Ingeniero de Datos Jr — Palantir Foundry"
+                      uid=28_35 generic
+                        uid=28_36 ignored
+                          uid=28_37 ignored
+                            uid=28_38 ignored
+                              uid=28_39 ignored
+                                uid=26_0 StaticText "🛫"
+                                  uid=28_7 InlineTextBox "🛫"
+                              uid=28_40 ignored
+                                uid=26_1 StaticText "Airflow · lno_sales_pipeline"
+                                  uid=28_7 InlineTextBox "Airflow · lno_sales_pipeline"
+                              uid=28_41 ignored
+                                uid=26_2 StaticText "● run completado"
+                                  uid=28_7 InlineTextBox "● run completado"
+                              uid=28_42 ignored
+                                uid=26_3 StaticText "schedule · 0 8 * * *"
+                                  uid=28_7 InlineTextBox "schedule · 0 8 * * *"
+                              uid=28_43 ignored
+                              uid=28_44 generic
+                                uid=26_4 StaticText "7"
+                                  uid=28_7 InlineTextBox "7"
+                                uid=26_5 StaticText "/"
+                                  uid=28_7 InlineTextBox "/"
+                                uid=26_6 StaticText "7"
+                                  uid=28_7 InlineTextBox "7"
+                                uid=26_7 StaticText " tareas ok"
+                                  uid=28_7 InlineTextBox " tareas ok"
+                              uid=26_8 button "▶ Trigger run"
+                                uid=28_45 StaticText "▶ Trigger run"
+                                  uid=28_7 InlineTextBox "▶ Trigger run"
+                            uid=28_46 ignored
+                              uid=26_9 button "📋 Ejecuciones"
+                                uid=28_47 StaticText "📋"
+                                  uid=28_7 InlineTextBox "📋"
+                                uid=28_48 StaticText " "
+                                  uid=28_7 InlineTextBox " "
+                                uid=28_49 StaticText "Ejecuciones"
+                                  uid=28_7 InlineTextBox "Ejecuciones"
+                              uid=26_10 button "🗺️ Grafo"
+                                uid=28_50 StaticText "🗺️"
+                                  uid=28_7 InlineTextBox "🗺️"
+                                uid=28_51 StaticText " "
+                                  uid=28_7 InlineTextBox " "
+                                uid=28_52 StaticText "Grafo"
+                                  uid=28_7 InlineTextBox "Grafo"
+                              uid=26_11 button "🧑‍💻 Código"
+                                uid=28_53 StaticText "🧑‍💻"
+                                  uid=28_7 InlineTextBox "🧑‍💻"
+                                uid=28_54 StaticText " "
+                                  uid=28_7 InlineTextBox " "
+                                uid=28_55 StaticText "Código"
+                                  uid=28_7 InlineTextBox "Código"
+                            uid=28_56 ignored
+                              uid=28_57 ignored
+                                uid=28_58 table
+                                  uid=28_59 rowgroup
+                                    uid=28_60 row
+                                      uid=28_61 columnheader "Run ID"
+                                        uid=26_12 StaticText "Run ID"
+                                          uid=28_7 InlineTextBox "Run ID"
+                                      uid=28_62 columnheader "Fecha"
+                                        uid=26_13 StaticText "Fecha"
+                                          uid=28_7 InlineTextBox "Fecha"
+                                      uid=28_63 columnheader "Hora"
+                                        uid=26_14 StaticText "Hora"
+                                          uid=28_7 InlineTextBox "Hora"
+                                      uid=28_64 columnheader "Estado"
+                                        uid=26_15 StaticText "Estado"
+                                          uid=28_7 InlineTextBox "Estado"
+                                      uid=28_65 columnheader "Duración"
+                                        uid=26_16 StaticText "Duración"
+                                          uid=28_7 InlineTextBox "Duración"
+                                      uid=28_66 columnheader "Tareas"
+                                        uid=26_17 StaticText "Tareas"
+                                          uid=28_7 InlineTextBox "Tareas"
+                                  uid=28_67 ignored
+                                    uid=28_68 row
+                                      uid=28_69 cell "scheduled__1"
+                                        uid=26_18 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_19 StaticText "1"
+                                          uid=28_7 InlineTextBox "1"
+                                      uid=28_70 cell "03/08"
+                                        uid=26_20 StaticText "03/08"
+                                          uid=28_7 InlineTextBox "03/08"
+                                      uid=28_71 cell "08:00"
+                                        uid=26_21 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_72 cell "success"
+                                        uid=26_22 StaticText "success"
+                                          uid=28_7 InlineTextBox "success"
+                                      uid=28_73 cell "3m 0s"
+                                        uid=26_23 StaticText "3"
+                                          uid=28_7 InlineTextBox "3"
+                                        uid=26_24 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_25 StaticText "0"
+                                          uid=28_7 InlineTextBox "0"
+                                        uid=26_26 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_74 cell
+                                        uid=28_75 ignored
+                                          uid=26_27 generic description="ingest_ventas: success"
+                                          uid=26_28 generic description="ingest_clientes: success"
+                                          uid=26_29 generic description="dbt_run_stg: success"
+                                          uid=26_30 generic description="dbt_run_int: success"
+                                          uid=26_31 generic description="dbt_run_mart: success"
+                                          uid=26_32 generic description="dbt_test: success"
+                                          uid=26_33 generic description="export_redshift: success"
+                                    uid=28_76 row
+                                      uid=28_77 cell "scheduled__2"
+                                        uid=26_34 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_35 StaticText "2"
+                                          uid=28_7 InlineTextBox "2"
+                                      uid=28_78 cell "04/08"
+                                        uid=26_36 StaticText "04/08"
+                                          uid=28_7 InlineTextBox "04/08"
+                                      uid=28_79 cell "08:00"
+                                        uid=26_37 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_80 cell "success"
+                                        uid=26_38 StaticText "success"
+                                          uid=28_7 InlineTextBox "success"
+                                      uid=28_81 cell "6m 12s"
+                                        uid=26_39 StaticText "6"
+                                          uid=28_7 InlineTextBox "6"
+                                        uid=26_40 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_41 StaticText "12"
+                                          uid=28_7 InlineTextBox "12"
+                                        uid=26_42 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_82 cell
+                                        uid=28_83 ignored
+                                          uid=26_43 generic description="ingest_ventas: success"
+                                          uid=26_44 generic description="ingest_clientes: success"
+                                          uid=26_45 generic description="dbt_run_stg: success"
+                                          uid=26_46 generic description="dbt_run_int: success"
+                                          uid=26_47 generic description="dbt_run_mart: success"
+                                          uid=26_48 generic description="dbt_test: success"
+                                          uid=26_49 generic description="export_redshift: success"
+                                    uid=28_84 row
+                                      uid=28_85 cell "scheduled__3"
+                                        uid=26_50 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_51 StaticText "3"
+                                          uid=28_7 InlineTextBox "3"
+                                      uid=28_86 cell "05/08"
+                                        uid=26_52 StaticText "05/08"
+                                          uid=28_7 InlineTextBox "05/08"
+                                      uid=28_87 cell "08:00"
+                                        uid=26_53 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_88 cell "success"
+                                        uid=26_54 StaticText "success"
+                                          uid=28_7 InlineTextBox "success"
+                                      uid=28_89 cell "9m 24s"
+                                        uid=26_55 StaticText "9"
+                                          uid=28_7 InlineTextBox "9"
+                                        uid=26_56 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_57 StaticText "24"
+                                          uid=28_7 InlineTextBox "24"
+                                        uid=26_58 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_90 cell
+                                        uid=28_91 ignored
+                                          uid=26_59 generic description="ingest_ventas: success"
+                                          uid=26_60 generic description="ingest_clientes: success"
+                                          uid=26_61 generic description="dbt_run_stg: success"
+                                          uid=26_62 generic description="dbt_run_int: success"
+                                          uid=26_63 generic description="dbt_run_mart: success"
+                                          uid=26_64 generic description="dbt_test: success"
+                                          uid=26_65 generic description="export_redshift: success"
+                                    uid=28_92 row
+                                      uid=28_93 cell "scheduled__4"
+                                        uid=26_66 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_67 StaticText "4"
+                                          uid=28_7 InlineTextBox "4"
+                                      uid=28_94 cell "06/08"
+                                        uid=26_68 StaticText "06/08"
+                                          uid=28_7 InlineTextBox "06/08"
+                                      uid=28_95 cell "08:00"
+                                        uid=26_69 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_96 cell "success"
+                                        uid=26_70 StaticText "success"
+                                          uid=28_7 InlineTextBox "success"
+                                      uid=28_97 cell "12m 36s"
+                                        uid=26_71 StaticText "12"
+                                          uid=28_7 InlineTextBox "12"
+                                        uid=26_72 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_73 StaticText "36"
+                                          uid=28_7 InlineTextBox "36"
+                                        uid=26_74 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_98 cell
+                                        uid=28_99 ignored
+                                          uid=26_75 generic description="ingest_ventas: success"
+                                          uid=26_76 generic description="ingest_clientes: success"
+                                          uid=26_77 generic description="dbt_run_stg: success"
+                                          uid=26_78 generic description="dbt_run_int: success"
+                                          uid=26_79 generic description="dbt_run_mart: success"
+                                          uid=26_80 generic description="dbt_test: success"
+                                          uid=26_81 generic description="export_redshift: success"
+                                    uid=28_100 row
+                                      uid=28_101 cell "scheduled__5"
+                                        uid=26_82 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_83 StaticText "5"
+                                          uid=28_7 InlineTextBox "5"
+                                      uid=28_102 cell "07/08"
+                                        uid=26_84 StaticText "07/08"
+                                          uid=28_7 InlineTextBox "07/08"
+                                      uid=28_103 cell "08:00"
+                                        uid=26_85 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_104 cell "failed"
+                                        uid=26_86 StaticText "failed"
+                                          uid=28_7 InlineTextBox "failed"
+                                      uid=28_105 cell "15m 48s"
+                                        uid=26_87 StaticText "15"
+                                          uid=28_7 InlineTextBox "15"
+                                        uid=26_88 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_89 StaticText "48"
+                                          uid=28_7 InlineTextBox "48"
+                                        uid=26_90 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_106 cell
+                                        uid=28_107 ignored
+                                          uid=26_91 generic description="ingest_ventas: success"
+                                          uid=26_92 generic description="ingest_clientes: success"
+                                          uid=26_93 generic description="dbt_run_stg: success"
+                                          uid=26_94 generic description="dbt_run_int: success"
+                                          uid=26_95 generic description="dbt_run_mart: success"
+                                          uid=26_96 generic description="dbt_test: failed"
+                                          uid=26_97 generic description="export_redshift: pending"
+                                    uid=28_108 row
+                                      uid=28_109 cell "scheduled__6"
+                                        uid=26_98 StaticText "scheduled__"
+                                          uid=28_7 InlineTextBox "scheduled__"
+                                        uid=26_99 StaticText "6"
+                                          uid=28_7 InlineTextBox "6"
+                                      uid=28_110 cell "08/08"
+                                        uid=26_100 StaticText "08/08"
+                                          uid=28_7 InlineTextBox "08/08"
+                                      uid=28_111 cell "08:00"
+                                        uid=26_101 StaticText "08:00"
+                                          uid=28_7 InlineTextBox "08:00"
+                                      uid=28_112 cell "success"
+                                        uid=26_102 StaticText "success"
+                                          uid=28_7 InlineTextBox "success"
+                                      uid=28_113 cell "18m 60s"
+                                        uid=26_103 StaticText "18"
+                                          uid=28_7 InlineTextBox "18"
+                                        uid=26_104 StaticText "m "
+                                          uid=28_7 InlineTextBox "m "
+                                        uid=26_105 StaticText "60"
+                                          uid=28_7 InlineTextBox "60"
+                                        uid=26_106 StaticText "s"
+                                          uid=28_7 InlineTextBox "s"
+                                      uid=28_114 cell
+                                        uid=28_115 ignored
+                                          uid=26_107 generic description="ingest_ventas: success"
+                                          uid=26_108 generic description="ingest_clientes: success"
+                                          uid=26_109 generic description="dbt_run_stg: success"
+                                          uid=26_110 generic description="dbt_run_int: success"
+                                          uid=26_111 generic description="dbt_run_mart: success"
+                                          uid=26_112 generic description="dbt_test: success"
+                                          uid=26_113 generic description="export_redshift: success"
+        uid=28_116 generic
