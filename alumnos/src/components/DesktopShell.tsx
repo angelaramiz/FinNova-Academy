@@ -32,6 +32,7 @@ import StatsSim from './StatsSim';
 import MLSim from './MLSim';
 import CvBuilderSim from './CvBuilderSim';
 import InterviewSim from './InterviewSim';
+import ChronicleSim from './ChronicleSim';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -50,7 +51,7 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
@@ -72,6 +73,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [careerPath, setCareerPath] = useState<CareerPathState | null>(null);
   const [showRoutes, setShowRoutes] = useState(false);
   const [demoPreview, setDemoPreview] = useState<'analyst' | 'engineering' | 'science'>('analyst');
+  const [storyArc, setStoryArc] = useState<{ arcId: string; nombre: string; activeScene: string | null; sceneLabel?: string } | null>(null);
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
@@ -107,10 +109,22 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
     } catch { /* noop */ }
   }
 
+  async function loadStory() {
+    try {
+      const route = isData ? (appSet === 'engineering' ? 'engineering' : appSet === 'science' ? 'science' : 'analyst') : 'contable';
+      const data = await apiPost(`/api/sim/story/state?route=${route}`);
+      if (data?.arcId) {
+        const arc = data.arcs?.find((a: any) => a.id === data.arcId);
+        setStoryArc({ arcId: data.arcId, nombre: arc?.nombre || data.arcId, activeScene: data.activeScene });
+      }
+    } catch { /* noop */ }
+  }
+
   useEffect(() => {
     if (isData) { loadWorld(); loadCareerPath(); }
+    loadStory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [specialty]);
+  }, [specialty, appSet]);
 
   async function toggleDemoOverride(enabled: boolean) {
     try {
@@ -207,6 +221,7 @@ const accountingApps = [
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
+  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
 ];
 
 const analystApps = [
@@ -222,6 +237,7 @@ const analystApps = [
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
+  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
 ];
 
 const engineeringApps = [
@@ -245,6 +261,7 @@ const engineeringApps = [
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
+  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
 ];
 
 const scienceApps = [
@@ -263,6 +280,7 @@ const scienceApps = [
   { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
+  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
 ];
 
   const appIcons = !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
@@ -336,6 +354,13 @@ const scienceApps = [
           <span>{world.pipeline?.status === 'failed' ? '🔴 en falla (dbt_test)' : '🟢 recuperado'}</span>
           <span>·</span>
           <span>SLA mart: {world.slas?.mrtSla === 'breached' ? '🔴 incumplido' : '🟢 cumplido'}</span>
+        </div>
+      )}
+
+      {storyArc && (
+        <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: '#a855f710', color: '#a855f7', borderBottom: `1px solid ${colors.border}` }}>
+          <span>📖 Arco: {storyArc.nombre}</span>
+          {storyArc.activeScene && <span>· escena: {storyArc.activeScene}</span>}
         </div>
       )}
 
@@ -413,6 +438,7 @@ const scienceApps = [
         )}
         {screen === 'cv' && <div className="animate-slide-in h-full"><CvBuilderSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'interview' && <div className="animate-slide-in h-full"><InterviewSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}

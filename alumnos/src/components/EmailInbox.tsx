@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
 
 interface EmailInboxProps {
@@ -6,6 +7,13 @@ interface EmailInboxProps {
   onSelectTask: (taskId: string) => void;
   onBack: () => void;
   specialty?: 'accounting' | 'data_engineering';
+}
+
+interface NpcMail {
+  subject: string;
+  body: string;
+  from: string;
+  npcName?: string;
 }
 
 function generatePreview(type: string): string {
@@ -34,6 +42,24 @@ function generatePreview(type: string): string {
 export default function EmailInbox({ theme, tasks, onSelectTask, onBack, specialty = 'accounting' }: EmailInboxProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
+  const [npcMails, setNpcMails] = useState<NpcMail[]>([]);
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('supabase_auth_token') || '';
+      const isRender = window.location.hostname.includes('onrender.com');
+      const baseUrl = (import.meta as any).env?.VITE_API_URL || (isRender ? 'https://finnova-back.onrender.com' : '');
+      fetch(`${baseUrl}/api/sim/story/state`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(d => {
+          const mails = (d?.events || [])
+            .filter((e: any) => e?.correo)
+            .map((e: any) => ({ ...e.correo, npcName: e.npcName }));
+          setNpcMails(mails);
+        })
+        .catch(() => { /* noop */ });
+    } catch { /* noop */ }
+  }, []);
 
   const senders = specialty === 'data_engineering'
     ? ['Ing. Sandra Mora', 'Sistema de Monitoreo', 'DataFlow Analytics', 'Sistema de Calidad']
@@ -48,6 +74,20 @@ export default function EmailInbox({ theme, tasks, onSelectTask, onBack, special
         <span className="text-[8px] font-mono ml-auto" style={{ color: colors.textMuted }}>{tasks.length} mensajes</span>
       </div>
       <div className="flex-1 overflow-auto divide-y" style={{ borderColor: colors.border + '30' }}>
+        {npcMails.length > 0 && (
+          <div className="px-4 py-2 border-b-2" style={{ borderColor: colors.border, background: '#a855f710' }}>
+            <p className="text-[9px] font-bold font-mono mb-1.5" style={{ color: '#a855f7' }}>📖 Mensajes del mundo vivo</p>
+            {npcMails.map((m, i) => (
+              <div key={i} className="rounded-lg border-2 mb-1.5 p-2.5" style={{ borderColor: colors.border, background: colors.cardBg }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-bold font-mono" style={{ color: colors.text }}>{m.subject}</span>
+                  <span className="text-[7px] font-mono shrink-0 ml-2" style={{ color: colors.primary }}>{m.from}</span>
+                </div>
+                <p className="text-[8px] mt-1" style={{ color: colors.textMuted }}>{m.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
         {tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <span className="text-3xl mb-2">📭</span>
