@@ -33,6 +33,7 @@ import MLSim from './MLSim';
 import CvBuilderSim from './CvBuilderSim';
 import InterviewSim from './InterviewSim';
 import ChronicleSim from './ChronicleSim';
+import VacancyTracker from './VacancyTracker';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -51,7 +52,7 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
@@ -222,6 +223,7 @@ const accountingApps = [
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
   { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
+  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
 ];
 
 const analystApps = [
@@ -238,6 +240,7 @@ const analystApps = [
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
   { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
+  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
 ];
 
 const engineeringApps = [
@@ -262,6 +265,7 @@ const engineeringApps = [
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
   { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
+  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
 ];
 
 const scienceApps = [
@@ -281,6 +285,7 @@ const scienceApps = [
   { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
   { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
   { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
+  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
 ];
 
   const appIcons = !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
@@ -439,6 +444,7 @@ const scienceApps = [
         {screen === 'cv' && <div className="animate-slide-in h-full"><CvBuilderSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'interview' && <div className="animate-slide-in h-full"><InterviewSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'vacancies' && <div className="animate-slide-in h-full"><VacancyTracker theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
