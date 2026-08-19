@@ -1,6 +1,6 @@
 # R-11 — Flywheel de datos reales (calidad transversal)
 
-> Estado: **PLANIFICADO (19-ago-2026)** — documentado, NO implementado aún.
+> Estado: **COMPLETO (19-ago-2026)** — T1-T7 implementados, gates en verde.
 > Anexo obligatorio a R-09/R-10. Aplica a todas las capas (mercado, diagnóstico,
 > simulador, experiencia, resultados reales).
 > Diferenciador central: *un curso es contenido estático; este simulador aprende de

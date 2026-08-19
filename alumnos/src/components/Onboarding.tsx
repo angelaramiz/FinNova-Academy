@@ -69,6 +69,10 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         assignedCompanyId: selectedCompany.id,
         specialty: selectedSpecialty,
       });
+      // R-11: consentimiento explícito y revocable de telemetría anonimizada.
+      try {
+        await api('/api/sim/telemetry', { events: [{ stage: 0, type: 'consent_given', ref: { specialty: selectedSpecialty }, data: { consented: true } }] });
+      } catch { /* no bloquea el onboarding */ }
       onComplete();
     } catch (e) { console.error(e); }
     setSaving(false);

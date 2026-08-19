@@ -73,7 +73,7 @@ const ROUTING_LABEL: Record<string, string> = {
 export default function CareerCenter({ theme, onBack, onOpenTool }: CareerCenterProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const [tab, setTab] = useState<'diag' | 'kit' | 'intensive' | 'density'>('diag');
+  const [tab, setTab] = useState<'diag' | 'kit' | 'intensive' | 'density' | 'outcome'>('diag');
 
   // ── Etapa 1 — Diagnóstico
   const [vacancyText, setVacancyText] = useState('');
@@ -148,6 +148,30 @@ export default function CareerCenter({ theme, onBack, onOpenTool }: CareerCenter
     setDensity(d); setDensLoading(false);
   }
 
+  // ── Resultado real (R-11 T6, consentido) — cierra el ciclo del flywheel
+  const [outApplied, setOutApplied] = useState('');
+  const [outInterviews, setOutInterviews] = useState('');
+  const [outHired, setOutHired] = useState(false);
+  const [outSkills, setOutSkills] = useState('');
+  const [outConsent, setOutConsent] = useState(false);
+  const [outResult, setOutResult] = useState<any>(null);
+  const [outLoading, setOutLoading] = useState(false);
+
+  async function saveOutcome() {
+    setOutLoading(true);
+    const d = await apiFetch('/api/stage1/outcome', {
+      method: 'POST',
+      body: JSON.stringify({
+        applied: Number(outApplied) || 0,
+        interviews: Number(outInterviews) || 0,
+        hired: outHired,
+        skills_entrevista: outSkills.split(',').map(s => s.trim()).filter(Boolean),
+        consent: outConsent,
+      }),
+    });
+    setOutResult(d); setOutLoading(false);
+  }
+
   const field = (v: string) => ({ borderColor: colors.border, background: isDark ? '#0f172a' : '#fff', color: colors.text });
   const btn = { background: colors.primary, color: '#fff' };
   const openTool = (tool: string) => { if (onOpenTool && TOOL_LABEL[tool]) onOpenTool(tool); };
@@ -159,9 +183,9 @@ export default function CareerCenter({ theme, onBack, onOpenTool }: CareerCenter
         <span className="text-base">💼</span>
         <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>Centro de Carrera</span>
         <div className="flex-1" />
-        {(['diag', 'kit', 'intensive', 'density'] as const).map(t => (
+        {(['diag', 'kit', 'intensive', 'density', 'outcome'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className="text-[10px] px-2 py-1 rounded-full font-bold cursor-pointer" style={{ background: tab === t ? colors.primary : 'transparent', color: tab === t ? '#fff' : colors.textMuted }}>
-            {t === 'diag' ? '🔎 Diagnóstico' : t === 'kit' ? 'Modo A · Kit' : t === 'intensive' ? 'Modo B · Intensivo' : 'Etapa 3 · Densidad'}
+            {t === 'diag' ? '🔎 Diagnóstico' : t === 'kit' ? 'Modo A · Kit' : t === 'intensive' ? 'Modo B · Intensivo' : t === 'density' ? 'Etapa 3 · Densidad' : '🎯 Resultado real'}
           </button>
         ))}
       </div>
@@ -342,6 +366,40 @@ export default function CareerCenter({ theme, onBack, onOpenTool }: CareerCenter
                   <div className="text-[10px] font-bold font-mono mb-1" style={{ color: colors.textMuted }}>Evidencia para el expediente</div>
                   {density.evidencia.map((e, i) => <div key={i} className="text-[10px] font-mono flex gap-2" style={{ color: colors.text }}><span style={{ color: '#22c55e' }}>✓</span>{e}</div>)}
                 </div>
+              </div>
+            )}
+          </>
+        )}
+        {tab === 'outcome' && (
+          <>
+            <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>Resultado real (R-11 T6): registra con consentimiento qué pasó con tu búsqueda. Esto cierra el ciclo del flywheel: el sistema aprende qué skills sí consiguen empleo y pesa tu ruta en consecuencia.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] font-mono" style={{ color: colors.textMuted }}>Aplicaciones enviadas</label>
+                <input type="number" min={0} value={outApplied} onChange={e => setOutApplied(e.target.value)} className="w-full text-[11px] font-mono rounded-lg px-3 py-2 outline-none mt-0.5" style={field(outApplied)} />
+              </div>
+              <div>
+                <label className="text-[9px] font-mono" style={{ color: colors.textMuted }}>Entrevistas</label>
+                <input type="number" min={0} value={outInterviews} onChange={e => setOutInterviews(e.target.value)} className="w-full text-[11px] font-mono rounded-lg px-3 py-2 outline-none mt-0.5" style={field(outInterviews)} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-[11px] font-mono cursor-pointer" style={{ color: colors.text }}>
+              <input type="checkbox" checked={outHired} onChange={e => setOutHired(e.target.checked)} /> ¿Conseguiste empleo?
+            </label>
+            <div>
+              <label className="text-[9px] font-mono" style={{ color: colors.textMuted }}>Skills que te preguntaron en entrevistas (separados por coma)</label>
+              <input value={outSkills} onChange={e => setOutSkills(e.target.value)} placeholder="sql, python, excel" className="w-full text-[11px] font-mono rounded-lg px-3 py-2 outline-none mt-0.5" style={field(outSkills)} />
+            </div>
+            <label className="flex items-start gap-2 text-[10px] font-mono cursor-pointer" style={{ color: colors.textMuted }}>
+              <input type="checkbox" checked={outConsent} onChange={e => setOutConsent(e.target.checked)} className="mt-0.5" />
+              <span>Consiento guardar este resultado de forma anonimizada (hash irreversible, sin datos personales) para mejorar el simulador. Puedo borrarlo después.</span>
+            </label>
+            <button onClick={saveOutcome} disabled={outLoading || !outConsent} className="w-full text-[11px] font-bold font-mono rounded-lg px-3 py-2 cursor-pointer" style={{ ...btn, opacity: outLoading || !outConsent ? 0.5 : 1 }}>
+              {outLoading ? 'Guardando…' : 'Guardar resultado'}
+            </button>
+            {outResult?.ok && (
+              <div className="rounded-xl border-2 p-3" style={{ borderColor: '#22c55e', background: colors.cardBg }}>
+                <div className="text-[11px] font-mono" style={{ color: '#22c55e' }}>✓ Guardado. Aplicaciones: {outResult.outcome.applied} · Entrevistas: {outResult.outcome.interviews} · Empleo: {outResult.outcome.hired ? 'Sí' : 'Aún no'}</div>
               </div>
             )}
           </>
