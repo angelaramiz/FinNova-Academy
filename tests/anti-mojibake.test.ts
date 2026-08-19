@@ -26,6 +26,13 @@ const MOJIBAKE_PATTERNS = [
 const SOURCE_DIRS = [
   path.resolve(__dirname, '../alumnos/src'),
   path.resolve(__dirname, '../staff/src'),
+  path.resolve(__dirname, '../backend/src'),
+];
+
+// El propio archivo que define los patrones de mojibake (storyCoherence.ts)
+// los contiene como literales para detectarlos — es un falso positivo legítimo.
+const EXCLUDE_FILES = [
+  'storyCoherence.ts',
 ];
 
 function listSourceFiles(dir: string): string[] {
@@ -51,6 +58,7 @@ describe('anti-mojibake — fuentes del simulador', () => {
     const offenders: { file: string; line: number; match: string }[] = [];
 
     for (const file of files) {
+      if (EXCLUDE_FILES.some(ef => file.endsWith(ef))) continue;
       const content = fs.readFileSync(file, 'utf8');
       const lines = content.split('\n');
       lines.forEach((line, idx) => {
