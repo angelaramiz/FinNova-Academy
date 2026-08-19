@@ -450,7 +450,7 @@ const scienceApps = [
         {screen === 'interview' && <div className="animate-slide-in h-full"><InterviewSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'vacancies' && <div className="animate-slide-in h-full"><VacancyTracker theme={theme} onBack={() => setScreen('desktop')} /></div>}
-        {screen === 'careercenter' && <div className="animate-slide-in h-full"><CareerCenter theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'careercenter' && <div className="animate-slide-in h-full"><CareerCenter theme={theme} onBack={() => setScreen('desktop')} onOpenTool={(tool) => { prevScreen.current = 'careercenter'; setScreen(tool as Screen); }} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}

@@ -1,6 +1,6 @@
 # R-10 v2 — Sistema de 3 Etapas: Diagnóstico → Seguimiento de Vacante con Simulador → Experiencia Comprobable
 
-> Estado: **EN CURSO (19-ago-2026)** — T1-T6 implementados; T7 (gates finales) pendiente.
+> Estado: **COMPLETO (19-ago-2026)** — T1-T7 implementados y verificados.
 > Fuente de trazabilidad: `agents.md` (sección R-10 v2). Regla de oro R-09 se mantiene:
 > números/match/densidad salen de motores o reglas; solo el texto de la vacante usa IA con fallback determinístico.
 
@@ -11,6 +11,18 @@
 - **T5** — Modo B: `simBlocks.ts` (registry skill→herramienta real) + `intensivePlanner.ts` (casos aplicados con 5 reglas obligatorias + encadenamiento) + `POST /api/stage1/intensive`.
 - **T6** — Etapa 3: `experienceDensity.ts` (density = f(casos, complejidad, variedad, incidentes, resultados)) + `POST /api/stage1/density`.
 - **Tests**: `intensive-cases` (8) + `density` (6) + `reevaluation` (5). Suite root 205 / backend 70 / audit 104.
+
+## Gaps cerrados (19-ago-2026, integración completa)
+
+El circuito Etapa 1 → 2 → 3 quedó **conectado**:
+
+- **UI de Etapa 1 (Diagnóstico)**: tab `🔎 Diagnóstico` en `CareerCenter.tsx` — pegar vacante → `POST /api/stage1/analyze` (skills + match + routing) → prueba rápida de gaps → `POST /api/stage1/submit`.
+- **Auto-track (Etapa 1 → 2)**: `submitStage1` ahora llama `ensureTracked` → `trackVacancy` con modo A/B según routing final + `match_pct` + stack. La vacante aparece sola en VacancyTracker.
+- **Reevaluación**: `updateVacancyMode` en `vacancyTracker.ts` actualiza modo/match de una vacante registrada; `reevaluateStage1` la dispara al migrar B→A. UI: botón "Reevaluar" por assessment + "Reevaluar tras completar el plan".
+- **Etapa 3 persistida**: `saveDensity` en `stage1Service.ts` escribe `profiles.experience_density`; `POST /api/stage1/density` lo persiste.
+- **Modo B abre herramienta real**: `CareerCenter` recibe `onOpenTool` (DesktopShell) y navega al screen real (SQLSim/DBTSim/…) desde cada caso.
+- **`GET /api/stage1/assessments`**: lista diagnósticos previos para reevaluar.
+- **Tests de integración**: `stage-routing.test.ts` ampliado (updateVacancyMode B→A). Suite root **207** / backend 70 / audit 104.
 
 
 

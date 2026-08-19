@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { routeStage, UMBRAL_DENSIDAD } from '../backend/src/services/stageRouter';
 import { computeMatch, UMBRAL_MODO_A } from '../backend/src/services/matchScorer';
 import { analyzeVacancyDeterministic } from '../backend/src/services/vacancyAnalyzer';
+import { listVacancies, resetVacancyMem } from '../backend/src/services/vacancyTracker';
 
 describe('R-10 v2 — stageRouter (Etapa 1 → routing)', () => {
   it('match 74 → Modo B', () => {
@@ -86,5 +87,30 @@ Experiencia: 3+ años en análisis de datos. Liderazgo de módulos.
     const sql = v.skills.find(s => s.skill === 'SQL');
     const py = v.skills.find(s => s.skill === 'Python');
     expect(sql!.weight).toBeGreaterThan(py!.weight);
+  });
+});
+
+describe('R-10 v2 — integración Etapa 1 → Etapa 2 (auto-track)', () => {
+  const userId = 'u-int-stage1';
+
+  beforeEach(() => {
+    resetVacancyMem(userId);
+  });
+
+  it('updateVacancyMode actualiza modo y match de una vacante registrada (reevaluación B→A)', async () => {
+    const { trackVacancy, updateVacancyMode } = await import('../backend/src/services/vacancyTracker');
+    await trackVacancy(userId, { vacancy_id: 'vac-x', modo: 'B', stage1_result_id: 'stage1-seed', vacante_titulo: 'Vacante', match_pct: 60 });
+    const updated = await updateVacancyMode(userId, 'stage1-seed', 'A', 82);
+    expect(updated).not.toBeNull();
+    expect(updated!.modo).toBe('A');
+    expect(updated!.match_pct).toBe(82);
+    const { vacancies } = await listVacancies(userId);
+    expect(vacancies.find(v => v.vacancy_id === 'vac-x')!.modo).toBe('A');
+  });
+
+  it('updateVacancyMode no rompe si la vacante no existe', async () => {
+    const { updateVacancyMode } = await import('../backend/src/services/vacancyTracker');
+    const r = await updateVacancyMode(userId, 'stage1-none', 'A');
+    expect(r).toBeNull();
   });
 });
