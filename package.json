@@ -9,7 +9,7 @@
     "start": "npx tsx backend/src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit:story": "vitest run tests/story-coherence.test.ts tests/career-path.test.ts tests/de-motors.test.ts tests/anti-mojibake.test.ts",
+    "audit:story": "vitest run tests/story-coherence.test.ts tests/case-generator.test.ts tests/career-path.test.ts tests/de-motors.test.ts tests/anti-mojibake.test.ts",
     "test:testsprite": "testsprite test run --plan-from testsprite.config.json",
     "test:testsprite:watch": "vitest",
     "testsprite:doctor": "testsprite doctor",
