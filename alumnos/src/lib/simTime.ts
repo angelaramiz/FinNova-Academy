@@ -1,5 +1,5 @@
 // ─── Reloj único de simulación ─────────────────────────────────
-// Todas las apps del simulador viven en julio 2026 (hoy sim = 06-jul-2026, lunes).
+// Todas las apps del simulador viven en julio 2026 (hoy sim = miércoles 08-jul-2026).
 // Usar estas funciones en lugar de new Date() para fechas del mundo simulado.
 
 export const SIM_YEAR = 2026;

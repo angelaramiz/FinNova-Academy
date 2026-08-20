@@ -6,7 +6,7 @@ interface EmailInboxProps {
   tasks: { id: string; title: string; type: string; difficulty: number; time: number }[];
   onSelectTask: (taskId: string) => void;
   onBack: () => void;
-  specialty?: 'accounting' | 'data_engineering';
+  specialty?: 'accounting' | 'data_engineering' | 'practicas';
 }
 
 interface NpcMail {

@@ -1,6 +1,6 @@
 # R-13 — Prácticas Profesionales: ruta guiada de contabilidad
 
-**Fecha**: 20-ago-2026 · **Estado**: IMPLEMENTADO (gates verdes, pendiente deploy)
+**Fecha**: 20-ago-2026 · **Estado**: IMPLEMENTADO Y DESPLEGADO (gates verdes; backend + alumnos en prod)
 
 ## R-13.5 — Tracker semanal + Pruebas por tema + Curso teórico con NPC capacitador
 
@@ -20,7 +20,7 @@
 - El NPC capacitador es narrativa (no afecta motores); coherencia vía `auditPracticasModules` + story-coherence.
 
 ### Tests
-- `tests/practicas-tracker.test.ts`: tracker 4 semanas coherentes con plan real, cada repetición explica por qué, cada módulo tiene prueba con índice correcto válido y curso con NPC capacitador, endpoints responden, prueba evalúa bien/mal.
+- `tests/practicas-modules.test.ts` (ampliado a 32): tracker 4 semanas coherentes con plan real, cada repetición explica por qué, cada módulo tiene prueba con índice correcto válido y curso con NPC capacitador, endpoints responden, prueba evalúa bien/mal.
 
 ### Gates
 - `npm run test` + `npm run audit:story` + `npx tsc --noEmit` backend + builds alumnos/staff.
