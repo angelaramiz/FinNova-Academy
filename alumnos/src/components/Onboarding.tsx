@@ -23,17 +23,22 @@ const JOBS = [
   { id: 'b0000000-0000-0000-0000-000000000001', title: 'Auxiliar Contable', desc: 'Registro de operaciones diarias, facturación, conciliación bancaria', difficulty: 1, specialty: 'accounting' },
   { id: 'b0000000-0000-0000-0000-000000000002', title: 'Analista de Cuentas por Pagar', desc: 'Gestión de proveedores, programación de pagos, conciliación CxP', difficulty: 2, specialty: 'accounting' },
   { id: 'b0000000-0000-0000-0000-000000000003', title: 'Analista de Datos', desc: 'SQL, Python, profiling, calidad de datos — desbloquea Ingeniería o Ciencia con tu práctica', difficulty: 1, specialty: 'data_engineering' },
+  { id: 'b0000000-0000-0000-0000-000000000004', title: 'Practicante de Contabilidad', desc: 'Prácticas profesionales guiadas por módulos: CFDI, gastos, nómina, conciliación — con guía paso a paso', difficulty: 1, specialty: 'practicas' },
 ];
 
 function jobForSpecialty(specialty: string, difficulty: number): typeof JOBS[0] {
   if (specialty === 'data_engineering') {
     return JOBS.find(j => j.specialty === 'data_engineering') || JOBS[0];
   }
+  if (specialty === 'practicas') {
+    return JOBS.find(j => j.specialty === 'practicas') || JOBS[0];
+  }
   return JOBS.find(j => j.specialty === 'accounting' && j.difficulty === difficulty) || JOBS[0];
 }
 
 const SPECIALTIES = [
   { id: 'accounting', label: 'Contabilidad', desc: 'Contador General Junior — Facturación, impuestos, reportes financieros', icon: '📊' },
+  { id: 'practicas', label: 'Prácticas Profesionales', desc: 'Para alumnos de contabilidad (mitad o ¾ de carrera): aprende el oficio por módulos con guía paso a paso (CFDI, gastos, nómina, conciliación)', icon: '🎓' },
   { id: 'data_engineering', label: 'Data Engineering', desc: 'Analista de Datos (ruta inicial) — Desbloquea Ingeniería o Ciencia de Datos con tu práctica', icon: '🔀' },
 ];
 
@@ -58,7 +63,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
     try {
       // Persistir localmente ANTES de la llamada API para que un remount
       // posterior no reinicie a la bienvenida (anti-reset, FALLA prod).
-      localStorage.setItem('sim_specialty', selectedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      localStorage.setItem('sim_specialty', selectedSpecialty);
       localStorage.setItem('sim_assigned_job', JSON.stringify(selectedJob));
       localStorage.setItem('sim_visited', '1');
       await api('/api/sim/subscribe', {});
@@ -188,9 +193,9 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         </div>
         <div className="border-t" style={{ borderColor: colors.border }}></div>
         <div className="flex items-center gap-4">
-          <span className="text-2xl">{selectedSpecialty === 'data_engineering' ? '🔀' : '📊'}</span>
+          <span className="text-2xl">{selectedSpecialty === 'data_engineering' ? '🔀' : selectedSpecialty === 'practicas' ? '🎓' : '📊'}</span>
           <div>
-            <p className="text-sm font-bold" style={{ color: colors.text }}>{selectedSpecialty === 'data_engineering' ? 'Data Engineering' : 'Contabilidad'}</p>
+            <p className="text-sm font-bold" style={{ color: colors.text }}>{selectedSpecialty === 'data_engineering' ? 'Data Engineering' : selectedSpecialty === 'practicas' ? 'Prácticas Profesionales' : 'Contabilidad'}</p>
             <p className="text-[11px]" style={{ color: colors.textMuted }}>Especialidad</p>
           </div>
         </div>

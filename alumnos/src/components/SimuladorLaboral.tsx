@@ -1149,9 +1149,10 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
   const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
-  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering'>(() => {
+  const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering' | 'practicas'>(() => {
     // Usar specialty del profile si está disponible
     if (profile?.specialty === 'data_engineering') return 'data_engineering';
+    if (profile?.specialty === 'practicas') return 'practicas';
     return 'accounting';
   });
 
@@ -1178,7 +1179,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   useEffect(() => {
     if (profile?.specialty) {
-      setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : profile.specialty === 'practicas' ? 'practicas' : 'accounting');
     }
   }, [profile?.specialty]);
 
@@ -1189,7 +1190,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
       if (localStorage.getItem('sim_visited') !== '1') return false;
       const savedSpecialty = localStorage.getItem('sim_specialty');
       if (!savedSpecialty) return false;
-      setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+      setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : savedSpecialty === 'practicas' ? 'practicas' : 'accounting');
       setNeedsOnboarding(false);
       const savedJob = localStorage.getItem('sim_assigned_job');
       if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
@@ -1199,7 +1200,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
     try {
       const profile = await apiFetch<any>('/api/sim/my-profile');
       if (profile.specialty) {
-        setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : 'accounting');
+        setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : profile.specialty === 'practicas' ? 'practicas' : 'accounting');
       }
       if (profile.assignedJob) {
         setSelectedJob(profile.assignedJob);
@@ -1268,6 +1269,9 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
             { id: 'task-2', title: 'Pago de Transportes Rápidos', type: 'payment_registration', difficulty: 1, time: 8, category: 'cobranza', description: 'Registrar pago', priority: 'media' },
             { id: 'task-3', title: 'CFDI de Papelería del Norte', type: 'supplier_invoice', difficulty: 1, time: 8, category: 'compras', description: 'Registrar factura proveedor', priority: 'media' },
           ];
+          if (activeSpecialty === 'practicas') {
+            todayTasks.push({ id: 'task-4', title: 'Comida empresarial — La Parrilla del Norte', type: 'business_expense', difficulty: 2, time: 15, category: 'gastos', description: 'Registrar gasto por comida de trabajo', priority: 'alta' });
+          }
         }
       }
 
@@ -1298,7 +1302,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         virtualJobs = [{ id: 'job-de', title: 'Ingeniero de Datos Jr', description: 'Soporte de pipelines, SQL y calidad de datos', difficulty: 1, category: 'data_engineering' }];
       }
 
-      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: activeSpecialty === 'data_engineering' ? 'Ingeniero de Datos Jr' : 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
+      setJobs(virtualJobs.length > 0 ? virtualJobs : [{ id: 'job-general', title: activeSpecialty === 'data_engineering' ? 'Ingeniero de Datos Jr' : activeSpecialty === 'practicas' ? 'Practicante de Contabilidad' : 'Auxiliar Contable', description: 'Tareas generales', difficulty: 1, category: 'general' }]);
       setTasks(formattedTasks);
     } catch (e: any) {
       setApiError('No se puede conectar con el backend. Verifica que VITE_API_URL esté configurado.');
@@ -1446,7 +1450,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
                 </p>
               ) : (
                 <p className="text-[13px] font-mono uppercase tracking-wider" style={{ color: colors.primary }}>
-                  {selectedJob ? selectedJob.title : 'Contador General Jr'} · Logística del Norte S.A.
+                  {selectedJob ? selectedJob.title : (specialty === 'practicas' ? 'Practicante de Contabilidad' : 'Contador General Jr')} · Logística del Norte S.A.
                 </p>
               )}
             </div>
@@ -1472,7 +1476,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
       <StableCanvas
         isDark={isDark}
-        roleLabel={specialty === 'data_engineering' ? 'Analista de Datos' : (selectedJob ? selectedJob.title : 'Contador General Jr')}
+        roleLabel={specialty === 'data_engineering' ? 'Analista de Datos' : (selectedJob ? selectedJob.title : specialty === 'practicas' ? 'Practicante de Contabilidad' : 'Contador General Jr')}
         onMonitorClick={handleMonitorClick}
         cameraResetTrigger={cameraResetTrigger}
       >

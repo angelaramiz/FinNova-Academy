@@ -70,7 +70,7 @@ export default function SpreadsheetWidget({ rows: rawRows, onSubmit, theme, titl
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={i} style={{
+                <tr key={i} data-guide={row.label} style={{
                   background: row.editable ? (isDark ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.5)') : 'transparent',
                 }}>
                   <td className="px-4 py-2.5 text-[10px] font-mono" style={{ borderBottom: `1px solid ${colors.border}40`, color: row.editable ? colors.text : colors.textMuted }}>

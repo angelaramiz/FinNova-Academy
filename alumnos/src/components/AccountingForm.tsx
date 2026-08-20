@@ -167,7 +167,7 @@ export default function AccountingForm({ formData, onSubmit, theme, loading }: A
           const inputStyle = { borderColor, background: isDark ? 'rgba(0,0,0,0.3)' : '#fff', color: colors.text };
 
           return (
-            <div key={field.key}>
+            <div key={field.key} data-guide={field.key}>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[13px] font-bold font-mono uppercase tracking-wider" style={{ color: colors.text }}>
                   {field.label}

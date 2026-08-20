@@ -35,6 +35,8 @@ import InterviewSim from './InterviewSim';
 import ChronicleSim from './ChronicleSim';
 import VacancyTracker from './VacancyTracker';
 import CareerCenter from './CareerCenter';
+import GuideBubbles from './GuideBubbles';
+import PracticasModules from './PracticasModules';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -53,11 +55,11 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
-  const specialty = (specialtyProp as 'accounting' | 'data_engineering') || 'accounting';
-  const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial(specialty);
+  const specialty = (specialtyProp as 'accounting' | 'data_engineering' | 'practicas') || 'accounting';
+  const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial(specialty as 'accounting' | 'data_engineering');
   const { addToast } = useToast();
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
@@ -79,6 +81,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
+  const isPracticas = specialty === 'practicas';
   const demoActive = !!careerPath?.demoOverride?.enabled;
   // En demo, se puede previsualizar cada fase sin elegir irreversiblemente.
   // Si ya eligió rama, esa rama manda; si no, usa demoPreview.
@@ -87,6 +90,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
       : careerPath?.chosenBranch === 'data_engineering' ? 'engineering'
       : demoActive ? demoPreview
       : 'analyst')
+    : isPracticas ? 'practicas'
     : 'accounting';
   const roleTitle = isData
     ? (careerPath?.chosenBranch === 'data_engineering' ? 'Ingeniero de Datos Jr'
@@ -94,6 +98,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
       : demoActive && demoPreview === 'engineering' ? 'Ingeniero de Datos Jr'
       : demoActive && demoPreview === 'science' ? 'Científico de Datos Jr'
       : 'Analista de Datos')
+    : isPracticas ? 'Practicante de Contabilidad'
     : 'Contador General Jr';
 
   async function loadWorld() {
@@ -201,6 +206,12 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
       }
       let entryType = type;
       if (type === 'supplier_invoice') entryType = 'supplier';
+      if (type === 'business_expense') {
+        data.subtotal = Number(answers['row_Subtotal del ticket'] || data.subtotal || 0);
+        data.iva = Number(answers['row_IVA del consumo (16%)'] || data.iva || 0);
+        data.total = Number(answers['row_Total pagado'] || data.total || 0);
+        data.propina = Number(answers['row_Propina (no deducible)'] || 0);
+      }
       apiPost('/api/sim/generate-entries', { type: entryType, data });
     } catch (e: any) { console.error(e); addToast(e.message || 'Error al cargar datos', 'error'); }
   }
@@ -293,7 +304,26 @@ const scienceApps = [
   { label: 'Carrera', icon: '💼', action: () => setScreen('careercenter'), dataApp: 'carrera' },
 ];
 
-  const appIcons = !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
+  const practicasApps = [
+  { label: 'Módulos', icon: '📚', action: () => setScreen('practicas'), dataApp: 'practicas' },
+  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+  { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
+  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
+  { label: 'Calendario', icon: '📅', action: () => setScreen('calendar'), dataApp: 'calendario' },
+  { label: 'Banco', icon: '🏦', action: () => setScreen('banking'), dataApp: 'banco' },
+  { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora'), dataApp: 'calculadora' },
+  { label: 'Archivo', icon: '📁', action: () => setScreen('archivo'), dataApp: 'archivo' },
+  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
+  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
+  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
+  { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
+  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
+  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
+  { label: 'Carrera', icon: '💼', action: () => setScreen('careercenter'), dataApp: 'carrera' },
+];
+
+const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -352,6 +382,11 @@ const scienceApps = [
             {careerPath?.demoOverride?.enabled ? 'Rutas DEMO: ⬤' : 'Rutas DEMO: ○'}
           </button>
           {careerPath?.demoOverride?.enabled && <span className="text-[7px] px-1 py-0.5 rounded-full bg-amber-500/20 text-amber-400">DEMO</span>}
+        </div>
+      ) : isPracticas ? (
+        <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: '#f59e0b10', color: '#f59e0b', borderBottom: `1px solid ${colors.border}` }}>
+          <span>🎓 Prácticas Profesionales — Contabilidad</span>
+          <button onClick={() => setScreen('practicas')} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#f59e0b50', color: '#f59e0b', background: 'transparent' }} title="Abrir currículum de módulos">📚 Módulos</button>
         </div>
       ) : (
         <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#22c55e10', color: '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
@@ -451,6 +486,7 @@ const scienceApps = [
         {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'vacancies' && <div className="animate-slide-in h-full"><VacancyTracker theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'careercenter' && <div className="animate-slide-in h-full"><CareerCenter theme={theme} onBack={() => setScreen('desktop')} onOpenTool={(tool) => { prevScreen.current = 'careercenter'; setScreen(tool as Screen); }} /></div>}
+        {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
@@ -517,6 +553,9 @@ const scienceApps = [
               {workflow.steps[stepIdx].type === 'form' && <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />}
               {workflow.steps[stepIdx].type === 'spreadsheet' && <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
+              {workflow.steps[stepIdx].guides && workflow.steps[stepIdx].guides.length > 0 && (
+                <GuideBubbles guides={workflow.steps[stepIdx].guides} theme={theme} />
+              )}
               {showMatcher && matcherData && (
                 <PaymentMatcher
                   theme={theme}
