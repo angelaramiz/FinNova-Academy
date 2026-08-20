@@ -2,6 +2,35 @@
 
 **Fecha**: 20-ago-2026 · **Estado**: IMPLEMENTADO (gates verdes, pendiente deploy)
 
+## R-13.5 — Tracker semanal + Pruebas por tema + Curso teórico con NPC capacitador
+
+**Solicitado por usuario (20-ago-2026)**: tracker semanal con tareas por tema REPETIDAS para mecanizar (memoria muscular del procedimiento) con explicación necesaria, prueba de conocimiento/comprensión al final de cada tema, y curso básico teórico explicado por un NPC "capacitador".
+
+### Diseño
+
+- **Tracker semanal**: `buildPracticasTracker(month, year)` en `practicasModules.ts` deriva las semanas del PLAN REAL (`generateMonthPlan` de taskPlanner) → agrupa tareas por tipo con conteo real y agrega explicación pedagógica de por qué se repite cada una (mecanización). Cada semana = tema (módulo) con su objetivo.
+- **Prueba por tema**: cada módulo gana `prueba: PracticaPrueba` (título, % mínimo para aprobar, preguntas con opciones, índice correcto y explicación). Endpoint `POST /api/sim/practicas/prueba/:id` evalúa respuestas (índices) y devuelve score + feedback por pregunta.
+- **Curso teórico**: cada módulo gana `curso: PracticaCurso` (introducción del NPC, secciones con teoría + línea de diálogo del capacitador, cierre). Endpoint `GET /api/sim/practicas/curso/:id` + `GET /api/sim/practicas/cursos`.
+- **NPC capacitador**: nuevo NPC `capacitador` en worldBible (company `lno`, route `contable`) — cumple `npcAuthorized` de story-coherence.
+- **Frontend**: `PracticasModules.tsx` gana tabs "📚 Módulos / 📅 Tracker / 🎓 Curso" (prop `initialTab`), quiz embebido al final de cada módulo y por semana, y visor de curso con avatar del capacitador + burbujas de diálogo + navegación por secciones. DesktopShell agrega apps "📅 Tracker" y "🎓 Curso" al appSet practicas.
+
+### Regla de oro
+- Conteos de repetición salen del plan real (`generateMonthPlan`), no hardcodeados.
+- Respuestas correctas de la prueba = contenido pedagógico estático (no IA); la validación de tareas reales NO se toca.
+- El NPC capacitador es narrativa (no afecta motores); coherencia vía `auditPracticasModules` + story-coherence.
+
+### Tests
+- `tests/practicas-tracker.test.ts`: tracker 4 semanas coherentes con plan real, cada repetición explica por qué, cada módulo tiene prueba con índice correcto válido y curso con NPC capacitador, endpoints responden, prueba evalúa bien/mal.
+
+### Gates
+- `npm run test` + `npm run audit:story` + `npx tsc --noEmit` backend + builds alumnos/staff.
+
+---
+
+## R-13 (base) — resumen
+
+**Fecha**: 20-ago-2026 · **Estado**: IMPLEMENTADO (gates verdes, pendiente deploy)
+
 ## Objetivo
 
 Crear una **ruta nueva** del simulador para alumnos reales de contabilidad (mitad / ¾ de carrera) que funcione como **prácticas profesionales**: el alumno "trabaja" el puesto de Contador General Jr en Logística del Norte con **guía pedagógica por módulos y procedural** — burbujas que explican exactamente qué se hace en cada portal (SAT/CFDI), qué datos se usan y cómo registrarlos.
