@@ -305,25 +305,13 @@ const scienceApps = [
 ];
 
   const practicasApps = [
-  { label: 'Módulos', icon: '📚', action: () => setScreen('practicas'), dataApp: 'practicas' },
-  { label: 'Tracker', icon: '📅', action: () => setScreen('practicasTracker'), dataApp: 'practicas' },
-  { label: 'Curso', icon: '🎓', action: () => setScreen('practicasCurso'), dataApp: 'practicas' },
-  { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
-  { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
-  { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
-  { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
-  { label: 'Calendario', icon: '📅', action: () => setScreen('calendar'), dataApp: 'calendario' },
-  { label: 'Banco', icon: '🏦', action: () => setScreen('banking'), dataApp: 'banco' },
-  { label: 'Calculadora', icon: '🧮', action: () => setScreen('calculadora'), dataApp: 'calculadora' },
-  { label: 'Archivo', icon: '📁', action: () => setScreen('archivo'), dataApp: 'archivo' },
-  { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
-  { label: 'Progreso', icon: '📉', action: () => setScreen('progress'), dataApp: 'progreso' },
-  { label: 'Mi CV', icon: '📄', action: () => setScreen('cv'), dataApp: 'cv' },
-  { label: 'Entrevista', icon: '🎤', action: () => setScreen('interview'), dataApp: 'interview' },
-  { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
-  { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
-  { label: 'Carrera', icon: '💼', action: () => setScreen('careercenter'), dataApp: 'carrera' },
-];
+    { label: 'Módulos', icon: '📚', action: () => setScreen('practicas'), dataApp: 'practicas' },
+    { label: 'Tracker', icon: '📅', action: () => setScreen('practicasTracker'), dataApp: 'practicas' },
+    { label: 'Curso', icon: '🎓', action: () => setScreen('practicasCurso'), dataApp: 'practicas' },
+    { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
+    { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
+    { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
+  ];
 
 const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
@@ -427,7 +415,27 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
             <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: colors.border }}>
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
-                {tasks.map(t => (
+                {isPracticas ? tasks.map((t, idx) => {
+                  const isCompleted = (t as any).completed || (t as any).passed;
+                  const isLocked = idx > 0 && !(tasks[idx - 1] as any).completed && !(tasks[idx - 1] as any).passed;
+                  return (
+                    <div key={t.id} data-task={t.id}
+                      className={`px-4 py-3 flex items-center justify-between transition ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 cursor-pointer'}`}
+                      onClick={() => !isLocked && startTask(t, true)}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0"
+                          style={{ background: isCompleted ? '#22c55e20' : isLocked ? '#64748b20' : t.difficulty === 1 ? '#22c55e20' : '#f59e0b20', color: isCompleted ? '#22c55e' : isLocked ? '#64748b' : t.difficulty === 1 ? '#22c55e' : '#f59e0b' }}>
+                          {isCompleted ? '✓' : isLocked ? '🔒' : t.difficulty === 1 ? '🌱' : '📈'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-bold truncate" style={{ color: isCompleted ? '#22c55e' : isLocked ? colors.textMuted : colors.text }}>{t.title}</p>
+                          <p className="text-[11px] font-mono" style={{ color: colors.textMuted }}>{t.time} min · {(t.type || '').replace(/_/g, ' ')}{isLocked ? ' · Completar anterior primero' : ''}</p>
+                        </div>
+                      </div>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: isCompleted ? '#22c55e' : isLocked ? '#64748b' : colors.primary, color: isCompleted || isLocked ? '#fff' : '#1B2632' }}>{isCompleted ? 'Hecho' : isLocked ? 'Bloqueado' : t.difficulty === 1 ? 'Fácil' : 'Medio'}</span>
+                    </div>
+                  );
+                }) : tasks.map(t => (
                   <div key={t.id} data-task={t.id} className="px-4 py-3 flex items-center justify-between hover:opacity-80 transition cursor-pointer" onClick={() => startTask(t, true)}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0" style={{ background: t.difficulty === 1 ? '#22c55e20' : '#f59e0b20', color: t.difficulty === 1 ? '#22c55e' : '#f59e0b' }}>{t.difficulty === 1 ? '🌱' : '📈'}</div>
