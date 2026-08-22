@@ -41,7 +41,7 @@ import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
 
-interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; isTrap?: boolean; trapId?: string; }
+interface TaskInfo { id: string; title: string; type: string; difficulty: number; time: number; isTrap?: boolean; trapId?: string; completed?: boolean; }
 async function apiPost(path: string, body?: any): Promise<any> { return apiFetch(path, { method: body ? 'POST' : 'GET', ...(body ? { body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } } : {}) }); }
 
 interface CareerPathState {
@@ -78,6 +78,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [showRoutes, setShowRoutes] = useState(false);
   const [demoPreview, setDemoPreview] = useState<'analyst' | 'engineering' | 'science'>('analyst');
   const [storyArc, setStoryArc] = useState<{ arcId: string; nombre: string; activeScene: string | null; sceneLabel?: string } | null>(null);
+  const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
@@ -172,7 +173,20 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
       const result = await apiPost('/api/workflows/validate', { taskType: currentTask.type, answers, trap: currentTask.isTrap ? currentTask.trapId : undefined, workflowId: workflow.taskId || workflow.id });
       setValidationResult(result);
       setStepIdx(workflow.steps.length - 1);
-      await apiPost(`/api/sim/tasks/${currentTask.id}/complete`, {});
+      // Record progress (non-blocking, best-effort)
+      try {
+        await apiPost('/api/sim/progress/record', {
+          taskId: currentTask.id, taskType: currentTask.type,
+          title: currentTask.title, category: (currentTask as any).category || '',
+          specialty: specialty || 'accounting', difficulty: currentTask.difficulty,
+          score: result.totalScore || 0, maxScore: result.maxPossible || 100,
+          passed: !!result.passed, week: 0, day: 0,
+          timeSpent: currentTask.time || 10,
+          isTrap: currentTask.isTrap, trapDetected: false,
+        });
+      } catch { /* non-critical */ }
+      // Mark task as completed locally for progressive unlocking
+      setCompletedTaskIds(prev => new Set([...prev, currentTask.id]));
       // Auto-generar asientos contables según el tipo de tarea
       generateEntriesForTask(currentTask.type, answers);
       addToast('Asiento contable generado automáticamente', 'success');
@@ -416,8 +430,8 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
                 {isPracticas ? tasks.map((t, idx) => {
-                  const isCompleted = (t as any).completed || (t as any).passed;
-                  const isLocked = idx > 0 && !(tasks[idx - 1] as any).completed && !(tasks[idx - 1] as any).passed;
+                  const isCompleted = completedTaskIds.has(t.id) || (t as any).completed || (t as any).passed;
+                  const isLocked = idx > 0 && !completedTaskIds.has(tasks[idx - 1].id) && !(tasks[idx - 1] as any).completed && !(tasks[idx - 1] as any).passed;
                   return (
                     <div key={t.id} data-task={t.id}
                       className={`px-4 py-3 flex items-center justify-between transition ${isLocked ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 cursor-pointer'}`}
