@@ -539,7 +539,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
           </div>
         )}
         {screen === 'workflow' && (
-          <div className="h-full overflow-auto animate-slide-in">
+          <div className="h-full overflow-y-auto animate-slide-in">
             {workflow && (<>
               {workflow.isTrap && (
                 <div className="px-4 py-2 border-b-2 text-[12px] font-bold font-mono animate-slide-in" style={{ borderColor: '#f59e0b', background: '#f59e0b20', color: '#f59e0b' }}>
