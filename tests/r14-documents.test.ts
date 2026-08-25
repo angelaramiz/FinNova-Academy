@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateInvoice, generateSupplierInvoice, generatePurchaseTicket, generateBankStatement, generateTaxDeclaration, generatePaymentReceipt } from '../backend/src/services/documentGenerator';
 import { auditDocument } from '../backend/src/services/auditDocument';
 import { mulberry32, docSeed, randRng, pickRng } from '../backend/src/lib/rng';
+import { generateCfdiXml, generateCfdiPdfHtml } from '../backend/src/services/cfdiGenerator';
 
 describe('R14 — Audit de documentos (9 checks de coherencia)', () => {
   it('audita la factura: pasa todos los checks', () => {
@@ -75,5 +76,23 @@ describe('R14 — Determinismo (misma seed → mismo documento)', () => {
     for (let i = 0; i < 50; i++) {
       expect(arr).toContain(pickRng(rng, arr));
     }
+  });
+});
+
+describe('R14 — Generador PDF/XML del CFDI', () => {
+  it('genera XML con estructura CFDI 4.0', () => {
+    const data = { client: 'Comercial del Norte', clientRfc: 'CNS-990101-HIJ', subtotal: 1000, iva: 160, total: 1160, invoiceNumber: 'FAC-2026-001', items: [{ desc: 'Servicio', qty: 1, unitPrice: 1000, amount: 1000 }] };
+    const xml = generateCfdiXml(data);
+    expect(xml).toContain('cfdi:Comprobante');
+    expect(xml).toContain('Version="4.0"');
+    expect(xml).toContain('Total="1160.00"');
+    expect(xml).toContain('CNS-990101-HIJ');
+  });
+
+  it('genera PDF HTML con totales cuadrados', () => {
+    const data = { client: 'Comercial del Norte', clientRfc: 'CNS-990101-HIJ', subtotal: 1000, iva: 160, total: 1160, items: [{ desc: 'Servicio', qty: 1, unitPrice: 1000, amount: 1000 }] };
+    const html = generateCfdiPdfHtml(data);
+    expect(html).toContain('CFDI');
+    expect(html).toContain('$1,160.00');
   });
 });
