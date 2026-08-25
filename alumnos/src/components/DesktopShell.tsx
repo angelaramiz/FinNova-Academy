@@ -39,6 +39,9 @@ import GuideBubbles from './GuideBubbles';
 import PracticasModules from './PracticasModules';
 import Glossary from './Glossary';
 import TaxDeclaration from './TaxDeclaration';
+import DualViewLayout from './DualViewLayout';
+import DataHighlight from './DataHighlight';
+import { getWorkflowDocumentHtml, getWorkflowHighlightFields } from '../lib/workflowDoc';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -578,8 +581,22 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                   </div>
                 </div>
               )}
-              {workflow.steps[stepIdx].type === 'form' && <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />}
-              {workflow.steps[stepIdx].type === 'spreadsheet' && <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />}
+              {workflow.steps[stepIdx].type === 'form' && (
+                isPracticas ? (
+                  <DualViewLayout theme={theme} portalTitle="Portal Contable" portalIcon="📊"
+                    documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    portalContent={<AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />} />
+                ) : <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />
+              )}
+              {workflow.steps[stepIdx].type === 'spreadsheet' && (
+                isPracticas ? (
+                  <DualViewLayout theme={theme} portalTitle="Hoja de Cálculo" portalIcon="📊"
+                    documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    portalContent={<SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />} />
+                ) : <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />
+              )}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
               {workflow.steps[stepIdx].guides && workflow.steps[stepIdx].guides.length > 0 && (
                 <GuideBubbles guides={workflow.steps[stepIdx].guides} theme={theme} />
