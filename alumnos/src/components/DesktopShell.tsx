@@ -37,6 +37,8 @@ import VacancyTracker from './VacancyTracker';
 import CareerCenter from './CareerCenter';
 import GuideBubbles from './GuideBubbles';
 import PracticasModules from './PracticasModules';
+import Glossary from './Glossary';
+import TaxDeclaration from './TaxDeclaration';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
@@ -595,6 +597,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
           </div>
         )}
       </div>
+      {isPracticas && <Glossary theme={theme} />}
     </div>
   );
 }
