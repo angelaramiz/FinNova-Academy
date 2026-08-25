@@ -530,7 +530,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
             )}
           </div>
         )}
-        {screen === 'banking' && <div className="animate-slide-in h-full"><BankingPortal theme={theme} onClose={() => setScreen('desktop')} /></div>}
+        {screen === 'banking' && <div className="animate-slide-in h-full">{isPracticas ? <BankPortal theme={theme} onBack={() => setScreen('desktop')} /> : <BankingPortal theme={theme} onClose={() => setScreen('desktop')} />}</div>}
         {screen === 'emailInbox' && <div className="animate-slide-in h-full"><EmailInbox theme={theme} tasks={tasks} onSelectTask={openTaskFromEmail} onBack={() => setScreen('desktop')} specialty={specialty} /></div>}
         {screen === 'calendar' && <div className="animate-slide-in h-full"><CalendarWidget theme={theme} tasks={tasks} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'calculadora' && <div className="animate-slide-in h-full"><Calculator theme={theme} onBack={() => setScreen('desktop')} /></div>}
