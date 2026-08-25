@@ -41,6 +41,10 @@ import Glossary from './Glossary';
 import TaxDeclaration from './TaxDeclaration';
 import DualViewLayout from './DualViewLayout';
 import DataHighlight from './DataHighlight';
+import PdfXmlViewer from './PdfXmlViewer';
+import AccountingPortal from './AccountingPortal';
+import BankPortal from './BankPortal';
+import QuickTips from './QuickTips';
 import { getWorkflowDocumentHtml, getWorkflowHighlightFields } from '../lib/workflowDoc';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
@@ -84,6 +88,9 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [demoPreview, setDemoPreview] = useState<'analyst' | 'engineering' | 'science'>('analyst');
   const [storyArc, setStoryArc] = useState<{ arcId: string; nombre: string; activeScene: string | null; sceneLabel?: string } | null>(null);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
+  const [showCfdi, setShowCfdi] = useState(false);
+  const [cfdiData, setCfdiData] = useState<any>(null);
+  const [showAccounting, setShowAccounting] = useState(false);
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
@@ -195,6 +202,14 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
       // Auto-generar asientos contables según el tipo de tarea
       generateEntriesForTask(currentTask.type, answers);
       addToast('Asiento contable generado automáticamente', 'success');
+      // R-14: Si es una factura, cargar CFDI (PDF+XML) para visualizar y registrar
+      if (isPracticas && currentTask.type === 'invoice_emission' && result.passed) {
+        try {
+          const cfdi: any = await apiPost('/api/sim/documents/cfdi');
+          setCfdiData(cfdi);
+          setShowCfdi(true);
+        } catch (e) { console.error(e); }
+      }
       // Si es tarea de pago, mostrar matcher
       if (currentTask.type === 'payment_registration' && answers.clientName && answers.amountReceived) {
         setMatcherData({ clientName: answers.clientName, amount: Number(answers.amountReceived) });
@@ -239,6 +254,36 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
 
   function closeWorkflow() { setScreen('desktop'); setCurrentTask(null); setWorkflow(null); setStepIdx(0); setValidationResult(null); }
   function openTaskFromEmail(taskId: string) { const task = tasks.find(t => t.id === taskId); if (task) startTask(task, true); }
+
+  function accountingEntriesFor(taskType: string, wf: any): { account: string; type: 'cargo' | 'abono'; amount: number; concept: string }[] {
+    const amount = wf?.validation?.find((v: any) => v.type === 'calculated')?.expected || 0;
+    const maps: Record<string, { account: string; type: 'cargo' | 'abono'; amount: number; concept: string }[]> = {
+      invoice_emission: [
+        { account: '1-03 Clientes', type: 'cargo', amount, concept: 'Cuenta por cobrar' },
+        { account: '4-01 Ventas', type: 'abono', amount: Math.round(amount / 1.16), concept: 'Ventas' },
+        { account: '2-03 IVA por pagar', type: 'abono', amount: Math.round(amount * 0.16 / 1.16), concept: 'IVA' },
+      ],
+      payment_registration: [
+        { account: '1-02 Bancos', type: 'cargo', amount, concept: 'Pago recibido' },
+        { account: '1-03 Clientes', type: 'abono', amount, concept: 'Liquidación factura' },
+      ],
+      business_expense: [
+        { account: '5-03 Gastos de administración', type: 'cargo', amount: Math.round(amount / 1.16), concept: 'Comida empresarial' },
+        { account: '2-03 IVA por pagar', type: 'cargo', amount: Math.round(amount * 0.16 / 1.16), concept: 'IVA acreditable' },
+        { account: '1-02 Bancos', type: 'abono', amount, concept: 'Pago tarjeta' },
+      ],
+      supplier_invoice: [
+        { account: '5-01 Compras', type: 'cargo', amount: Math.round(amount / 1.16), concept: 'Compra a proveedor' },
+        { account: '2-03 IVA por pagar', type: 'cargo', amount: Math.round(amount * 0.16 / 1.16), concept: 'IVA acreditable' },
+        { account: '2-01 Proveedores', type: 'abono', amount, concept: 'Pasivo' },
+      ],
+      payroll: [
+        { account: '5-04 Gastos de nómina', type: 'cargo', amount, concept: 'Nómina' },
+        { account: '1-02 Bancos', type: 'abono', amount, concept: 'Dispersión' },
+      ],
+    };
+    return maps[taskType] || [];
+  }
 
 const accountingApps = [
   { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
@@ -586,7 +631,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                   <DualViewLayout theme={theme} portalTitle="Portal Contable" portalIcon="📊"
                     documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
                     highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
-                    portalContent={<AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />} />
+                    portalContent={<><QuickTips theme={theme} moduleId={currentTask?.type || 'cfdi'} /><AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} /></>} />
                 ) : <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />
               )}
               {workflow.steps[stepIdx].type === 'spreadsheet' && (
@@ -594,12 +639,28 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                   <DualViewLayout theme={theme} portalTitle="Hoja de Cálculo" portalIcon="📊"
                     documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
                     highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
-                    portalContent={<SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />} />
+                    portalContent={<><QuickTips theme={theme} moduleId={currentTask?.type || 'cfdi'} /><SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} /></>} />
                 ) : <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />
               )}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
               {workflow.steps[stepIdx].guides && workflow.steps[stepIdx].guides.length > 0 && (
                 <GuideBubbles guides={workflow.steps[stepIdx].guides} theme={theme} />
+              )}
+              {showCfdi && cfdiData && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-t-xl border-2 border-b-0" style={{ borderColor: '#8b5cf650', background: '#8b5cf610' }}>
+                    <span className="text-[12px] font-bold font-mono" style={{ color: '#8b5cf6' }}>📄 CFDI Generado — visualiza, descarga y registra</span>
+                    <button onClick={() => setShowCfdi(false)} className="text-[11px] cursor-pointer" style={{ color: colors.textMuted }}>✕</button>
+                  </div>
+                  <PdfXmlViewer theme={theme} xml={cfdiData.xml} pdfHtml={cfdiData.pdfHtml} data={cfdiData.data}
+                    onDownload={(fmt) => { setShowCfdi(false); setShowAccounting(true); addToast(`CFDI ${fmt.toUpperCase()} descargado — ahora regístralo en el sistema contable`, 'info'); }} />
+                </div>
+              )}
+              {showAccounting && currentTask && (
+                <div className="mt-4">
+                  <AccountingPortal theme={theme} entries={accountingEntriesFor(currentTask.type, workflow)}
+                    onConfirm={() => { setShowAccounting(false); addToast('Asiento registrado en el sistema contable', 'success'); if (onTaskComplete) onTaskComplete(); }} />
+                </div>
               )}
               {showMatcher && matcherData && (
                 <PaymentMatcher
