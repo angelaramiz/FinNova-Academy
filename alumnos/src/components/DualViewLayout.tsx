@@ -67,8 +67,8 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
             </div>
           )}
 
-          {/* Document iframe */}
-          <div className="rounded-xl border overflow-hidden" style={{ borderColor: colors.border, background: '#fff' }}>
+          {/* Document iframe — tiene data-guide="ticket" para que la burbuja Guía pueda resaltar el ticket */}
+          <div data-guide="ticket" className="rounded-xl border overflow-hidden" style={{ borderColor: colors.border, background: '#fff' }}>
             <iframe srcDoc={documentHtml} className="w-full" style={{ minHeight: 500, border: 'none' }} title="Documento" />
           </div>
         </div>
