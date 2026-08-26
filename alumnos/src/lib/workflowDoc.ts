@@ -2,18 +2,47 @@
 export function getWorkflowDocumentHtml(taskType: string, stepData: any): string {
   const rows = stepData?.rows;
   const fields = stepData?.fields;
-  // Cabecera coherente con el ticket real del Módulo 2 (LPN = La Parrilla del Norte)
+
+  // Ticket real de restaurante (fuente) para business_expense: muestra los
+  // valores que el alumno debe transcribir/calcular. Cabecera coherente con
+  // el email de generateBusinessExpenseWorkflow (LPN = La Parrilla del Norte).
+  if (taskType === 'business_expense' && rows) {
+    const rowOf = (label: string): number => {
+      const r = rows.find((x: any) => x.label === label);
+      return r?.cell_B !== undefined ? Number(r.cell_B) : 0;
+    };
+    const emp = (rows.find((r: any) => r.label === 'Empresa / Razón social')?.cell_B) || 'La Parrilla del Norte';
+    const rfc = (rows.find((r: any) => r.label === 'RFC del establecimiento')?.cell_B) || 'LPN-880707-ABC';
+    const folio = (rows.find((r: any) => r.label === 'Folio del ticket')?.cell_B) || 'TK-00000';
+    const subtotal = rowOf('Subtotal del ticket');
+    const propina = rowOf('Propina (no deducible)');
+    const iva = rowOf('IVA del consumo (16%)');
+    const total = rowOf('Total pagado');
+    const row = (l: string, v: string, note = '') =>
+      `<tr><td style="padding:7px 10px;border:1px dashed #bbb;font-size:12px;font-family:'Courier New'">${l}</td><td style="padding:7px 10px;border:1px dashed #bbb;text-align:right;font-size:12px;font-family:'Courier New'">${v}</td><td style="padding:7px 10px;border:1px dashed #bbb;font-size:10px;color:#777">${note}</td></tr>`;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:'Courier New',monospace;background:#fff;padding:0;margin:0}@page{margin:0}.ticket{max-width:340px;margin:16px auto;border:2px dashed #999;padding:16px 14px;font-size:12px;color:#111}.ttl{text-align:center;font-size:15px;font-weight:bold;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:4px}.sub{text-align:center;font-size:11px;color:#444;margin-bottom:10px}.meta{font-size:11px;margin-bottom:10px}.tot{font-weight:bold;border-top:2px solid #000;margin-top:6px}</style></head><body><div class="ticket">
+      <div class="ttl">🧾 TICKET DE COMPRA</div>
+      <div class="sub">${emp} · RFC ${rfc}</div>
+      <div class="meta">Folio: <strong>${folio}</strong><br>Fecha: 08-jul-2026 · Restaurante La Parrilla del Norte</div>
+      <table style="width:100%;border-collapse:collapse">${row('Subtotal (consumos)', `$${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Subtotal')}${row('IVA (16%)', `$${iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo IVA del consumo')}${row('Propina', `$${propina.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Propina (no deducible)')}${row('Total pagado', `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Total pagado')}</table>
+      <div style="margin-top:10px;font-size:10px;color:#666">Deducción restaurantes 65% del subtotal. La propina NO es deducible ni genera IVA.</div>
+      <div class="tot" style="padding-top:6px;text-align:center">GRACIAS POR SU VISITA</div>
+      <div style="margin-top:8px;font-size:8px;text-align:center;color:#aaa">Documento educativo · Simulador Laboral</div>
+    </div></body></html>`;
+  }
+
   const ctx = taskType === 'business_expense'
     ? { company: 'La Parrilla del Norte', rfc: 'LPN-880707-ABC' }
     : { company: 'Operadora Logística del Norte S.A. de C.V.', rfc: 'OLN-220701-ABC' };
 
   if (rows) {
     // El documento MUESTRA la tabla pero los valores de filas editables (sin fórmula)
-    // se enmascaran — el alumno debe extraerlos del ticket, no copiarlos.
+    // Se muestran las filas fuente (sin fórmula = dato de entrada) y se
+    // enmascaran las calculadas (respuesta que el alumno debe deducir).
     const rowHtml = rows.map((r: any) => {
-      const isEditable = !r.formula && r.cell_B !== undefined;
-      const val = isEditable
-        ? '<span style="color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:10px">— Ver en TICKET</span>'
+      const isComputed = !!r.formula;
+      const val = isComputed
+        ? '<span style="color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:10px">→ Calcúlalo</span>'
         : r.cell_B !== undefined ? `$${Number(r.cell_B).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '';
       const formula = r.formula ? `<span style="color:#666;font-size:9px">${r.formula}</span>` : '';
       return `<tr><td style="padding:6px 8px;border:1px solid #ddd;font-size:11px">${r.label}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">${val}</td><td style="padding:6px 8px;font-size:9px;color:#888">${formula}</td></tr>`;

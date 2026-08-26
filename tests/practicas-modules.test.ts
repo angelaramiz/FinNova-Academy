@@ -52,9 +52,16 @@ describe('R-13 — Prácticas Profesionales (ruta guiada de contabilidad)', () =
       expect(labels).toContain('Total pagado');
       expect(labels).toContain('Gasto deducible');
       expect(labels).toContain('IVA acreditable');
+      // Cada fila editable (transcrita/calculada por el alumno) tiene una regla.
+      const editableRows = wf.steps.find(s => s.type === 'spreadsheet')!.data.rows.filter((r: any) => r.editable);
+      for (const r of editableRows) {
+        const hasRule = wf.validation.some(v => v.field === `row_${r.label}`);
+        expect(hasRule).toBe(true);
+      }
       // La propina NO es deducible: no debe validarse como gasto deducible.
+      const subtotal = wf.steps.find(s => s.type === 'spreadsheet')!.data.rows.find((r: any) => r.label === 'Subtotal del ticket').cell_B;
       const deducible = wf.validation.find(v => v.label === 'Gasto deducible');
-      expect(deducible?.expected).toBe(Math.round((wf.steps[1].data.rows[0].cell_B) * 0.65));
+      expect(deducible?.expected).toBe(Math.round(subtotal * 0.65));
     });
 
     it('los números salen de los motores (subtotal → IVA = 16%)', () => {
@@ -86,6 +93,35 @@ describe('R-13 — Prácticas Profesionales (ruta guiada de contabilidad)', () =
       const debit = entries.reduce((s, e) => s + e.debit, 0);
       const credit = entries.reduce((s, e) => s + e.credit, 0);
       expect(debit).toBe(credit);
+    });
+
+    it('NO auto-aprueba: respuestas correctas pasan, incorrectas reprueban (regresión INC-001)', () => {
+      const wf = generateWorkflow('business_expense');
+      const rows = wf.steps.find(s => s.type === 'spreadsheet')!.data.rows;
+      const build = (useCorrect: boolean) => {
+        const answers: Record<string, any> = {};
+        for (const r of rows) {
+          answers[`row_${r.label}`] = useCorrect ? r.cell_B : (typeof r.cell_B === 'string' ? 'xx' : 0);
+        }
+        let total = 0, max = 0;
+        for (const rule of wf.validation) {
+          const ua = answers[rule.field];
+          if (ua === undefined) continue;
+          max += rule.points;
+          const un = Number(ua), en = Number(rule.expected), tol = rule.tolerance ?? 0;
+          const pass = rule.type === 'calculated'
+            ? Math.abs(un - en) <= tol
+            : String(ua).trim().toLowerCase() === String(rule.expected).trim().toLowerCase();
+          if (pass) total += rule.points;
+        }
+        return { max, pct: max > 0 ? Math.round(total / max * 100) : 0, pass: max > 0 && total >= max * 0.6 };
+      };
+      const ok = build(true);
+      expect(ok.max).toBeGreaterThan(0); // si max=0 auto-aprueba (bug)
+      expect(ok.pct).toBe(100);
+      expect(ok.pass).toBe(true);
+      const bad = build(false);
+      expect(bad.pass).toBe(false);
     });
   });
 
