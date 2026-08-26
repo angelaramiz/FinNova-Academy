@@ -82,3 +82,18 @@ En el screenshot el usuario está en `business_expense` como primera tarea visib
 3. `generateBusinessExpenseWorkflow` / `workflowDoc.getWorkflowDocumentHtml` → cabecera consistente con `generateBusinessExpenseWorkflow` (LPN-880707-ABC) y/o parametrizar `ctx` con datos del email.
 4. `taskPlanner` → evaluar `todayTasks` por progreso; si el alumno no completó Módulo 1, priorizarlo aunque el calendario diga semana 2.
 5. Tests: `tests/workflowDoc.test.ts` nuevo — verifica que para `business_expense` no se exponga `cell_B` de filas editables y que exista hint de RFC.
+
+---
+
+## RESUELTO (2026-08-26) — fix desplegado
+
+### Bug crítico adicional encontrado: business_expense AUTO-APROBABA siempre
+En `/validate` (workflows.ts:53-54) las reglas cuyo campo el alumno no envía se saltan (`continue`). En `business_expense`, las únicas filas editables eran `Subtotal` y `Propina` (sin fórmula), pero las 4 reglas de validación apuntaban a filas **calculadas** (read-only, nunca enviadas) → `maxPossible=0` → `passed=true` siempre. El workflow no evaluaba nada. El test existente solo verificaba la definición del objeto, no el runtime.
+
+### Cambios
+- **Backend `workflowEngine.generateBusinessExpenseWorkflow`** (`36aaef5`): las 9 filas del spreadsheet ahora son **editables** — el alumno transcribe `Empresa/Razón social`, `RFC del establecimiento`, `Folio`, `Subtotal`, `Propina` y **calcula** `IVA 16%`, `Total pagado`, `Gasto deducible 65%`, `IVA acreditable`. Se eliminan las fórmulas pre-llenadas. Validación real sobre **cada** campo (9 reglas, maxPossible=26, umbral 60%). La guía enseña el asiento `5-03 / 2-03 / 1-02` y la propina como no deducible `5-08`.
+- **Frontend `workflowDoc.getWorkflowDocumentHtml`** (`a70652e`): el panel derecho de `business_expense` ahora renderiza un **ticket real de restaurante** (fuente con valores visibles: La Parrilla del Norte, RFC LPN-880707-ABC, folio, subtotal/IVA/propina/total), de donde el alumno extrae datos. Filas calculadas genéricas enmascaradas como "→ Calcúlalo" (no revelar respuesta). `getWorkflowHighlightFields` devuelve pistas de mapeo (ocultas por defecto, como la burbuja Guía).
+- **Tests** (`practicas-modules.test.ts`, 31): nuevo test anti-regresión "NO auto-aprueba" — respuestas correctas = 100% y pasan; incorrectas reprueban; y verifica que cada fila editable tiene su regla.
+
+### Pendiente (INC-002)
+- Orden de primera tarea: `PRACTICAS_WEEKS` ancla por semana del mes (08-jul = semana 2 → Módulo 2 antes que Módulo 1). Propuesto: progresión por módulo desbloqueado en `todayTasks` en vez de por fecha sim. No aplicado en este fix.
