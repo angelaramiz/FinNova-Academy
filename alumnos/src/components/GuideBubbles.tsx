@@ -66,10 +66,10 @@ export default function GuideBubbles({ guides, theme }: GuideBubblesProps) {
 
   return (
     <>
-      {/* Botón flotante 💡 Guía */}
+      {/* Botón 💡 Guía — posicionado dentro de su contenedor (no fixed al viewport, evita solapar con botones globales) */}
       <button
         onClick={() => { setOpen(o => !o); setIdx(0); }}
-        className="fixed bottom-5 right-5 z-[110] flex items-center gap-2 px-4 py-3 rounded-full shadow-xl cursor-pointer hover:opacity-90 transition select-none"
+        className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-3 rounded-full shadow-xl cursor-pointer hover:opacity-90 transition select-none"
         style={{ background: colors.primary, color: '#1B2632', border: `2px solid ${colors.border}`, boxShadow: `3px 3px 0px 0px ${colors.border}` }}
         title="Abrir guía paso a paso"
       >
