@@ -1184,11 +1184,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   }, [profile?.specialty]);
 
   async function checkOnboarding() {
-    const resumeFromLocal = () => {
-      // Solo reanuda onboarding y job desde localStorage.
-      // NO sobreescribe specialty — eso viene del perfil.
+    const resumeFromLocal = (profileJob?: any) => {
       if (localStorage.getItem('sim_visited') !== '1') return false;
       setNeedsOnboarding(false);
+      // No sobreescribir el job si la API ya entregó uno (evita Analista stale sobre Practicante)
+      if (profileJob) return true;
       const savedJob = localStorage.getItem('sim_assigned_job');
       if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
       return true;
@@ -1199,11 +1199,15 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
       if (profile.specialty) {
         setSpecialty(profile.specialty === 'data_engineering' ? 'data_engineering' : profile.specialty === 'practicas' ? 'practicas' : 'accounting');
       }
-      if (profile.assignedJob) {
+      const hasApiJob = !!profile.assignedJob;
+      if (hasApiJob) {
         setSelectedJob(profile.assignedJob);
+        // Sincroniza el job correcto a localStorage (corrige Analista stale)
+        localStorage.setItem('sim_assigned_job', JSON.stringify(profile.assignedJob));
+        localStorage.setItem('sim_specialty', profile.specialty || 'accounting');
       }
       if (!profile.onboardingCompleted) {
-        if (!resumeFromLocal()) setNeedsOnboarding(true);
+        if (!resumeFromLocal(profile.assignedJob)) setNeedsOnboarding(true);
       } else {
         setNeedsOnboarding(false);
         localStorage.setItem('sim_visited', '1');
