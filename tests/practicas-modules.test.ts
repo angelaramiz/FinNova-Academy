@@ -289,4 +289,65 @@ describe('R-13 — Prácticas Profesionales (ruta guiada de contabilidad)', () =
       expect(issues).toEqual([]);
     });
   });
+
+  describe('COMPROBACIÓN DE TAREA — la actividad coincide con el módulo y NO auto-aprueba (INC-001/002)', () => {
+    // Mapeo módulo → taskType (tarea que el alumno ejecuta) y su skill/objetivo.
+    const MODULO_TAREA: Record<string, { taskType: string; skill: string }> = {
+      'mod-cfdi': { taskType: 'invoice_emission', skill: 'facturacion' },
+      'mod-gastos': { taskType: 'business_expense', skill: 'gastos' },
+      'mod-cobranza': { taskType: 'payment_registration', skill: 'cobranza' },
+      'mod-proveedores': { taskType: 'supplier_invoice', skill: 'proveedores' },
+      'mod-nomina': { taskType: 'payroll', skill: 'nomina' },
+      'mod-cierre': { taskType: 'bank_reconciliation', skill: 'conciliacion' },
+    };
+
+    it('cada módulo referencia la tarea correcta según su objetivo (no hay desalineación tema↔actividad)', () => {
+      for (const m of getPracticasModules()) {
+        const map = MODULO_TAREA[m.id];
+        expect(map, `módulo ${m.id} sin mapeo`).toBeTruthy();
+        // El módulo debe tener al menos un paso tarea con su taskType correcto.
+        const paso = m.pasos.find(p => p.tipo === 'tarea');
+        expect(paso, `módulo ${m.id} sin paso tarea`).toBeTruthy();
+        expect(paso!.taskType).toBe(map.taskType);
+        expect(m.skill).toBe(map.skill);
+      }
+    });
+
+    it('ningún workflow de prácticas auto-aprueba: cada fila/campo editable tiene regla de validación', () => {
+      const spreadsheetSteps = ['business_expense', 'payroll', 'bank_reconciliation', 'cash_cut'];
+      for (const mod of getPracticasModules()) {
+        const map = MODULO_TAREA[mod.id];
+        const wf = generateWorkflow(map.taskType);
+        // Recolecta campos/filas editables (los que el alumno envía).
+        const step = wf.steps.find(s => s.type === 'spreadsheet' || s.type === 'form');
+        const editableKeys: string[] = [];
+        if (step?.type === 'spreadsheet') {
+          for (const r of step.data.rows) {
+            if (r.editable !== false) editableKeys.push(`row_${r.label}`);
+          }
+        } else if (step?.type === 'form') {
+          for (const f of step.data.fields) editableKeys.push(f.key);
+        }
+        for (const key of editableKeys) {
+          const hasRule = wf.validation.some(v => v.field === key);
+          expect(hasRule, `[${mod.id}] el campo editable '${key}' no tiene regla de validación → auto-aprueba`).toBe(true);
+        }
+        // maxPossible > 0 (realmente evalúa).
+        const max = wf.validation.reduce((s, v) => s + v.points, 0);
+        expect(max, `[${mod.id}] maxPossible=0 (auto-aprueba)`).toBeGreaterThan(0);
+      }
+    });
+
+    it('payroll usa TARIFA PROGRESIVA, NO 15% fijo (coherencia con su lección y módulo)', () => {
+      const wf = generateWorkflow('payroll');
+      const email = wf.steps.find(s => s.type === 'email');
+      const body = email!.data.body;
+      expect(body).toMatch(/progresiva|tarifa|tramo/i);
+      expect(body).not.toMatch(/ISR:\s*15%/);
+      // Ninguna regla valida un "ISR 15%".
+      expect(wf.validation.some(v => v.field.includes('15%'))).toBe(false);
+      // Hay ISR por empleado (progresivo) y se valida cada uno.
+      expect(wf.validation.some(v => v.field.includes('ISR'))).toBe(true);
+    });
+  });
 });
