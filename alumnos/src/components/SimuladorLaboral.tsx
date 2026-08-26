@@ -1185,12 +1185,9 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   async function checkOnboarding() {
     const resumeFromLocal = () => {
-      // Solo reanuda si el usuario completó el onboarding localmente
-      // (sim_visited lo escribe Onboarding.handleStart al pulsar ¡Empezar!).
+      // Solo reanuda onboarding y job desde localStorage.
+      // NO sobreescribe specialty — eso viene del perfil.
       if (localStorage.getItem('sim_visited') !== '1') return false;
-      const savedSpecialty = localStorage.getItem('sim_specialty');
-      if (!savedSpecialty) return false;
-      setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : savedSpecialty === 'practicas' ? 'practicas' : 'accounting');
       setNeedsOnboarding(false);
       const savedJob = localStorage.getItem('sim_assigned_job');
       if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
@@ -1206,11 +1203,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         setSelectedJob(profile.assignedJob);
       }
       if (!profile.onboardingCompleted) {
-        // Solo reanudar si ya completó el onboarding en una sesión previa.
         if (!resumeFromLocal()) setNeedsOnboarding(true);
       } else {
-        // Onboarding completado en el servidor: persistir localmente para el
-        // anti-reset y NO mostrar la bienvenida nunca más.
         setNeedsOnboarding(false);
         localStorage.setItem('sim_visited', '1');
         const finalSpecialty = profile.specialty || (localStorage.getItem('sim_specialty') || 'accounting');
@@ -1223,6 +1217,11 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
       // Si la API no responde pero el usuario ya completó el onboarding,
       // reanudar desde localStorage en vez de regresar a la bienvenida.
       if (!resumeFromLocal()) setNeedsOnboarding(true);
+      // Si hay specialty en localStorage, usarlo como fallback
+      const savedSpecialty = localStorage.getItem('sim_specialty');
+      if (savedSpecialty) {
+        setSpecialty(savedSpecialty === 'data_engineering' ? 'data_engineering' : savedSpecialty === 'practicas' ? 'practicas' : 'accounting');
+      }
       return null;
     }
   }
@@ -1424,7 +1423,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
       setNeedsOnboarding(false);
       localStorage.setItem('sim_visited', '1');
       const savedSpecialty = localStorage.getItem('sim_specialty');
-      const spec = savedSpecialty === 'data_engineering' ? 'data_engineering' : 'accounting';
+      const spec = savedSpecialty === 'data_engineering' ? 'data_engineering' : savedSpecialty === 'practicas' ? 'practicas' : 'accounting';
       setSpecialty(spec);
       const savedJob = localStorage.getItem('sim_assigned_job');
       if (savedJob) { try { setSelectedJob(JSON.parse(savedJob)); } catch { /* noop */ } }
