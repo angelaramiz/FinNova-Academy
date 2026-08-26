@@ -40,7 +40,6 @@ import PracticasModules from './PracticasModules';
 import Glossary from './Glossary';
 import TaxDeclaration from './TaxDeclaration';
 import DualViewLayout from './DualViewLayout';
-import DataHighlight from './DataHighlight';
 import PdfXmlViewer from './PdfXmlViewer';
 import AccountingPortal from './AccountingPortal';
 import BankPortal from './BankPortal';

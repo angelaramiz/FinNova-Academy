@@ -14,7 +14,8 @@ interface DualViewLayoutProps {
 export default function DualViewLayout({ theme, portalTitle, portalIcon, documentHtml, highlightFields = [], onPortalSubmit, portalContent }: DualViewLayoutProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const [showHighlight, setShowHighlight] = useState(true);
+  // Como la burbuja Guía: oculto por defecto, el alumno pide la pista
+  const [showHighlight, setShowHighlight] = useState(false);
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -25,7 +26,7 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
         <button onClick={() => setShowHighlight(!showHighlight)}
           className="px-2 py-1 rounded text-[10px] font-mono cursor-pointer border"
           style={{ borderColor: colors.primary, color: showHighlight ? colors.primary : colors.textMuted, background: showHighlight ? colors.primary + '15' : 'transparent' }}>
-          {showHighlight ? '◉ Resaltar datos' : '○ Mostrar datos'}
+          {showHighlight ? '◉ Ocultar pistas' : '○ Mostrar pistas'}
         </button>
       </div>
 
@@ -49,16 +50,17 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
             <h3 className="text-[12px] font-bold font-mono" style={{ color: colors.text }}>📄 Documento</h3>
           </div>
 
-          {/* Highlight fields */}
+          {/* Highlight — como burbuja Guía: pista de mapeo, no respuestas */}
           {showHighlight && highlightFields.length > 0 && (
             <div className="mb-3 p-3 rounded-xl border-2" style={{ borderColor: '#f59e0b50', background: '#f59e0b10' }}>
-              <p className="text-[10px] font-bold font-mono mb-2" style={{ color: '#f59e0b' }}>⚡ Datos clave para copiar al portal:</p>
+              <p className="text-[10px] font-bold font-mono mb-1" style={{ color: '#f59e0b' }}>💡 Pistas: dónde está cada dato y a dónde va</p>
+              <p className="text-[9px] font-mono mb-2" style={{ color: colors.textMuted }}>Lee el TICKET y ubica cada campo. Las pistas no dan la respuesta — indican el mapeo, como la burbuja Guía.</p>
               <div className="space-y-1.5">
                 {highlightFields.map((f, i) => (
                   <div key={i} className="flex items-center gap-2 text-[10px]">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f59e0b' }} />
+                    <span className="text-[10px]">{(f as any).icon || '•'}</span>
                     <span className="font-mono font-bold" style={{ color: colors.text }}>{f.label}:</span>
-                    <span className="font-mono" style={{ color: '#f59e0b', background: '#f59e0b15', padding: '1px 4px', borderRadius: 4 }}>{f.value}</span>
+                    <span className="font-mono" style={{ color: colors.textMuted, background: isDark ? '#ffffff0a' : '#00000006', padding: '1px 6px', borderRadius: 4 }}>{f.value}</span>
                   </div>
                 ))}
               </div>

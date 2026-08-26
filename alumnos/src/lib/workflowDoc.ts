@@ -2,12 +2,19 @@
 export function getWorkflowDocumentHtml(taskType: string, stepData: any): string {
   const rows = stepData?.rows;
   const fields = stepData?.fields;
-  const ctx = { company: 'Operadora Logística del Norte S.A. de C.V.', rfc: 'OLN-220701-ABC' };
+  // Cabecera coherente con el ticket real del Módulo 2 (LPN = La Parrilla del Norte)
+  const ctx = taskType === 'business_expense'
+    ? { company: 'La Parrilla del Norte', rfc: 'LPN-880707-ABC' }
+    : { company: 'Operadora Logística del Norte S.A. de C.V.', rfc: 'OLN-220701-ABC' };
 
   if (rows) {
-    // Spreadsheet style document
+    // El documento MUESTRA la tabla pero los valores de filas editables (sin fórmula)
+    // se enmascaran — el alumno debe extraerlos del ticket, no copiarlos.
     const rowHtml = rows.map((r: any) => {
-      const val = r.cell_B !== undefined ? `$${Number(r.cell_B).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '';
+      const isEditable = !r.formula && r.cell_B !== undefined;
+      const val = isEditable
+        ? '<span style="color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:10px">— Ver en TICKET</span>'
+        : r.cell_B !== undefined ? `$${Number(r.cell_B).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '';
       const formula = r.formula ? `<span style="color:#666;font-size:9px">${r.formula}</span>` : '';
       return `<tr><td style="padding:6px 8px;border:1px solid #ddd;font-size:11px">${r.label}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">${val}</td><td style="padding:6px 8px;font-size:9px;color:#888">${formula}</td></tr>`;
     }).join('');
@@ -52,25 +59,44 @@ function getDocTitle(taskType: string): string {
   return titles[taskType] || '📄 DOCUMENTO';
 }
 
-// Extrae datos clave del workflow para DataHighlight
+// Pistas de mapeo (como burbuja Guía): indica DÓNDE está cada dato y A DÓNDE va,
+// sin revelar la respuesta de los campos que el alumno debe llenar.
+// Incluye cabecera (RFC, empresa, folio) y filas editables como "Ver en TICKET".
 export function getWorkflowHighlightFields(taskType: string, stepData: any): { label: string; value: string; icon?: string }[] {
+  if (taskType === 'business_expense' && stepData?.rows) {
+    return [
+      { label: 'Empresa / Razón social', value: 'TICKET encabezado → campo Empresa', icon: '🏢' },
+      { label: 'RFC del establecimiento', value: 'TICKET encabezado (RFC) → campo RFC', icon: '🪪' },
+      { label: 'Folio del ticket', value: 'TICKET encabezado (TK-xxxxx) → referencia', icon: '🎫' },
+      { label: 'Subtotal del ticket', value: 'TICKET línea 1 → campo editable "Subtotal del ticket"', icon: '📋' },
+      { label: 'Propina (no deducible)', value: 'TICKET línea 2 → campo editable "Propina"', icon: '💡' },
+      { label: 'IVA del consumo (16%)', value: 'Calculado: =B1×0.16', icon: '🧮' },
+      { label: 'Total / Deducible / IVA acreditable', value: 'Calculados por fórmula — no copiar', icon: '🔒' },
+    ];
+  }
+
   const fields: { label: string; value: string; icon?: string }[] = [];
 
   if (stepData?.rows) {
-    // Spreadsheet: extraer filas como campos
     for (const r of stepData.rows) {
-      if (r.cell_B !== undefined) {
-        fields.push({ label: r.label, value: `$${Number(r.cell_B).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, icon: '📌' });
+      if (r.cell_B === undefined) continue;
+      // Filas sin fórmula son inputs del alumno — no revelar valor
+      if (!r.formula) {
+        fields.push({ label: r.label, value: 'Ver en documento → campo editable', icon: '📋' });
+      } else {
+        fields.push({ label: r.label, value: 'Calculado por fórmula', icon: '🧮' });
       }
     }
   }
 
   if (stepData?.fields) {
-    // Form: extraer campos correctos
     for (const f of stepData.fields) {
-      if (f.correct !== undefined) {
-        const val = typeof f.correct === 'number' ? `$${Number(f.correct).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : String(f.correct);
-        fields.push({ label: f.label, value: val, icon: '📌' });
+      if (f.correct === undefined) continue;
+      // Campos de captura (choice/text) — no revelar; calculados — pista
+      if (f.type === 'calculated') {
+        fields.push({ label: f.label, value: `Calculado: ${f.formula || '—'}`, icon: '🧮' });
+      } else {
+        fields.push({ label: f.label, value: 'Ver en documento/correo → completar', icon: '📋' });
       }
     }
   }
