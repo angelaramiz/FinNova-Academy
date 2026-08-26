@@ -12,6 +12,8 @@ export interface GuideBubble {
 interface GuideBubblesProps {
   guides: GuideBubble[];
   theme: Theme;
+  /** Si es true, el botón se posiciona absoluto dentro de su contenedor relative (no fixed al viewport). */
+  inline?: boolean;
 }
 
 function anchorRect(anchor?: string): DOMRect | null {
@@ -25,7 +27,7 @@ function anchorRect(anchor?: string): DOMRect | null {
   }
 }
 
-export default function GuideBubbles({ guides, theme }: GuideBubblesProps) {
+export default function GuideBubbles({ guides, theme, inline }: GuideBubblesProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [open, setOpen] = useState(false);
@@ -66,10 +68,12 @@ export default function GuideBubbles({ guides, theme }: GuideBubblesProps) {
 
   return (
     <>
-      {/* Botón 💡 Guía — posicionado dentro de su contenedor (no fixed al viewport, evita solapar con botones globales) */}
+      {/* Botón 💡 Guía — fixed global salvo inline (dentro de su panel) */}
       <button
         onClick={() => { setOpen(o => !o); setIdx(0); }}
-        className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-3 rounded-full shadow-xl cursor-pointer hover:opacity-90 transition select-none"
+        className={inline
+          ? 'absolute bottom-3 right-3 z-20 flex items-center gap-2 px-3 py-2.5 rounded-full shadow-xl cursor-pointer hover:opacity-90 transition select-none'
+          : 'fixed bottom-20 right-5 z-[110] flex items-center gap-2 px-4 py-3 rounded-full shadow-xl cursor-pointer hover:opacity-90 transition select-none'}
         style={{ background: colors.primary, color: '#1B2632', border: `2px solid ${colors.border}`, boxShadow: `3px 3px 0px 0px ${colors.border}` }}
         title="Abrir guía paso a paso"
       >

@@ -630,6 +630,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                   <DualViewLayout theme={theme} portalTitle="Portal Contable" portalIcon="📊"
                     documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
                     highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    guides={workflow.steps[stepIdx].guides}
                     portalContent={<><QuickTips theme={theme} moduleId={currentTask?.type || 'cfdi'} /><AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} /></>} />
                 ) : <AccountingForm formData={workflow.steps[stepIdx].data} onSubmit={handleFormSubmit} theme={theme} loading={loading} />
               )}
@@ -638,13 +639,17 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                   <DualViewLayout theme={theme} portalTitle="Hoja de Cálculo" portalIcon="📊"
                     documentHtml={getWorkflowDocumentHtml(currentTask?.type || '', workflow.steps[stepIdx].data)}
                     highlightFields={getWorkflowHighlightFields(currentTask?.type || '', workflow.steps[stepIdx].data)}
+                    guides={workflow.steps[stepIdx].guides}
                     portalContent={<><QuickTips theme={theme} moduleId={currentTask?.type || 'cfdi'} /><SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} /></>} />
                 ) : <SpreadsheetWidget rows={workflow.steps[stepIdx].data.rows} onSubmit={handleSpreadsheetSubmit} theme={theme} title={workflow.steps[stepIdx].title} loading={loading} />
               )}
               {workflow.steps[stepIdx].type === 'result' && <ResultView data={workflow.steps[stepIdx].data} validation={validationResult} taskTitle={currentTask?.title || ''} onFinish={closeWorkflow} theme={theme} />}
-              {workflow.steps[stepIdx].guides && workflow.steps[stepIdx].guides.length > 0 && (
-                <GuideBubbles guides={workflow.steps[stepIdx].guides} theme={theme} />
-              )}
+              {(() => {
+                const isDual = isPracticas && (workflow.steps[stepIdx].type === 'form' || workflow.steps[stepIdx].type === 'spreadsheet');
+                return (!isDual && workflow.steps[stepIdx].guides && workflow.steps[stepIdx].guides.length > 0) ? (
+                  <GuideBubbles guides={workflow.steps[stepIdx].guides} theme={theme} />
+                ) : null;
+              })()}
               {showCfdi && cfdiData && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between px-3 py-2 rounded-t-xl border-2 border-b-0" style={{ borderColor: '#8b5cf650', background: '#8b5cf610' }}>

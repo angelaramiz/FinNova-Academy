@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { themeColors, Theme } from '../lib/theme';
+import GuideBubbles, { GuideBubble } from './GuideBubbles';
 
 interface DualViewLayoutProps {
   theme: Theme;
@@ -9,13 +10,16 @@ interface DualViewLayoutProps {
   highlightFields?: { label: string; value: string; selector?: string }[];
   onPortalSubmit?: (answers: Record<string, any>) => void;
   portalContent?: React.ReactNode;
+  guides?: GuideBubble[];
 }
 
-export default function DualViewLayout({ theme, portalTitle, portalIcon, documentHtml, highlightFields = [], onPortalSubmit, portalContent }: DualViewLayoutProps) {
+export default function DualViewLayout({ theme, portalTitle, portalIcon, documentHtml, highlightFields = [], onPortalSubmit, portalContent, guides }: DualViewLayoutProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   // Como la burbuja Guía: oculto por defecto, el alumno pide la pista
   const [showHighlight, setShowHighlight] = useState(false);
+  const ticketGuides = (guides || []).filter(g => g.anchor === '[data-guide="ticket"]');
+  const formGuides = (guides || []).filter(g => g.anchor !== '[data-guide="ticket"]');
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
@@ -33,7 +37,7 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
       {/* 2-column layout */}
       <div className="flex-1 flex min-h-0">
         {/* LEFT: Portal */}
-        <div className="flex-1 border-r-2 overflow-auto p-4" style={{ borderColor: colors.border, minWidth: '50%' }}>
+        <div className="relative flex-1 border-r-2 overflow-auto p-4" style={{ borderColor: colors.border, minWidth: '50%' }}>
           <div className="mb-3">
             <h3 className="text-[12px] font-bold font-mono mb-2" style={{ color: colors.text }}>{portalIcon} Portal</h3>
           </div>
@@ -42,10 +46,11 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
               <p className="text-[11px]">Portal en desarrollo...</p>
             </div>
           )}
+          {formGuides.length > 0 && <GuideBubbles guides={formGuides} theme={theme} inline />}
         </div>
 
         {/* RIGHT: Document */}
-        <div className="flex-1 overflow-auto p-4" style={{ minWidth: '50%', background: isDark ? 'rgba(0,0,0,0.1)' : '#f8fafc' }}>
+        <div className="relative flex-1 overflow-auto p-4" style={{ minWidth: '50%', background: isDark ? 'rgba(0,0,0,0.1)' : '#f8fafc' }}>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[12px] font-bold font-mono" style={{ color: colors.text }}>📄 Documento</h3>
           </div>
@@ -71,6 +76,7 @@ export default function DualViewLayout({ theme, portalTitle, portalIcon, documen
           <div data-guide="ticket" className="rounded-xl border overflow-hidden" style={{ borderColor: colors.border, background: '#fff' }}>
             <iframe srcDoc={documentHtml} className="w-full" style={{ minHeight: 500, border: 'none' }} title="Documento" />
           </div>
+          {ticketGuides.length > 0 && <GuideBubbles guides={ticketGuides} theme={theme} inline />}
         </div>
       </div>
     </div>
