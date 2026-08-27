@@ -61,8 +61,9 @@ describe('story-coherence — guion de seguimiento de la especialidad Data', () 
     const planAnalyst = generateMonthPlan(6, 2026, 'data_engineering', 'analyst');
     const analystPhases = new Set(planAnalyst.tasks.map(t => t.phase));
     // fase analista: solo tareas analyst (sin incident_recovery / airflow_dag de ingeniería)
+    // las trampas genéricas no tienen phase (undefined) — son neutrales, no fuga de rama.
     for (const t of planAnalyst.tasks) {
-      expect(['analyst']).toContain(t.phase);
+      expect(['analyst', undefined]).toContain(t.phase);
     }
     const planEng = generateMonthPlan(6, 2026, 'data_engineering', 'de');
     expect(planEng.tasks.some(t => t.phase === 'de')).toBe(true);

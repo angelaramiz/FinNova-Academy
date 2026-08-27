@@ -31,29 +31,28 @@ describe('R-12 — Capacidades de motor (auto-extensión)', () => {
     expect(resolveCapability('Resolución de incidentes')?.taskTypes).toContain('incident_recovery');
   });
 
-  it('detecta motores faltantes que el sistema debe construir', () => {
-    expect(resolveCapability('Power BI')?.status).toBe('missing');
-    expect(resolveCapability('Power BI')?.buildPlan?.length).toBeGreaterThan(0);
+  it('los motores avanzados de la carrera data YA existen (R-15 implementado)', () => {
+    expect(resolveCapability('Power BI')?.status).toBe('exists');
+    expect(resolveCapability('Power BI')?.validator).toBe('dax');
     expect(resolveCapability('n8n')?.id).toBe('n8n');
-    expect(resolveCapability('Automatización')?.status).toBe('missing');
-    expect(resolveCapability('Pronóstico')?.buildPlan).toContain('Motor de pronóstico (media móvil, tendencia lineal, PRONOSTICO) en motor de fórmulas');
+    expect(resolveCapability('Automatización')?.status).toBe('exists');
+    expect(resolveCapability('Pronóstico')?.status).toBe('exists');
+    expect(resolveCapability('Excel')?.status).toBe('exists');
+    expect(resolveCapability('APIs LLM')?.status).toBe('exists');
+    expect(resolveCapability('Agentes')?.status).toBe('exists');
+    expect(resolveCapability('Prompt')?.status).toBe('exists');
   });
 
-  it('Excel se marca como "extends" (el motor existe, faltan funciones)', () => {
-    const cap = resolveCapability('Excel');
-    expect(cap?.status).toBe('extends');
-    expect(cap?.buildPlan?.join(' ')).toMatch(/XLOOKUP/);
-  });
-
-  it('registerEngineRequirement agrega al backlog y dedupe por id', () => {
+  it('registerEngineRequirement dedupe: los motores construidos no se agregan, ERP (missing) sí', () => {
     ENGINE_BACKLOG.length = 0;
-    const cap = resolveCapability('Power BI')!;
-    const a = registerEngineRequirement(cap);
-    expect(a.added).toBe(true);
-    const b = registerEngineRequirement(cap);
-    expect(b.added).toBe(false);
+    const built = resolveCapability('Power BI')!;
+    const a = registerEngineRequirement(built);
+    expect(a.added).toBe(false); // ya existe → no es pendiente
+    const erp = resolveCapability('SAP')!;
+    const b = registerEngineRequirement(erp);
+    expect(b.added).toBe(true); // sigue missing → entra al backlog
     expect(ENGINE_BACKLOG.length).toBe(1);
-    expect(pendingEngines()[0].id).toBe('power_bi');
+    expect(pendingEngines()[0].id).toBe('erp');
   });
 });
 
@@ -83,13 +82,13 @@ describe('R-12 — Agente-automatizador (compileRoute)', () => {
     expect(res.routing).toBe('ETAPA_3');
   });
 
-  it('detecta y registra los motores faltantes de la vacante (Power BI, pronóstico)', async () => {
+  it('la vacante de analista ya NO requiere construir Power BI/pronóstico (están implementados)', async () => {
     const before = pendingEngines().length;
     const res = await compileRoute(VACANCY_ANALISTA, 'user-test', 'data_engineering');
-    expect(res.requires_engine_build).toBe(true);
+    // Power BI y Pronóstico ya existen: no deben aparecer como motores faltantes.
     const ids = res.missing_engines.map(m => m.id);
-    expect(ids).toContain('power_bi');
-    expect(ids).toContain('forecast');
+    expect(ids).not.toContain('power_bi');
+    expect(ids).not.toContain('forecast');
     expect(pendingEngines().length).toBeGreaterThanOrEqual(before);
   });
 
@@ -100,12 +99,13 @@ describe('R-12 — Agente-automatizador (compileRoute)', () => {
     expect(prueba.every(q => q.pregunta && q.peso > 0)).toBe(true);
   });
 
-  it('la vacante de IA registra motores de automatización/agentes', async () => {
+  it('la vacante de IA resuelve n8n/LLM/agentes como motores existentes (R-15)', async () => {
     const res = await compileRoute(VACANCY_IA, 'user-test', 'data_engineering');
     const ids = res.missing_engines.map(m => m.id);
-    expect(ids).toContain('n8n');
-    expect(ids).toContain('llm_api');
-    expect(ids).toContain('agents');
+    // Al estar implementados, no deben quedar pendientes n8n/llm_api/agents.
+    expect(ids).not.toContain('n8n');
+    expect(ids).not.toContain('llm_api');
+    expect(ids).not.toContain('agents');
   });
 
   it('capabilities lista existentes y pendientes', () => {

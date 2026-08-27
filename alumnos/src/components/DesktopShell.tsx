@@ -44,6 +44,11 @@ import PdfXmlViewer from './PdfXmlViewer';
 import AccountingPortal from './AccountingPortal';
 import BankPortal from './BankPortal';
 import QuickTips from './QuickTips';
+import PowerBISim from './PowerBISim';
+import ForecastSim from './ForecastSim';
+import AutomationSim from './AutomationSim';
+import AgentSim from './AgentSim';
+import PromptSim from './PromptSim';
 import { getWorkflowDocumentHtml, getWorkflowHighlightFields } from '../lib/workflowDoc';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
@@ -63,7 +68,7 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso' | 'powerbi' | 'forecast' | 'automation' | 'agent' | 'prompt';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering' | 'practicas') || 'accounting';
@@ -309,6 +314,8 @@ const analystApps = [
   { label: 'Notebook', icon: '📓', action: () => setScreen('notebook'), dataApp: 'notebook' },
   { label: 'Catalog', icon: '📚', action: () => setScreen('catalog'), dataApp: 'catalog' },
   { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
+  { label: 'Power BI', icon: '📊', action: () => setScreen('powerbi'), dataApp: 'powerbi' },
+  { label: 'Pronóstico', icon: '🔮', action: () => setScreen('forecast'), dataApp: 'forecast' },
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
   { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
@@ -333,6 +340,8 @@ const engineeringApps = [
   { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
   { label: 'Capstone', icon: '🎓', action: () => setScreen('capstone'), dataApp: 'capstone' },
   { label: 'API Client', icon: '📡', action: () => setScreen('api'), dataApp: 'api' },
+  { label: 'Automatización', icon: '⚙️', action: () => setScreen('automation'), dataApp: 'automation' },
+  { label: 'Agente', icon: '🧠', action: () => setScreen('agent'), dataApp: 'agent' },
   { label: 'DataOps', icon: '🧠', action: () => setScreen('dataops'), dataApp: 'dataops' },
   { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'SQL', icon: '🗃️', action: () => setScreen('sql'), dataApp: 'sql' },
@@ -356,6 +365,8 @@ const scienceApps = [
   { label: 'ML', icon: '🤖', action: () => setScreen('ml'), dataApp: 'ml' },
   { label: 'Experimentos', icon: '🧪', action: () => setScreen('ml'), dataApp: 'experimentos' },
   { label: 'BI', icon: '📊', action: () => setScreen('bi'), dataApp: 'bi' },
+  { label: 'Pronóstico', icon: '🔮', action: () => setScreen('forecast'), dataApp: 'forecast' },
+  { label: 'Prompt', icon: '💬', action: () => setScreen('prompt'), dataApp: 'prompt' },
   { label: 'Excel', icon: '📈', action: () => setScreen('spreadsheet'), dataApp: 'excel' },
   { label: 'Aprendizaje', icon: '📚', action: () => setScreen('learning'), dataApp: 'learning' },
   { label: 'Dashboard', icon: '⚡', action: () => setScreen('dashboard'), dataApp: 'dashboard' },
@@ -551,6 +562,11 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
         {screen === 'learning' && <div className="animate-slide-in h-full"><LearningSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'stats' && <div className="animate-slide-in h-full"><StatsSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'ml' && <div className="animate-slide-in h-full"><MLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'powerbi' && <div className="animate-slide-in h-full"><PowerBISim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'forecast' && <div className="animate-slide-in h-full"><ForecastSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'automation' && <div className="animate-slide-in h-full"><AutomationSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'agent' && <div className="animate-slide-in h-full"><AgentSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'prompt' && <div className="animate-slide-in h-full"><PromptSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'routes' && careerPath && (
           <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setShowRoutes(false)} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
         )}
@@ -695,6 +711,11 @@ function renderTool(app: string, theme: Theme) {
     case 'bi': return <BiSim theme={theme} onBack={noop} />;
     case 'warehouse': return <WarehouseSim theme={theme} onBack={noop} />;
     case 'pipeline': return <PipelineSim theme={theme} onBack={noop} />;
+    case 'powerbi': return <PowerBISim theme={theme} onBack={noop} />;
+    case 'forecast': return <ForecastSim theme={theme} onBack={noop} />;
+    case 'automation': return <AutomationSim theme={theme} onBack={noop} />;
+    case 'agent': return <AgentSim theme={theme} onBack={noop} />;
+    case 'prompt': return <PromptSim theme={theme} onBack={noop} />;
     default: return <div className="p-6 text-xs font-mono" style={{ color: '#64748b' }}>Herramienta no disponible: {app}</div>;
   }
 }
@@ -711,12 +732,18 @@ const DE_SLOTS: Record<string, string> = {
   code_review: '13:30',         // code reviews
   airflow_dag: '14:00',         // orquestación
   soporte_datos: '14:30',       // soporte a analistas
+  automation_etl: '10:00',      // motores avanzados (n8n)
+  llm_integration: '10:30',     // APIs LLM
+  agent_task: '13:30',          // agentes
 };
 
 const ANALYST_SLOTS: Record<string, string> = {
   sql_query: '10:00',           // SQL exploratorio
   data_quality: '11:00',        // alerta de calidad
   soporte_datos: '14:30',
+  powerbi_dax: '10:00',         // motores avanzados (DAX)
+  excel_advanced: '10:30',
+  forecast_sales: '11:00',
 };
 
 const DS_SLOTS: Record<string, string> = {
@@ -724,6 +751,7 @@ const DS_SLOTS: Record<string, string> = {
   modelo_baseline: '10:30',     // entrenamiento
   eval_metricas: '11:00',       // evaluación
   data_quality: '11:30',
+  prompt_engineering: '13:30',  // motores avanzados (prompt)
 };
 
 interface AgendaBlock {
