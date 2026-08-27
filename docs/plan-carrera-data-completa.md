@@ -1,6 +1,6 @@
-# Plan — Carrera Data Completa (motores faltantes) — PENDIENTE
+# Plan — Carrera Data Completa (motores faltantes) — IMPLEMENTADO (R-15)
 
-> Estado: **PENDIENTE / BACKLOG** — no implementado. Roadmap para que la carrera data (analista → ingeniero → científico, `careerPath.ts:15`, `UNLOCK_PCT=40`) pase de 12 a 20 motores. Todo queda en `ENGINE_BACKLOG` (`engineCapabilities.ts:60`, `GET /api/automator/pending-engines`) como 7 motores `missing/extends`. No se aplica migración ni se toca `ENGINE_CAPABILITIES` hasta priorizar.
+> Estado: **IMPLEMENTADO (R-15, 26-ago-2026)** — los 7 motores se construyeron y desplegaron. De 12 a **19 motores `exists`** (quedó `erp` como `missing` único). Backend `e1a0129` live. Verificado en prod: `powerbi_dax` valida `20/20`, `GET /api/automator/capabilities` lista los 7 con `status=exists` y validator.
 
 ## Dónde estamos hoy
 
