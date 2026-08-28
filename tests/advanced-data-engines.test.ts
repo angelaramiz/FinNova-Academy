@@ -79,4 +79,17 @@ describe('R-15 — Motores avanzados (carrera data completa)', () => {
       expect(c!.taskTypes.length).toBeGreaterThan(0);
     }
   });
+
+  it('ningún workflow avanzado auto-aprueba: todo tiene maxPossible > 0 (regresión INC-001 en /validate)', () => {
+    const types = ['excel_advanced', 'powerbi_dax', 'forecast_sales', 'automation_etl', 'llm_integration', 'agent_task', 'prompt_engineering'];
+    for (const t of types) {
+      const wf = getAdvancedWorkflow(t);
+      const max = wf.validation.reduce((s, v) => s + v.points, 0);
+      expect(max, `${t} maxPossible=0 (auto-aprueba)`).toBeGreaterThan(0);
+      // El validador es advanced y evalúa el campo del alumno (no un campo inexistente).
+      const rule = wf.validation[0];
+      expect(rule.type).toBe('advanced');
+      expect(rule.field).toBeTruthy();
+    }
+  });
 });
