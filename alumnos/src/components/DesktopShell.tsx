@@ -199,6 +199,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
           passed: !!result.passed, week: 0, day: 0,
           timeSpent: currentTask.time || 10,
           isTrap: currentTask.isTrap, trapDetected: false,
+          countsAsCase: !!(currentTask as any).countsAsCase,
         });
       } catch { /* non-critical */ }
       // Mark task as completed locally for progressive unlocking
@@ -711,6 +712,9 @@ function renderTool(app: string, theme: Theme) {
     case 'bi': return <BiSim theme={theme} onBack={noop} />;
     case 'warehouse': return <WarehouseSim theme={theme} onBack={noop} />;
     case 'pipeline': return <PipelineSim theme={theme} onBack={noop} />;
+    case 'stats': return <StatsSim theme={theme} onBack={noop} />;
+    case 'ml': return <MLSim theme={theme} onBack={noop} />;
+    case 'monitor': return <MonitorSim theme={theme} onBack={noop} />;
     case 'powerbi': return <PowerBISim theme={theme} onBack={noop} />;
     case 'forecast': return <ForecastSim theme={theme} onBack={noop} />;
     case 'automation': return <AutomationSim theme={theme} onBack={noop} />;
@@ -736,6 +740,12 @@ const DE_SLOTS: Record<string, string> = {
   automation_etl: '10:00',      // motores avanzados (n8n)
   llm_integration: '10:30',     // APIs LLM
   agent_task: '13:30',          // agentes
+  ecosistema_de: '11:00',       // ecosistema ingeniería
+  python_basico: '09:30',
+  foundry_basico: '10:00',
+  airflow_basico: '10:30',
+  git_basico: '13:30',
+  monitor_basico: '11:00',
 };
 
 const ANALYST_SLOTS: Record<string, string> = {
@@ -745,6 +755,11 @@ const ANALYST_SLOTS: Record<string, string> = {
   powerbi_dax: '10:00',         // motores avanzados (DAX)
   excel_advanced: '10:30',
   forecast_sales: '11:00',
+  ecosistema_da: '10:00',       // ecosistema analista
+  excel_basico: '09:30',        // Capa 0
+  sql_basico: '10:00',
+  catalog_basico: '10:30',
+  bi_basico: '11:00',
 };
 
 const DS_SLOTS: Record<string, string> = {
@@ -753,6 +768,10 @@ const DS_SLOTS: Record<string, string> = {
   eval_metricas: '11:00',       // evaluación
   data_quality: '11:30',
   prompt_engineering: '13:30',  // motores avanzados (prompt)
+  ecosistema_ds: '11:00',       // ecosistema ciencia
+  stats_basico: '09:30',        // Capa 0
+  ml_basico: '10:00',
+  metricas_basico: '10:30',
 };
 
 interface AgendaBlock {
