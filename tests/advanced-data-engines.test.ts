@@ -20,8 +20,10 @@ describe('R-15 — Motores avanzados (carrera data completa)', () => {
     expect(bad.passed).toBe(false);
   });
 
-  it('validador Excel reconoce XLOOKUP/SUMIFS/pivot', () => {
+  it('validador Excel reconoce XLOOKUP/SUMIFS/UNIQUE/FILTER/pivot y rechaza base SUM (Bloque 6 VBA sustituido)', () => {
     expect(runAdvancedValidator({ validator: 'excel' }, { 'row_Fórmula avanzada que usarías': 'XLOOKUP del precio' }).passed).toBe(true);
+    expect(runAdvancedValidator({ validator: 'excel' }, { 'row_Fórmula avanzada que usarías': 'UNIQUE de SKUs' }).passed).toBe(true);
+    expect(runAdvancedValidator({ validator: 'excel' }, { 'row_Fórmula avanzada que usarías': 'FILTER de inventario' }).passed).toBe(true);
     expect(runAdvancedValidator({ validator: 'excel' }, { 'row_Fórmula avanzada que usarías': 'SUM(A1:A5)' }).passed).toBe(false);
   });
 

@@ -1,0 +1,47 @@
+{
+  "simulab_id": "SIMULAB_guess_encargado_almacen",
+  "module": "excel_advanced",
+  "extends": "excel_advanced",
+  "c/buildPlan": {
+    "p1_datos": {
+      "densidad": 0.4,
+      "ticket": "PQ_Limpieza",
+      "criterio_cierre": "CSV 5k filas en Power Query, sin nulos, tipos correctos, cargado como Tabla Movimientos"
+    },
+    "p2_pivot": {
+      "densidad": 0.2,
+      "ticket": "PT_ABC",
+      "criterio_cierre": "Dinámica Categoría>SKU, Mes en columnas, % acumulado ABC funcional y actualizable"
+    },
+    "p3_formulas": {
+      "densidad": 0.15,
+      "ticket": "FR_Cruzada",
+      "criterio_cierre": "SUMAR.SI.CONJUNTO y BUSCARX validando Físico vs Sistema sin errores"
+    },
+    "p4_dashboard": {
+      "densidad": 0.15,
+      "ticket": "DS_Gerencial",
+      "criterio_cierre": "Dashboard con 3 segmentadores conectados a 3 gráficos dinámicos"
+    },
+    "p5_eval": {
+      "densidad": 0.1,
+      "ticket": "EV_Oral",
+      "criterio_cierre": "Explicación oral en 5 min del flujo y justificación de métricas de merma"
+    }
+  },
+  "reglas": {
+    "cierre_tickets": "Por criterio de aceptación técnico, no por tiempo",
+    "version": "v2",
+    "oral": "5 min"
+  },
+  "correcciones_aplicadas": {
+    "bloque_6_vba": "Eliminado (obsoleto para perfil IA/SQL). Sustituido por Modelo de Datos (Power Pivot/DAX básico) + Funciones de Matriz Dinámica (UNIQUE, FILTER) en SpreadsheetSim",
+    "sobrecarga": "9h en 1 día → distribuido por c/buildPlan (p1 0.4 / p2 0.2 / p3 0.15 / p4 0.15 / p5 0.1) con cierre por criterio",
+    "simulab_v2": "Estructura JSON único con simId, densidad y criterio de cierre técnico (validateSimulabV2)"
+  },
+  "motores": {
+    "excel": "SpreadsheetSim XLOOKUP/BUSCARX, SUMIFS/SUMAR.SI.CONJUNTO, COUNTIFS, UNIQUE/UNICO, FILTER/FILTRAR + pivots (bundle 89mSrKRo)",
+    "power_pivot": "PowerBISim CALCULATE/SUMX sobre MART_TOTAL=128350 (mrt_ventas_por_cliente)",
+    "power_query": "PQ_Limpieza — Tabla Movimientos"
+  }
+}

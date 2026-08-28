@@ -451,6 +451,93 @@ function evaluateFormula(
       return String(variance);
     }
 
+    // ─── XLOOKUP / BUSCARX ───────────────────────────────
+    if (name === 'XLOOKUP' || name === 'BUSCARX') {
+      const lookupValue = evalExpr(args[0] ?? '');
+      const lookupRange = parseRangeStr(args[1] ?? '');
+      const returnRange = parseRangeStr(args[2] ?? '');
+      const ifNotFound = args[3] !== undefined ? evalExpr(args[3]) : '#N/A';
+      if (!lookupRange || !returnRange) return ifNotFound;
+      for (let i = 0; i < lookupRange.length; i++) {
+        if (String(getVal(cells, lookupRange[i][0], lookupRange[i][1])) === String(lookupValue)) {
+          const target = returnRange[i] || returnRange[0];
+          return getVal(cells, target[0], target[1]);
+        }
+      }
+      return ifNotFound;
+    }
+
+    // ─── SUMIFS / SUMAR.SI.CONJUNTO ───────────────────────
+    if (name === 'SUMIFS' || name === 'SUMAR.SI.CONJUNTO') {
+      const sumRange = parseRangeStr(args[0] ?? '');
+      if (!sumRange) return '0';
+      let sum = 0;
+      for (let i = 0; i < sumRange.length; i++) {
+        const [r, c] = sumRange[i];
+        let match = true;
+        for (let k = 1; k + 1 < args.length; k += 2) {
+          const critRange = parseRangeStr(args[k] ?? '');
+          const crit = evalExpr(args[k + 1] ?? '');
+          if (!critRange || String(getVal(cells, critRange[i]?.[0] ?? r, critRange[i]?.[1] ?? c)) !== String(crit)) { match = false; break; }
+        }
+        if (match) { const v = parseFloat(getVal(cells, r, c)); if (!isNaN(v)) sum += v; }
+      }
+      return String(sum);
+    }
+
+    // ─── COUNTIFS / CONTAR.SI.CONJUNTO ────────────────────
+    if (name === 'COUNTIFS' || name === 'CONTAR.SI.CONJUNTO') {
+      // args son pares criteria_range, criteria
+      let maxLen = 0;
+      const pairs: { range: [number, number][] | null; crit: string }[] = [];
+      for (let k = 0; k + 1 < args.length; k += 2) {
+        const range = parseRangeStr(args[k] ?? '');
+        const crit = evalExpr(args[k + 1] ?? '');
+        pairs.push({ range, crit });
+        if (range) maxLen = Math.max(maxLen, range.length);
+      }
+      if (maxLen === 0) return '0';
+      let count = 0;
+      for (let i = 0; i < maxLen; i++) {
+        let match = true;
+        for (const p of pairs) {
+          if (!p.range) { match = false; break; }
+          const v = String(getVal(cells, p.range[i]?.[0] ?? p.range[0][0], p.range[i]?.[1] ?? p.range[0][1]));
+          if (v !== p.crit) { match = false; break; }
+        }
+        if (match) count++;
+      }
+      return String(count);
+    }
+
+    // ─── UNIQUE / UNICO ───────────────────────────────────
+    if (name === 'UNIQUE' || name === 'UNICO') {
+      const range = parseRangeStr(args[0] ?? '');
+      if (!range) return '#REF!';
+      const seen = new Set<string>();
+      const uniq: string[] = [];
+      for (const [r, c] of range) {
+        const v = String(getVal(cells, r, c));
+        if (!seen.has(v)) { seen.add(v); uniq.push(v); }
+      }
+      return uniq.join(',');
+    }
+
+    // ─── FILTER / FILTRAR ─────────────────────────────────
+    if (name === 'FILTER' || name === 'FILTRAR') {
+      const range = parseRangeStr(args[0] ?? '');
+      const includeRange = parseRangeStr(args[1] ?? '');
+      const ifEmpty = args[2] !== undefined ? evalExpr(args[2]) : '#CALC!';
+      if (!range || !includeRange) return ifEmpty;
+      const out: string[] = [];
+      for (let i = 0; i < range.length && i < includeRange.length; i++) {
+        const inc = getVal(cells, includeRange[i][0], includeRange[i][1]);
+        const truthy = inc !== '0' && inc !== '' && inc.toUpperCase() !== 'FALSE';
+        if (truthy) out.push(getVal(cells, range[i][0], range[i][1]));
+      }
+      return out.length ? out.join(',') : ifEmpty;
+    }
+
     return '#NAME?';
   }
 
