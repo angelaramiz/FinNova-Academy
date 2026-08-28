@@ -1,4 +1,6 @@
-# Plan — Capas 0 (Fundamentos) + Ecosistema por Especialidad — PENDIENTE
+# Plan — Capas 0 (Fundamentos) + Ecosistema por Especialidad — IMPLEMENTADO
+
+> Estado: **IMPLEMENTADO (R-15, 26-ago-2026)** — los 9 gaps de la auditoría se resolvieron y desplegaron. Backend `458ffc8` / frontend `a9e67cd`. Verificado en prod: `task-plan?route=analyst` lista `excel_basico→sql_basico→catalog_basico→bi_basico→ecosistema_da`; `excel_basico` y `bi_basico` validan 10/10. Suite 301 tests / audit 106 / builds limpios.
 
 > Estado: **PENDIENTE** — diseño para anteponer una **Capa 0** de fundamentos por herramienta antes de la práctica integrada del ecosistema, en cada rama. No se toca `ENGINE_CAPABILITIES` ni se aplica migración hasta priorizar. Encaja en `taskPlanner.ts:352` y `careerPath.ts:15` (`UNLOCK_PCT=40`, `practicePct=0.45*tasks+0.35*sims+0.20*cases`).
 
@@ -98,23 +100,21 @@ Caso churn degradado (incidente 05-jul) → `StatsSim` (EDA sobre mart) → `MLS
 - Un alumno nuevo `data_engineering` en `analyst` ve en semana 2 los 4 minis (Excel→SQL→Catalog→BI) y en semana 3 el ticket Guess completo; al aprobarlos, `practicePct` sube y desbloquea la rama sin haber hecho un caso.
 - `npm run test` (≥ 310 tests) verde, `audit:story` verde, y `GET /api/sim/task-plan/6/2026?route=analyst` lista primero los `*_basico`.
 
-## Auditoría de aplicabilidad (26-ago-2026) — gaps que faltan
+## Auditoría de aplicabilidad (26-ago-2026) — RESUELTO (los 9 gaps)
 
-Verificado contra el código real. Para aplicar el plan se requieren estos cambios además de los de "Integración técnica":
+Verificado contra el código real. Los 9 gaps se implementaron y desplegaron (`458ffc8`/`a9e67cd`):
 
-| # | Gap | Dónde | Detalle |
-|---|-----|-------|---------|
-| 1 | **Validador `bi` no existe** | `deValidation.ts` / `advancedDataEngines.ts` | `DEValidatorId = sql\|etl_clean\|quality_decision\|review\|incident`; `advanced = excel\|dax\|forecast\|automation\|llm_api\|agent\|prompt`. `bi_basico` caería a "Validador desconocido". Crear `validateBI` (modelo→1 visual) o usar `dax`. |
-| 2 | **~15 workflows nuevos no existen** | `dataEngineeringWorkflows.ts` + `advancedDataEngines.ts` | 12 `fundamentals_*` (DA 4, DE 5, DS 3) + 3 `ecosistema_*` no tienen generador ni registro en `DE_WORKFLOWS`/`ADVANCED_WORKFLOWS`. |
-| 3 | **~15 templates de tarea + FUNDAMENTALS/ECOSYSTEM_WEEKS no existen** | `taskPlanner.ts` | `DE_TASK_TEMPLATES` no tiene `excel_basico/sql_basico/.../ecosistema_*`; no hay `FUNDAMENTALS_WEEKS`/`ECOSYSTEM_WEEKS` por rama. |
-| 4 | **Router de workflows no conoce los nuevos tipos** | `workflows.ts` | `advancedTypes`/`deTypes` deben incluir los 15 nuevos, tanto en `GET` como en el fallback de `/validate` (el auto-aprueba que ya corregimos se reintroduciría si se omiten). |
-| 5 | **`task-plan`/`today-tasks` ignoran `?route`** | `simEngine.ts:339-355` | Solo leen `specialty`; el criterio de salida `?route=analyst` sería ignorado y un alumno data siempre vería la semana base (analista puro, sin fundamentos ni ecosistema). Cablear `route` → `generateMonthPlan(month, year, specialty, route)` y `getTodayTasks(...specialty, route)`. |
-| 6 | **`computePracticeBreakdown` tiene totales hardcodeados** | `progressTracker.ts:239-241` | `tasks.total=12, sims.total=8, cases.total=3`. Al añadir 15 workflows, `sims.validated` satura en 8 y la métrica "Capa 0 ≈ +12-15 practicePct" del plan es incorrecta. Derivar `total` del plan real (o actualizar constantes). |
-| 7 | **Semántica de validadores "solo lectura"** | `deValidation.ts` | `monitor_basico` (validator `incident`) y `airflow_basico` (`de exact`) requieren una acción/recovery; un mini de solo lectura podría no pasar. Diseñar el form para que cumpla el validator (o añadir un validator `basic_read`). |
-| 8 | **Agenda/slots del frontend** | `DesktopShell.tsx` | Añadir `ECOSYSTEM_SLOTS` y la vista "Capa 0 / Ecosistema" en `buildAgendaDE`. |
-| 9 | **Tests** | `tests/capa-zero.test.ts` (nuevo) | Cubrir: cada `*_basico` valida `maxPossible>0`, no `countsAsCase`, y que `task-plan?route` filtra por rama. |
-
-> Con los gaps 1-9 resueltos el plan es aplicable sin romper la regla de oro R-09 (golden de motores) ni el desbloqueo por `careerPath.ts`.
+| # | Gap | Resolución |
+|---|-----|-----------|
+| 1 | Validador `bi` no existe | Creado `validateBI` + `basic_read` en `deValidation.ts` |
+| 2 | ~15 workflows nuevos | `fundamentals.ts`: 12 `fundamentals_*` + 3 `ecosistema_*` |
+| 3 | ~15 templates + semanas | `taskPlanner`: `FUNDAMENTALS_WEEKS`/`ECOSYSTEM_WEEKS` por rama, fusionadas |
+| 4 | Router no conoce los tipos | `workflows.ts` `fundamentalsTypes` en `GET` + fallback `/validate` |
+| 5 | `?route` ignorado | `simEngine.ts`: `task-plan`/`today-tasks`/`week-tasks` leen `route` |
+| 6 | `sims.total` hardcodeado | `computePracticeBreakdown` deriva del plan; `countsAsCase` persistido |
+| 7 | Validadores "solo lectura" | `basic_read` cubre `monitor/airflow` de lectura |
+| 8 | Agenda/slots frontend | `ECOSYSTEM_SLOTS` + `renderTool` stats/ml/monitor |
+| 9 | Tests | `tests/capa-zero.test.ts` (6) |
 
 ---
 *Mantener este doc permite auditar la deuda sin construirla; al priorizar, cada Capa 0/Ecosistema se implementa siguiendo su `buildPlan` y la regla de oro R-09.*
