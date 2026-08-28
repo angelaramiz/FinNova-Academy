@@ -186,3 +186,33 @@ Regla de oro R-09 respetada: golden de motor real.
 
 ---
 *Teams: QA (Chrome DevTools) · Backend  `458ffc8` + `cbb8ac9` · Frontend `89mSrKRo` → nuevo tras `cbb8ac9` · Reporte ligado a `docs/plan-qa-produccion-capa0.md`*
+---
+
+# RE-VALIDACIÓN (26-ago, ronda 2) — caza de fugas de bugs
+
+> Tras el QA inicial se re-ejecutó el plan al pie de la letra para evitar fugas. Se detectaron y **corrigieron 3 bugs reales** que los tests iniciales no cubrían.
+
+## Bugs detectados y corregidos
+| # | Bug | Impacto | Fix (commit) |
+|---|-----|---------|--------------|
+| 1 | **Tool `excel` no disponible** en paso `tool` (excel_basico mostraba "Herramienta no disponible") | Fundamentos Excel no mostraban la hoja real | `DesktopShell.tsx:703` `case 'excel' → SpreadsheetSim` — **verificado live**: el paso tool ahora renderiza SpreadsheetSim completo (toolbar/formula/Exportar CSV) |
+| 2 | **Auto-aprueba en vacío** (`/validate`): enviar `{}` (omitir campo) → regla saltada → `maxPossible=0` → `passed=true` | Alumno que no responde aprobaba; transversal a TODOS los workflows | `workflows.ts:158` `passed = maxPossible>0 && totalScore>=max*0.6` (cddd90d) |
+| 3 | **Desalineación field↔validator** en Capa 0: `sql_basico` usaba `row_Concepto de SQL` pero el validador `sql` lee `row_SELECT/row_FROM/...`; igual `python/foundry/git/stats/ml/metricas` y ecosistemas `dax/automation/forecast` | 12 fundamentos + 3 ecosistemas **nunca podían pasar** (validador leía claves que el form no proveía) | Nuevo validador `concept` (keyword por herramienta, lee `rule.field` real) para los 12 fundamentos; ecosistemas con claves alineadas y multi-campo (`row_Nodos`+`row_Trigger`, `row_Método`+`row_MAPE`); `bi_basico` con 2 campos (964fb28) |
+
+## Verificación final en producción (todos OK)
+| Tipo | correcto | vacío | Estado |
+|------|----------|-------|--------|
+| 12 `*_basico` (excel/sql/catalog/bi/python/foundry/airflow/git/monitor/stats/ml/metricas) | ✅ 10/10 | ✅ false (no auto-aprueba) | PASS |
+| `ecosistema_da` / `ecosistema_de` | ✅ 20/20 | ✅ false | PASS |
+| `ecosistema_ds` / `powerbi_dax` / `excel_advanced` | ✅ 20/20 | ✅ false | PASS |
+| 7 avanzados (restantes) | ✅ 20/20 (previo) | ✅ false | PASS |
+
+Los `undefined` transitorios eran **429 rate limit** (QA repetido), no bugs.
+
+## Gates tras re-validación
+- Suite: **303 tests** (31) ✅ · audit **106** (11) ✅ · backend tsc 0 ✅
+- Commits: backend `964fb28` (concept validator) + `cddd90d` (gate maxPossible>0) · main `76e9b8e`/`41586b3`
+- Deploy backend live (`202`) — re-verificado en producción
+
+## Veredicto go-live (tras re-validación)
+> ✅ **GO** — la carrera desde Capa 0 es funcional: los 12 fundamentos + 3 ecosistemas + 7 avanzados reciben inputs correctos, devuelven outputs correctos (10/10, 20/20), **no auto-aprueban en vacío** y no hay desalineación field↔validator. El fix del tool `excel` está live. Sin fugas de bugs bloqueantes.
