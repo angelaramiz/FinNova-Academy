@@ -18,12 +18,14 @@ Cada mini-módulo: `type: tool_fundamentals`, `difficulty:1`, `15 min`, `tool` e
 
 ### DA — Analista (semana 2, antes de ADVANCED_WEEKS.analyst)
 
+> ⚠️ Auditoría 26-ago-2026: el validador `bi` NO existe hoy (deValidation: `sql|etl_clean|quality_decision|review|incident`; dsValidation: `eda|model|metrics`; advanced: `excel|dax|forecast|automation|llm_api|agent|prompt`). Se **debe crear** en Capa 0; no reusar uno inexistente (caería a "Validador desconocido" → siempre reprueba). Alternativa de menor esfuerzo: que `bi_basico` valide con `dax` (ya existe) o crear `bi` como check simple de "modelo→1 visual".
+
 | Id | Herramienta | Ticket SIMULAB v2 (cierre por criterio) | Validator |
 |----|-------------|------------------------------------------|-----------|
 | `excel_basico` | SpreadsheetSim | Tabla 200 filas, tipos correctos, Power Query sin nulos, cargada como Tabla | `excel` (base SUM/IF) |
 | `sql_basico` | SQLSim | `SELECT + WHERE + JOIN + GROUP BY` sobre `ventas×clientes` | `sql` |
 | `catalog_basico` | CatalogSim | Linaje `raw→stg→mrt` localizado | `quality_decision` |
-| `bi_basico` | BiSim | Un visual (barras por cliente) publicado | `bi` |
+| `bi_basico` | BiSim | Un visual (barras por cliente) publicado | `bi` **(nuevo, a crear)** o `dax` |
 
 `FUNDAMENTALS_WEEKS.DA = { week:2, theme:"Fundamentos Analista", tasks:[{excel_basico:1},{sql_basico:1},{catalog_basico:1},{bi_basico:1}] }`
 
@@ -80,6 +82,7 @@ Caso churn degradado (incidente 05-jul) → `StatsSim` (EDA sobre mart) → `MLS
 |---------|--------|
 | `backend/src/services/dataEngineeringWorkflows.ts` | Añadir 12 generadores `fundamentals_*` + 3 `ecosistema_*` (`type: tool_fundamentals / ecosystem`) |
 | `backend/src/services/advancedDataEngines.ts` | Validadores ya existen (`excel/dax/forecast/automation/llm_api/agent/prompt`) — Capa 0 usa umbral básico, Capa 1 exige `CALCULATE+XLOOKUP+MAPE<10` |
+| `backend/src/services/deValidation.ts` | **(nuevo)** añadir `bi` a `DEValidatorId` + `validateBI` (modelo→1 visual) para `bi_basico` |
 | `backend/src/services/taskPlanner.ts` | `FUNDAMENTALS_WEEKS` por rama + `ADVANCED_WEEKS`/`ECOSYSTEM_WEEKS`; `generateMonthPlan` inserta Capa 0 antes de Capa 1 (`week 2 → Capa 0, week 3 → Ecosistema` para cada `route`) |
 | `backend/src/services/specialties.ts` | `DE_SPECIALTY.workflowTypes` añade `*_basico` y `*_ecosistema` |
 | `alumnos/src/components/DesktopShell.tsx` | `analystApps/engineeringApps/scienceApps` ya tienen las apps; añadir `ECOSYSTEM_SLOTS` y agenda `Capa 0 / Ecosistema` |
