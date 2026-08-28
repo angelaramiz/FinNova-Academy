@@ -716,6 +716,7 @@ function renderTool(app: string, theme: Theme) {
     case 'automation': return <AutomationSim theme={theme} onBack={noop} />;
     case 'agent': return <AgentSim theme={theme} onBack={noop} />;
     case 'prompt': return <PromptSim theme={theme} onBack={noop} />;
+    case 'excel': return <SpreadsheetSim theme={theme} onBack={noop} />;
     default: return <div className="p-6 text-xs font-mono" style={{ color: '#64748b' }}>Herramienta no disponible: {app}</div>;
   }
 }
