@@ -20,37 +20,38 @@ graph TD
 
 ### `backend/`
 
-Archivo de arranque: [`backend/src/server.ts`](file:///c:/Users/angel/Desktop/academicFinace/backend/src/server.ts)
+Archivo de arranque: [`backend/src/server.ts`](file:///c:/Users/angel/Desktop/academicFinace/backend/src/server.ts) (Render: `finnova-back.onrender.com`)
 
 Responsabilidades:
 
-- CORS, rate limiting y headers de seguridad.
-- JSON logging estructurado.
-- Rutas de autenticación, cursos, progreso, ejercicios, pipeline y simulador.
-- Health checks y diagnóstico de cola de correos.
-- Worker de reintento para correo vía n8n.
+- CORS, rate limiting y headers de seguridad (helmet).
+- JSON logging estructurado (`pino`).
+- **Autenticación dual**: Supabase JWT + `login-credentials` (bcrypt + `profiles.passwordHash`), OTP y `mustChangePassword`.
+- **Simulador**: generador de tareas (`taskPlanner.ts` con 4 planes: accounting/DE/DS/practicas, `FUNDAMENTALS_WEEKS`/`ECOSYSTEM_WEEKS`/`ADVANCED_WEEKS`), validación de workflows (`workflowEngine.ts`/`dataEngineeringWorkflows.ts`/`advancedDataEngines.ts`/`fundamentals.ts`, 15+ tipos, con `workflowStore` TTL 30m), auto-asientos (`autoEntries.ts`), matching (`paymentMatching.ts`), cron de lore (`storyState.ts`/`caseGenerator.ts` + `worldBible.ts` + `storyCoherence.ts` 9 checks), progresos (`progressTracker.ts` con `computePracticeBreakdown` derivado del plan, no hardcodeado), ingestas reales (`ingestService.ts` — pendiente).
+- Worker de reintento para correo vía n8n (`emailQueue.ts`).
 
 Rutas montadas:
 
-- `/api/auth`
-- `/api/courses`
-- `/api/progress`
-- `/api/exercises`
-- `/api/pipeline`
-- `/api/webhooks`
-- `/api/simulator`
+- `/api/auth` (login-credentials, me, otp)
+- `/api/courses`, `/api/progress`, `/api/exercises`, `/api/pipeline`, `/api/webhooks` (n8n HMAC)
+- `/api/sim/*` (task-plan, today-tasks `?route`, workflow `GET /:taskType ?trap`, `POST /validate` con `advanced` + fallback, progress/record con `countsAsCase`, documents `GET /cfdi` `POST /cfdi`, world/story/chronicle, career-path, cv, expediente, ingest — pendiente)
+- `/api/automator/*` (capabilities, pending-engines, compile `POST /compile`, `roadmapCompiler.ts` + `vacancyAnalyzer.ts` + `simulabFormat.ts`)
+- `/api/staff/*` (students, quality, tickets, etc.)
+- `/api/ingest/*` (CSV/Kaggle/API/BD/S3 — **pendiente**, diseño en `plan-ingesta-datos-reales.md`)
 
 ### `alumnos/`
 
-Portal de estudiantes en React/Vite.
+Portal de estudiantes en React/Vite + **React Three Fiber** (oficina 3D, `StableCanvas` con anti-reset/mojibake).
 
 Responsabilidades:
 
-- autenticación de perfiles `student`,
-- navegación a cursos y clips,
-- reproducción y seguimiento de progreso,
-- ejercicios y utilidades académicas,
-- registro público y manejo de PWA.
+- autenticación de perfiles `student` (incl. `practicas`) y `data_engineering` (analyst/de/ds),
+- **SimuladorLaboral.tsx**: escena 3D + header `ANALISTA/PRACTICANTE… / DataFlow/Logística`, `checkOnboarding` (hereda `specialty` de DB, sync de `selectedJob`),
+- **DesktopShell.tsx**: escritorio con apps por `appSet` (analyst: Power BI/Pronóstico; eng: Automatización/Agente; science: Prompt; practicas: 6 módulos + Tracker/Curso) + agenda `DE/ANALYST/DS_SLOTS` + `ECOSYSTEM_SLOTS` + `renderTool` (`sql/notebook/git/airflow/catalog/bi/warehouse/pipeline/stats/ml/monitor/excel/powerbi/forecast/automation/agent/prompt`),
+- **Workflow UI**: `AccountingForm`/`SpreadsheetWidget` con `data-guide={field.key}` + `DualViewLayout`/`DataHighlight` (vista dual portal↔documento, pistas mapeo ocultas por defecto, ticket La Parrilla LPN),
+- **Sistemas reales embebidos**: `DBTSim` (compileModelSql, MART 128350), `PipelineSim`, `SQLSim`, `NotebookSim` (pandas), `BiSim`, `AirflowSim`, `CloudSim` (S3/Redshift), `GitSim`, `DataOpsSim`, `PowerBISim` (DAX `CALCULATE/SUMX` sobre 128350), `ForecastSim` (media móvil/MAPE), `AutomationSim` (n8n), `AgentSim`, `PromptSim`,
+- navegación a `PracticasModules`/`PracticasTracker`/`PracticasCurso`/`ChronicleSim`/`VacancyTracker`/`CareerCenter`/`CvBuilderSim`/`GuideBubbles` (12 apps inline por panel, split ticketGuides/formGuides),
+- registro público y PWA.
 
 ### `staff/`
 

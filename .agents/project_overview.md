@@ -124,4 +124,23 @@ El esquema persistente base vive en [`supabase/schema.sql`](file:///c:/Users/ang
 
 ## Situación real del proyecto
 
-La documentación antigua describía una única SPA con backend embebido en Vite. El estado real ya no es ese: el backend está separado, hay dos frontends web independientes y existe una app Android de administración. Toda nueva documentación debe partir de esa realidad.
+La documentación antigua describía una única SPA con backend embebido en Vite. El estado real ya no es ese: el backend está separado, hay dos frontends web independientes y existe una app Android de administración. **Además, el dominio central es el SIMULADOR LABORAL 3D** (no solo clips/cursos).
+
+### Simulador Laboral 3D — Especialidades y flujos vigentes (2026-08)
+
+| # | Especialidad | Empresa | Stack / Empresa |
+|---|-------------|---------|-----------------|
+| 1 | Contador General Junior | Logística del Norte S.A. | Odoo, Excel, CFDI 4.0, SAT |
+| 2 | Ingeniero de Datos Jr | DataFlow Analytics (CDMX) | Foundry, SQL, Python, AWS (S3/Redshift/Airflow) |
+| 3 | **NUEVA** `practicas` — Prácticas Profesionales | Logística del Norte (conta. guiada) | Módulos por pasos (`mod-cfdi`…`mod-cierre`), burbujas Guía por campo |
+
+**Flujo contable (12 workflows + 1 nuevo `business_expense`)**: invoice_emission, payment_registration, supplier_invoice, bank_reconciliation (con trampa cheque $3,500), payroll (tarifa progresiva, no 15% fijo), journal_entry (depreciación), business_expense (ticket restaurante La Parrilla LPN-880707-ABC), etc. Cada workflow tiene `Guides` por campo y validación con `workflowId` + `workflowStore` (TTL 30m) para coherencia GET→validate.
+
+**Flujo Data Engineering (Analista → Ingeniería / Ciencia)**: árbol de rutas `careerPath.ts` (`practicePct=0.45*tasks+0.35*sims+0.20*cases`, desbloqueo 40, irreversible). Apps por fase: Analista (SQL/Notebook/Catalog/BI/Excel/Stats/ML), Ingeniería (Foundry/dbt/Airflow/Cloud/Git/BI/ApiClient/DataOps + n8n/LLM/Agente), Ciencia (Forecast/Prompt). **R-15** añade 7 motores avanzados: Excel avanzado (XLOOKUP/UNIQUE/FILTER,pivot), Power BI/DAX (CALCULATE/SUMX sobre 128350), Pronóstico (media móvil/MAPE), n8n, APIs LLM, Agentes, Prompt — todos cableados como `exists` en `engineCapabilities.ts` (quedó `erp` como único `missing`).
+
+**Prácticas profesionales — Capas 0 + Ecosistema (R-15)**: cada especialidad tiene una **Capa 0** de fundamentos por herramienta (15 mini-módulos, cierre por criterio, `NOT countsAsCase` pero cuenta como `sims.validated`) → **Capa 1 Ecosistema** (herramientas juntas, `countsAsCase`) → Capstone. Por rama: DA (excel→sql→catalog→bi), DE (python→foundry→airflow→git→monitor), DS (stats→ml→metricas). Métrica `computePracticeBreakdown` ya no es hardcodeada (8/12/3) sino derivada del plan real; `task-plan`/`today-tasks` leen `?route` para filtrar por rama.
+
+### Simulador como máquina de estado vivo (R-09)
+`worldBible.ts` + `storyArcs.ts` (8 arcos por ruta, 9 checks `storyCoherence.ts`: `goldenFromEngine` 128350, `balancedEntry`, `slaConsistent`, etc.) + `caseGenerator.ts` (seed `hash(userId:weekKey:arcId)`, PRNG mulberry32, auditCase) + `chronicle.ts`/`storyState.ts` persistidos en `sim_story`. La Oficina 3D (`SimuladorLaboral.tsx`, React Three Fiber) muestra el banner de arco/es/cena y el Documento real (La Parrilla LPN) vs el portal Odoo.
+
+Toda nueva documentación debe partir de esta realidad.
