@@ -421,7 +421,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
       {specialty === 'data_engineering' ? (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2 flex-wrap" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
           <span>{careerPath?.chosenBranch === 'data_engineering' ? '🔀' : careerPath?.chosenBranch === 'data_science' ? '🧪' : '🧭'} {roleTitle}</span>
-          <button onClick={() => setShowRoutes(true)} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#3b82f650', color: '#3b82f6', background: 'transparent' }} title="Abrir panel de rutas">🧭 Rutas</button>
+          <button onClick={() => setScreen('routes')} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#3b82f650', color: '#3b82f6', background: 'transparent' }} title="Abrir panel de rutas">🧭 Rutas</button>
           {demoActive && !careerPath?.chosenBranch && (
             <span className="flex items-center gap-1 ml-1" style={{ background: '#f59e0b15', border: `1px solid #f59e0b40`, borderRadius: 6, padding: '1px 3px' }}>
               {([
@@ -569,7 +569,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
         {screen === 'agent' && <div className="animate-slide-in h-full"><AgentSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'prompt' && <div className="animate-slide-in h-full"><PromptSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'routes' && careerPath && (
-          <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setShowRoutes(false)} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
+          <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setScreen('desktop')} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
         )}
         {screen === 'cv' && <div className="animate-slide-in h-full"><CvBuilderSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'interview' && <div className="animate-slide-in h-full"><InterviewSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
