@@ -1,4 +1,4 @@
--- SQL schema for AuraFi Academy / FinNova Supabase Database
+-- SQL schema for FinNova Academy Supabase Database
 
 -- 0. Profiles Table (usuarios del sistema)
 CREATE TABLE IF NOT EXISTS profiles (

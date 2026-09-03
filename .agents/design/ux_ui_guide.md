@@ -1,4 +1,4 @@
-# Guía del Sistema de Diseño UX/UI - AuraFi / FinNova Academy
+# Guía del Sistema de Diseño UX/UI - FinNova Academy
 
 Esta guía documenta las especificaciones del sistema de diseño global, la paleta de colores, la tipografía y las pautas UX/UI adoptadas para el desarrollo del portal de alumnos, portal del staff y los dashboards embebidos. Su propósito es prevenir problemas de contraste, consistencia de componentes o inconsistencias de estilo al expandir o mantener la plataforma.
 
@@ -6,7 +6,7 @@ Esta guía documenta las especificaciones del sistema de diseño global, la pale
 
 ## 1. Filosofía de Diseño: Soft Neo-Brutalismo / Minimalist Flat
 
-AuraFi Academy adopta una estética **Neo-brutalista Suave (Soft Neo-Brutalism)** combinada con **Flat Design**. Sus principios fundamentales son:
+FinNova Academy adopta una estética **Neo-brutalista Suave (Soft Neo-Brutalism)** combinada con **Flat Design**. Sus principios fundamentales son:
 *   **Bordes Nítidos y Definidos**: Todos los bloques, botones y tarjetas usan bordes sólidos gruesos (generalmente de `2px`) en lugar de sombras borrosas.
 *   **Sombras Sólidas y Planas (Hard Offsets)**: Las tarjetas y los botones interactivos utilizan sombras proyectadas planas, sin desenfoque (`box-shadow: 4px 4px 0px 0px [color-borde]`), logrando un efecto físico retro-moderno tridimensional.
 *   **Ausencia de Degradados Complejos**: Se priorizan bloques de color plano para facilitar la lectura de los datos de mercado y mantener la ligereza de la interfaz.

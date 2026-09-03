@@ -1,6 +1,6 @@
 # REPORTE DE SUGERENCIAS ESTRATEGICAS (2026-06-16)
 
-Este reporte ha sido generado por el comando `/sugerencias` tras analizar la base de código actual del monorepo AuraFi Academy (backend, alumnos, staff).
+Este reporte ha sido generado por el comando `/sugerencias` tras analizar la base de código actual del monorepo FinNova Academy (backend, alumnos, staff).
 
 ---
 

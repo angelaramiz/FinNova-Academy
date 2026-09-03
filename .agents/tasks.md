@@ -1,4 +1,4 @@
-# Tareas — AuraFi Academy / FinNova Academy
+# Tareas — FinNova Academy
 
 ## Pendientes
 

@@ -85,7 +85,7 @@ export default function RegisterRequest() {
           <ClipboardCheck className="w-8 h-8 animate-pulse" />
         </div>
         <h2 className="text-2xl font-extrabold text-slate-100 tracking-wide">
-          AuraFi Academy
+          FinNova Academy
         </h2>
         <p className="mt-1 text-xs text-slate-400">
           Solicitud de Alta de Alumno

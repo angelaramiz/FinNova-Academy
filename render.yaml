@@ -1,4 +1,4 @@
-# render.yaml — AuraFi Academy
+# render.yaml — FinNova Academy
 # Despliega los 3 servicios desde el mismo monorepo
 # Docs: https://render.com/docs/blueprint-spec
 
@@ -8,7 +8,7 @@ services:
   # 1. BACKEND — Web Service (Node.js / Express + TSX)
   # ─────────────────────────────────────────────────────
   - type: web
-    name: aurafi-backend
+    name: finnova-back
     runtime: node
     rootDir: backend
     buildCommand: npm install
@@ -43,7 +43,7 @@ services:
   # 2. PORTAL ALUMNOS — Static Site (React + Vite)
   # ─────────────────────────────────────────────────────
   - type: web
-    name: aurafi-alumnos
+    name: finnova-academy
     runtime: static
     rootDir: alumnos
     buildCommand: npm install && npm run build
@@ -58,7 +58,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false   # URL del backend: https://aurafi-backend.onrender.com
+        sync: false   # URL del backend: https://finnova-back.onrender.com
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
@@ -68,7 +68,7 @@ services:
   # 3. PORTAL STAFF — Static Site (React + Vite)
   # ─────────────────────────────────────────────────────
   - type: web
-    name: aurafi-staff
+    name: finnova-staff
     runtime: static
     rootDir: staff
     buildCommand: npm install && npm run build
@@ -83,7 +83,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false   # URL del backend: https://aurafi-backend.onrender.com
+        sync: false   # URL del backend: https://finnova-back.onrender.com
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
