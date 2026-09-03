@@ -32,8 +32,8 @@ type HistoryEntry = {
 const COLUMNS = 26;
 const ROWS = 100;
 const MAX_HISTORY = 20;
-const ROW_HEIGHT = 24;
-const BUFFER = 5;
+const ROW_HEIGHT = 19;
+const BUFFER = 6;
 
 function colToLetter(col: number): string {
   return String.fromCharCode(65 + col);

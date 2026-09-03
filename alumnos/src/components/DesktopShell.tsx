@@ -95,6 +95,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [showCfdi, setShowCfdi] = useState(false);
   const [cfdiData, setCfdiData] = useState<any>(null);
   const [showAccounting, setShowAccounting] = useState(false);
+  const [taskDrawerOpen, setTaskDrawerOpen] = useState(true);
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
@@ -633,8 +634,31 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                     <span className="text-[11px] font-bold font-mono" style={{ color: colors.text }}>🔧 {workflow.steps[stepIdx].title}</span>
                     <span className="text-[9px] font-mono ml-auto" style={{ color: colors.textMuted }}>herramienta real · contexto de la tarea</span>
                   </div>
-                  <div className="flex-1 overflow-hidden" style={{ background: colors.bg }}>
+                  <div className="flex-1 overflow-hidden relative" style={{ background: colors.bg }}>
                     {renderTool(workflow.steps[stepIdx].data?.app, theme)}
+                    {/* Pestaña retráctil de tareas — dentro del Excel */}
+                    <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-2 pointer-events-none">
+                      <button onClick={() => setTaskDrawerOpen(o => !o)}
+                        className="pointer-events-auto px-3 py-1.5 rounded-full border-2 text-[11px] font-bold font-mono shadow-lg cursor-pointer hover:opacity-90 transition flex items-center gap-1.5"
+                        style={{ borderColor: colors.primary, background: taskDrawerOpen ? colors.primary : colors.cardBg, color: taskDrawerOpen ? '#1B2632' : colors.primary }}>
+                        {taskDrawerOpen ? '✕ Tareas' : `📋 ${tasks.length} tareas`}
+                      </button>
+                      {taskDrawerOpen && (
+                        <div className="pointer-events-auto w-72 max-h-[45vh] overflow-auto rounded-xl border-2 shadow-xl p-3 space-y-2" style={{ borderColor: colors.border, background: isDark ? '#0f172a' : '#fff' }}>
+                          <p className="text-[11px] font-bold font-mono" style={{ color: colors.text }}>📋 {workflow.taskTitle}</p>
+                          <p className="text-[10px] leading-relaxed" style={{ color: colors.textMuted }}>{workflow.steps[0]?.data?.subject || workflow.steps[stepIdx].description}</p>
+                          <div className="h-px" style={{ background: colors.border }} />
+                          <p className="text-[10px] font-bold font-mono" style={{ color: colors.textMuted }}>Pendientes del día</p>
+                          {tasks.slice(0, 4).map((t: any) => (
+                            <div key={t.id} className="flex items-center gap-2 text-[10px] p-1.5 rounded-lg" style={{ background: t.id === currentTask?.id ? colors.primary + '15' : 'transparent', border: `1px solid ${t.id === currentTask?.id ? colors.primary + '40' : 'transparent'}` }}>
+                              <span style={{ color: colors.primary }}>•</span>
+                              <span className="flex-1 font-mono truncate" style={{ color: colors.text }}>{t.title}</span>
+                              {t.id === currentTask?.id && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: colors.primary, color: '#1B2632' }}>actual</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="px-4 py-3 border-t-2 shrink-0 flex items-center justify-between gap-3" style={{ borderColor: colors.border, background: colors.cardBg }}>
                     <span className="text-[9px] leading-tight" style={{ color: colors.textMuted }}>💡 {workflow.steps[stepIdx].description || 'Usa esta herramienta para resolver la tarea.'}</span>
