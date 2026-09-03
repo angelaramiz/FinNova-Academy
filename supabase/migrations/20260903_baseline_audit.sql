@@ -1,0 +1,57 @@
+-- 20260903_baseline_audit.sql - AUDITORIA ONLY, SIN DDL.
+-- Regla P0: ningun DDL nuevo hasta alinear local vs remoto.
+-- Generado: 2026-09-03. Fuente remota: supabase_list_migrations (6 aplicadas).
+-- Verificado: 2026-09-03 via list_tables + information_schema (columnas reales).
+-- Archivo ASCII puro a proposito (cero tildes, cero mojibake posible).
+--
+-- REMOTO APLICADO (6):
+--   1. 20260819054749 sim_story
+--   2. 20260819070256 auth_plans_vacancy
+--   3. 20260819102053 quality_flywheel
+--   4. 20260822095707 add_practicas_specialty
+--   5. 20260824105024 create_arboles_remotos
+--   6. 20260824111148 fix_rls_arboles
+--
+-- LOCAL (10 archivos en supabase/migrations):
+--   L01. 20260812083736_persist_sim_world.sql
+--   L02. 20260812092933_persist_sim_progress.sql
+--   L03. 20260815090000_add_profiles_specialty.sql
+--   L04. 20260815100000_career_path.sql
+--   L05. 20260816090000_cv_profiles.sql
+--   L06. 20260817090000_account_requests_career_branch.sql
+--   L07. 20260817090000_verification_links.sql
+--   L08. 20260818234617_sim_story.sql
+--   L09. 20260819010235_auth_plans.sql
+--   L10. 20260819020000_quality_flywheel.sql
+--
+-- RESOLUCION DE TICKETS SQUASH (verificado 2026-09-03, proyecto nhcgclqiihvioyqwqjlf):
+--   L01 sim_world      -> RESUELTO: tabla public.sim_world existe (3 rows).
+--   L02 sim_progress   -> RESUELTO: tabla public.sim_progress existe (1 row).
+--   L03 specialty      -> RESUELTO: profiles.specialty existe; valores
+--                         'practicas'/'data_engineering' en uso (R4 la extiende).
+--   L04 career_path    -> RESUELTO: sim_world.career_path existe (jsonb);
+--                         el breakdown vive dentro de state (jsonb), sin columna propia.
+--   L05 cv_profiles    -> RESUELTO: tabla public.cv_profiles existe (0 rows).
+--   L06 career_branch  -> RESUELTO: account_requests.career_branch existe.
+--   L07 verif. links   -> RESUELTO: tabla public.verification_links existe (1 row).
+--   L08 sim_story      -> R1 re-aplicacion remota; tabla public.sim_story existe (4 rows).
+--   L09 auth_plans     -> R2 squash remoto; vacancy_tracking + stage1_assessments
+--                         existen; profiles.plan + experience_density existen.
+--   L10 quality        -> R3 re-aplicacion remota; quality_events (72 rows) +
+--                         item_stats/misconceptions/improvement_tickets existen.
+--   R5/R6 arboles      -> tabla public.arboles_remotos existe (1 row). Traer su
+--                         DDL a local sigue pendiente (migracion solo-remota).
+--
+-- HALLAZGO SEGURIDAD (NO auto-remediar, decide Angel):
+--   public.arboles_remotos tiene RLS DISABLED pese a R6 fix_rls_arboles.
+--   Expuesta a anon/authenticated. Remediacion propuesta (solo con aprobacion):
+--   ALTER TABLE public.arboles_remotos ENABLE ROW LEVEL SECURITY;
+--   (habilitar sin policies bloquea todo acceso: definir policies primero).
+--
+-- PSEUDOTEST DE SALIDA (P0):
+--   dado `supabase migration list --linked`
+--   cuando comparo local vs remoto
+--   entonces todo local tiene equivalente remoto o ticket de squash explicito.
+-- ESTADO: PASA - 10/10 locales con equivalente verificado; R5/R6 documentado.
+-- ACCION: DDL nuevo permitido solo con ticket previo; squash R5/R6 local pendiente.
+-- NOTA: este archivo es intencionalmente solo-comentarios para no alterar el estado migratorio.
