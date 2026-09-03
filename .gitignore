@@ -50,3 +50,4 @@ supabase/tmp_query_approved.sql
 
 # Agent local configuration
 .agent/
+.agents/
