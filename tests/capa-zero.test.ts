@@ -41,7 +41,7 @@ describe('R-15 — Capa 0 (fundamentos) + Ecosistema', () => {
 
   it('cada fundamento valida su campo con el validador correcto (sin desalineación field↔validator)', () => {
     const map: Record<string, { validator: string; ok: Record<string, string> }> = {
-      excel_basico: { validator: 'concept', ok: { 'row_Concepto de Excel': 'Power Query limpia 5k filas' } },
+      excel_basico: { validator: 'concept', ok: { 'row_Power Query que harías': 'Power Query limpia 5k filas y tipos', 'row_Fórmula XLOOKUP': 'XLOOKUP del precio', 'row_Fórmula SUMIFS': 'SUMIFS por categoría' } },
       sql_basico: { validator: 'concept', ok: { 'row_Concepto de SQL': 'SELECT cliente, SUM(total) FROM ventas GROUP BY cliente' } },
       catalog_basico: { validator: 'concept', ok: { 'row_Concepto de catálogo': 'linaje raw a stg a mrt' } },
       bi_basico: { validator: 'bi', ok: { 'row_Visual del tablero': 'barras por cliente', 'row_Origen de los datos': 'mrt_ventas' } },

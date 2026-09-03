@@ -648,6 +648,14 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
                           <p className="text-[11px] font-bold font-mono" style={{ color: colors.text }}>📋 {workflow.taskTitle}</p>
                           <p className="text-[10px] leading-relaxed" style={{ color: colors.textMuted }}>{workflow.steps[0]?.data?.subject || workflow.steps[stepIdx].description}</p>
                           <div className="h-px" style={{ background: colors.border }} />
+                          <p className="text-[10px] font-bold font-mono" style={{ color: colors.textMuted }}>Pasos de este ejercicio</p>
+                          {(workflow.steps.find((s: any) => s.type === 'form')?.data?.fields || []).map((f: any, i: number) => (
+                            <div key={f.key} className="flex gap-2 text-[10px] p-1.5 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc', border: `1px solid ${colors.border}30` }}>
+                              <span className="font-bold shrink-0" style={{ color: colors.primary }}>{i + 1}.</span>
+                              <span className="flex-1 font-mono leading-snug" style={{ color: colors.text }}>{f.label}</span>
+                            </div>
+                          ))}
+                          <div className="h-px" style={{ background: colors.border }} />
                           <p className="text-[10px] font-bold font-mono" style={{ color: colors.textMuted }}>Pendientes del día</p>
                           {tasks.slice(0, 4).map((t: any) => (
                             <div key={t.id} className="flex items-center gap-2 text-[10px] p-1.5 rounded-lg" style={{ background: t.id === currentTask?.id ? colors.primary + '15' : 'transparent', border: `1px solid ${t.id === currentTask?.id ? colors.primary + '40' : 'transparent'}` }}>
