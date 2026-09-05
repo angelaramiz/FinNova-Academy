@@ -1,7 +1,7 @@
 {
   "name": "FinNova Academy",
   "short_name": "FinNova",
-  "description": "Infraestructura base para una plataforma de micro-aprendizaje en finanzas con videos cortos.",
+  "description": "Simulador laboral 3D: practicas contables y carrera data (FinNova Academy).",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
