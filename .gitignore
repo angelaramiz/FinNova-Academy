@@ -12,6 +12,8 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+android-app/.gradle/
+android-app/build/
 
 # System/IDE configurations
 .DS_Store
