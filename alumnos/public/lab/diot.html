@@ -90,12 +90,15 @@ body { font-family: 'Inter', sans-serif; }
 
 .pilot-highlight {
   position: relative; z-index: 103;
-  background: white !important;
+  /* Sin background forzado: el resaltado conserva el fondo propio del
+     elemento (banner azul, tarjetas blancas, botones) y solo suma el anillo.
+     El `background: white !important` anterior volvía invisible el texto
+     claro sobre fondos de color (texto blanco sobre blanco). */
   box-shadow: 0 0 0 4px #3b82f6, 0 0 30px rgba(59, 130, 246, 0.5);
   border-radius: 12px;
   transition: all 0.5s ease;
 }
-.dark .pilot-highlight { background: #1e293b !important; }
+.dark .pilot-highlight { box-shadow: 0 0 0 4px #60a5fa, 0 0 30px rgba(96, 165, 250, 0.5); }
 
 .virtual-cursor {
   position: fixed; width: 32px; height: 32px;
