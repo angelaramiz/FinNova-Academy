@@ -6,13 +6,14 @@ import type { TrainingSegmento } from '../alumnos/src/components/TrainingPlayer'
 import auditoria from '../alumnos/src/data/capacitaciones/auditoria.json';
 import conciliacion from '../alumnos/src/data/capacitaciones/conciliacion.json';
 import nomina from '../alumnos/src/data/capacitaciones/nomina.json';
+import reporteImpuestos from '../alumnos/src/data/capacitaciones/reporte-impuestos.json';
 
 // TASK-2-2: mismo layout x3, seek, buscador. Sin DOM: lógica pura + contrato.
 
-const MODULOS = [auditoria, conciliacion, nomina];
+const MODULOS = [auditoria, conciliacion, nomina, reporteImpuestos];
 
-describe('capacitaciones: mismo layout en los 3 módulos', () => {
-  it('los 3 cumplen el contrato TrainingData sin errores', () => {
+describe('capacitaciones: mismo layout en los 4 módulos', () => {
+  it('los 4 cumplen el contrato TrainingData sin errores', () => {
     for (const m of MODULOS) {
       expect(validarTraining(m)).toEqual([]);
     }
@@ -84,5 +85,21 @@ describe('capacitaciones: buscador filtra', () => {
     expect(fmtTiempo(0)).toBe('0:00');
     expect(fmtTiempo(65)).toBe('1:05');
     expect(fmtTiempo(3568)).toBe('59:28');
+  });
+});
+
+describe('capacitaciones: reporte de impuestos (4to modulo)', () => {
+  it('8 capitulos anclados a inicios reales y 162 segmentos', () => {
+    expect(reporteImpuestos.capitulos.length).toBe(8);
+    expect(reporteImpuestos.segmentos.length).toBe(162);
+    const inicios = new Set(reporteImpuestos.segmentos.map((s) => s.start));
+    for (const c of reporteImpuestos.capitulos) {
+      expect(inicios.has(c.inicio)).toBe(true);
+    }
+  });
+  it('segmentos traen speaker del VTT', () => {
+    for (const s of reporteImpuestos.segmentos) {
+      expect(s.speaker).toBe('Customer success Contalink');
+    }
   });
 });

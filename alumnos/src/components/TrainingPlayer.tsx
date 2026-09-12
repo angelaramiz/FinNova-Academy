@@ -14,6 +14,7 @@ export interface TrainingSegmento {
   start: number;
   end: number;
   text: string;
+  speaker?: string;
 }
 
 export interface TrainingData {
