@@ -1,5 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { Briefcase } from 'lucide-react';
-import SimuladorLaboral from './SimuladorLaboral';
+// P1-3: la oficina 3D (three) no entra al initial; carga diferida.
+const SimuladorLaboral = lazy(() => import('./SimuladorLaboral'));
 import { themeColors, Theme } from '../lib/theme';
 
 interface StudentPanelProps {
@@ -23,7 +25,9 @@ export default function StudentPanel({ theme, profile }: StudentPanelProps) {
         </div>
       </div>
       <div className="flex-1">
-        <SimuladorLaboral theme={theme} profile={profile} />
+        <Suspense fallback={<div className="p-6 text-xs font-mono animate-pulse" style={{ color: colors.textMuted }}>Cargando oficina 3D…</div>}>
+          <SimuladorLaboral theme={theme} profile={profile} />
+        </Suspense>
       </div>
     </div>
   );

@@ -18,6 +18,18 @@ export default defineConfig(async () => {
 
   return {
     envPrefix: ['VITE_', 'SUPABASE_'],
+    build: {
+      // P1-3: el bundle inicial superaba 1900 kB (three + 19 sims en un chunk).
+      chunkSizeWarningLimit: 800,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // three + R3F fuera del initial: solo se cargan con SimuladorLaboral (lazy).
+            'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          },
+        },
+      },
+    },
     plugins: [
       react(),
       tailwindcss(),

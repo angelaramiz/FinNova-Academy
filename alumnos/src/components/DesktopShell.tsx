@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import TutorialOverlay, { useTutorial } from './Tutorial';
 import { themeColors, Theme } from '../lib/theme';
 import EmailInbox from './EmailInbox';
@@ -44,11 +44,15 @@ import PdfXmlViewer from './PdfXmlViewer';
 import AccountingPortal from './AccountingPortal';
 import BankPortal from './BankPortal';
 import QuickTips from './QuickTips';
-import PowerBISim from './PowerBISim';
-import ForecastSim from './ForecastSim';
 import AutomationSim from './AutomationSim';
-import AgentSim from './AgentSim';
 import PromptSim from './PromptSim';
+// P1-3: sims pesados fuera del initial (lazy + Suspense en cada uso).
+const PowerBISim = lazy(() => import('./PowerBISim'));
+const ForecastSim = lazy(() => import('./ForecastSim'));
+const AgentSim = lazy(() => import('./AgentSim'));
+function SimFallback() {
+  return <div className="p-6 text-xs font-mono animate-pulse" style={{ color: '#64748b' }}>Cargando herramienta…</div>;
+}
 import { getWorkflowDocumentHtml, getWorkflowHighlightFields } from '../lib/workflowDoc';
 import { apiFetch } from '../lib/api';
 import { useToast } from './Toast';
@@ -564,10 +568,10 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
         {screen === 'learning' && <div className="animate-slide-in h-full"><LearningSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'stats' && <div className="animate-slide-in h-full"><StatsSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'ml' && <div className="animate-slide-in h-full"><MLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
-        {screen === 'powerbi' && <div className="animate-slide-in h-full"><PowerBISim theme={theme} onBack={() => setScreen('desktop')} /></div>}
-        {screen === 'forecast' && <div className="animate-slide-in h-full"><ForecastSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'powerbi' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><PowerBISim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
+        {screen === 'forecast' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><ForecastSim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
         {screen === 'automation' && <div className="animate-slide-in h-full"><AutomationSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
-        {screen === 'agent' && <div className="animate-slide-in h-full"><AgentSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
+        {screen === 'agent' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><AgentSim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
         {screen === 'prompt' && <div className="animate-slide-in h-full"><PromptSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'routes' && careerPath && (
           <div className="animate-slide-in h-full"><RoutesPanel careerPath={careerPath} onClose={() => setScreen('desktop')} onChoose={chooseBranch} onToggleDemo={toggleDemoOverride} theme={theme} /></div>
@@ -747,10 +751,10 @@ function renderTool(app: string, theme: Theme) {
     case 'stats': return <StatsSim theme={theme} onBack={noop} />;
     case 'ml': return <MLSim theme={theme} onBack={noop} />;
     case 'monitor': return <MonitorSim theme={theme} onBack={noop} />;
-    case 'powerbi': return <PowerBISim theme={theme} onBack={noop} />;
-    case 'forecast': return <ForecastSim theme={theme} onBack={noop} />;
+    case 'powerbi': return <Suspense fallback={<SimFallback />}><PowerBISim theme={theme} onBack={noop} /></Suspense>;
+    case 'forecast': return <Suspense fallback={<SimFallback />}><ForecastSim theme={theme} onBack={noop} /></Suspense>;
     case 'automation': return <AutomationSim theme={theme} onBack={noop} />;
-    case 'agent': return <AgentSim theme={theme} onBack={noop} />;
+    case 'agent': return <Suspense fallback={<SimFallback />}><AgentSim theme={theme} onBack={noop} /></Suspense>;
     case 'prompt': return <PromptSim theme={theme} onBack={noop} />;
     case 'excel': return <SpreadsheetSim theme={theme} onBack={noop} />;
     default: return <div className="p-6 text-xs font-mono" style={{ color: '#64748b' }}>Herramienta no disponible: {app}</div>;
