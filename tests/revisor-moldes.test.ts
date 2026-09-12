@@ -4,6 +4,7 @@ import auditoria from '../alumnos/src/data/capacitaciones/auditoria.json';
 import conciliacion from '../alumnos/src/data/capacitaciones/conciliacion.json';
 import nomina from '../alumnos/src/data/capacitaciones/nomina.json';
 import reporteImpuestos from '../alumnos/src/data/capacitaciones/reporte-impuestos.json';
+import { MOLDES, auditMoldes } from '../alumnos/src/lib/moldesRegistry';
 
 // TASK-1-1 (Revisor de moldes, TDD): el validador estructural es puro.
 // Cada regla tiene su caso rojo; los 4 moldes reales pasan en verde.
@@ -98,5 +99,23 @@ describe('revisor-moldes: moldes reales en verde', () => {
     ['reporte-impuestos', reporteImpuestos],
   ])('%s pasa sin errores', (_id, molde) => {
     expect(validateMolde(molde)).toEqual([]);
+  });
+});
+
+describe('revisor-moldes: registry y auditoria', () => {
+  it('registra los 4 moldes con {id, version, fuente, validado_en}', () => {
+    expect(MOLDES.map((m) => m.id)).toEqual(['auditoria', 'conciliacion', 'nomina', 'reporte-impuestos']);
+    for (const m of MOLDES) {
+      expect(typeof m.version).toBe('string');
+      expect(typeof m.fuente).toBe('string');
+      expect(typeof m.validado_en).toBe('string');
+    }
+  });
+  it('auditMoldes valida los 4 en verde', () => {
+    const reporte = auditMoldes();
+    expect(reporte.length).toBe(4);
+    for (const r of reporte) {
+      expect(r.errores).toEqual([]);
+    }
   });
 });

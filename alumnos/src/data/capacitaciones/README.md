@@ -30,11 +30,30 @@ propio reproductor (object URL, nada se sube).
 
 ## Vista
 
-`alumnos/src/components/Capacitaciones.tsx` instancia el mismo componente 3
+`alumnos/src/components/Capacitaciones.tsx` instancia el mismo componente 4
 veces (tabs). Cableada en `DesktopShell` (pantalla `capacitaciones`, app
 “Videos” en `practicasApps`).
 
 ## Tests
 
-`tests/capacitaciones.test.ts`: mismo layout ×3 (contrato), destinos de seek
+`tests/capacitaciones.test.ts`: mismo layout ×4 (contrato), destinos de seek
 válidos, `indiceActivo`, filtro del buscador, `fmtTiempo`.
+
+## Revisor de moldes (Capa 1 dura)
+
+Un **molde** = JSON de esta carpeta + su contrato de validez.
+`alumnos/src/lib/revisorMoldes.ts` (`validateMolde`) verifica: claves exactas,
+tipos, `capitulos >= 5`, segmentos ordenados por `start`, cada
+`capitulos[i].inicio` dentro de `[0, duracion]` y a <1s de un inicio real,
+`start <= end`, `start >= 0`, textos no vacíos; cada error trae su ruta
+(`capitulos[3]`, `segmentos[120]`). Clave `speaker` opcional permitida.
+`alumnos/src/lib/moldesRegistry.ts`: `MOLDES` (`{id, version, fuente,
+validado_en}` ×4) + `auditMoldes()` que valida todos y reporta.
+Tests: `tests/revisor-moldes.test.ts` (TDD: válido + 1 rojo por regla + 4
+reales en verde + registry).
+
+### Cómo agregar un molde
+1. Agrega `<id>.json` aquí con el mismo schema (+ `duracionTxt`).
+2. Regístralo en `MOLDES` (id, version, fuente, validado_en).
+3. Cablea import + `VIDEO_SRC` + `MODULOS` en `Capacitaciones.tsx`.
+4. Corre `auditMoldes()` (vía tests): debe salir en verde.
