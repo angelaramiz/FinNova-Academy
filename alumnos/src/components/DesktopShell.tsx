@@ -50,6 +50,7 @@ import PromptSim from './PromptSim';
 const PowerBISim = lazy(() => import('./PowerBISim'));
 const ForecastSim = lazy(() => import('./ForecastSim'));
 const AgentSim = lazy(() => import('./AgentSim'));
+import Capacitaciones from './Capacitaciones';
 function SimFallback() {
   return <div className="p-6 text-xs font-mono animate-pulse" style={{ color: '#64748b' }}>Cargando herramienta…</div>;
 }
@@ -72,7 +73,7 @@ interface CareerPathState {
 }
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
-type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso' | 'powerbi' | 'forecast' | 'automation' | 'agent' | 'prompt';
+type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso' | 'powerbi' | 'forecast' | 'automation' | 'agent' | 'prompt' | 'capacitaciones';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering' | 'practicas') || 'accounting';
@@ -388,6 +389,7 @@ const scienceApps = [
     { label: 'Módulos', icon: '📚', action: () => setScreen('practicas'), dataApp: 'practicas' },
     { label: 'Tracker', icon: '📅', action: () => setScreen('practicasTracker'), dataApp: 'practicas' },
     { label: 'Curso', icon: '🎓', action: () => setScreen('practicasCurso'), dataApp: 'practicas' },
+    { label: 'Capacitaciones', icon: '🎬', action: () => setScreen('capacitaciones'), dataApp: 'capacitaciones' },
     { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
     { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
     { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
@@ -584,6 +586,7 @@ const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet
         {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} /></div>}
         {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} initialTab="tracker" /></div>}
         {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} initialTab="curso" /></div>}
+        {screen === 'capacitaciones' && <div className="animate-slide-in h-full"><Capacitaciones /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
