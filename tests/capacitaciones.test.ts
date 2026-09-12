@@ -7,17 +7,17 @@ import auditoria from '../alumnos/src/data/capacitaciones/auditoria.json';
 import conciliacion from '../alumnos/src/data/capacitaciones/conciliacion.json';
 import nomina from '../alumnos/src/data/capacitaciones/nomina.json';
 
-// TASK-2-2: mismo layout x3, seek, buscador. Sin DOM: logica pura + contrato.
+// TASK-2-2: mismo layout x3, seek, buscador. Sin DOM: lógica pura + contrato.
 
 const MODULOS = [auditoria, conciliacion, nomina];
 
-describe('capacitaciones: mismo layout en los 3 modulos', () => {
+describe('capacitaciones: mismo layout en los 3 módulos', () => {
   it('los 3 cumplen el contrato TrainingData sin errores', () => {
     for (const m of MODULOS) {
       expect(validarTraining(m)).toEqual([]);
     }
   });
-  it('capitulos >= 5 con inicios ordenados y dentro de la duracion', () => {
+  it('capítulos >= 5 con inicios ordenados y dentro de la duración', () => {
     for (const m of MODULOS) {
       expect(m.capitulos.length).toBeGreaterThanOrEqual(5);
       const inicios = m.capitulos.map((c) => c.inicio);
@@ -37,8 +37,8 @@ describe('capacitaciones: mismo layout en los 3 modulos', () => {
   });
 });
 
-describe('capacitaciones: seek (capitulo y linea saltan al tiempo)', () => {
-  it('todo inicio de capitulo cae dentro de la duracion (seek valido)', () => {
+describe('capacitaciones: seek (capítulo y línea saltan al tiempo)', () => {
+  it('todo inicio de capítulo cae dentro de la duración (seek válido)', () => {
     for (const m of MODULOS) {
       m.capitulos.forEach((c) => {
         expect(c.inicio).toBeGreaterThanOrEqual(0);
@@ -46,7 +46,7 @@ describe('capacitaciones: seek (capitulo y linea saltan al tiempo)', () => {
       });
     }
   });
-  it('toda linea tiene start valido como destino de seek', () => {
+  it('toda línea tiene start válido como destino de seek', () => {
     for (const m of MODULOS) {
       m.segmentos.forEach((s) => {
         expect(s.start).toBeLessThanOrEqual(m.duracion);
@@ -69,9 +69,9 @@ describe('capacitaciones: seek (capitulo y linea saltan al tiempo)', () => {
 describe('capacitaciones: buscador filtra', () => {
   const segs: TrainingSegmento[] = [
     { start: 0, end: 5, text: 'Reporte DIOT ante el SAT' },
-    { start: 5, end: 10, text: 'Conciliacion bancaria' },
+    { start: 5, end: 10, text: 'Conciliación bancaria' },
   ];
-  it('query vacio devuelve todo', () => {
+  it('query vacío devuelve todo', () => {
     expect(filtrarSegmentos(segs, '')).toHaveLength(2);
     expect(filtrarSegmentos(segs, '   ')).toHaveLength(2);
   });
