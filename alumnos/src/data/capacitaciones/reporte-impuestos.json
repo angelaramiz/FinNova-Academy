@@ -1,0 +1,1014 @@
+{
+  "titulo": "Reporte de impuestos y DIOT automatica",
+  "instructor": "Diego Ramos",
+  "duracion": 1780.69,
+  "duracionTxt": "29:40",
+  "capitulos": [
+    {
+      "titulo": "Bienvenida: Diego Ramos y declaraciones automaticas DIOT",
+      "inicio": 165.14
+    },
+    {
+      "titulo": "Donde esta el reporte DIOT y formatos TXT/Excel",
+      "inicio": 302.02
+    },
+    {
+      "titulo": "Demo: generar el reporte DIOT de enero 2026",
+      "inicio": 556.27
+    },
+    {
+      "titulo": "Envio online: modal SAT y tipos de declaracion",
+      "inicio": 715.55
+    },
+    {
+      "titulo": "Declaraciones automaticas: estatus y revision previa",
+      "inicio": 834.34
+    },
+    {
+      "titulo": "Presentar: de borrador a procesando y acuse SAT",
+      "inicio": 1030.58
+    },
+    {
+      "titulo": "Errores: SAT caido con reintentos y complementarias",
+      "inicio": 1174.6
+    },
+    {
+      "titulo": "Preguntas: egresos de otros periodos y CFDI cancelados",
+      "inicio": 1435.91
+    }
+  ],
+  "segmentos": [
+    {
+      "start": 75.78,
+      "end": 80.24,
+      "speaker": "Customer success Contalink",
+      "text": "Qué tal buen día a todos? Vamos a dar un par de minutos. Para comenzar, vale."
+    },
+    {
+      "start": 80.51,
+      "end": 85.15,
+      "speaker": "Customer success Contalink",
+      "text": "si de momento me pudieran confirmar aquí en el chat Si me escuchan correctamente, se los agradecería mucho."
+    },
+    {
+      "start": 104.94,
+      "end": 113.71,
+      "speaker": "Customer success Contalink",
+      "text": "Vale excelente, contador. Muchas gracias. Excelente. Le agradezco mucho. Vamos a dar un minu un minutito más para que se terminen de conectar los compañeros y arrancamos."
+    },
+    {
+      "start": 160.38,
+      "end": 164.59,
+      "speaker": "Customer success Contalink",
+      "text": "¿vale, por respeto a los que ya estamos conectados, Vamos a arrancar"
+    },
+    {
+      "start": 165.14,
+      "end": 179.35,
+      "speaker": "Customer success Contalink",
+      "text": "listo. Nos arrancamos entonces, pues, muy buenos días a todos. Mi nombre es Diego Ramos. Actualmente me desempeño como producto manager del área de impuestos y reportes, Y voy a estar practicando ahora con ustedes de una nueva funcionalidad que lanzamos no hace más de un mes"
+    },
+    {
+      "start": 179.79,
+      "end": 183.84,
+      "speaker": "Customer success Contalink",
+      "text": "orientada o enfocada a la presentación de Dios. Vale"
+    },
+    {
+      "start": 184.0,
+      "end": 193.86,
+      "speaker": "Customer success Contalink",
+      "text": "a informarles que cualquier duda que tengan la pueden ir escribiendo aquí en el chat y yo. Ahora voy leyendo en un espacio o al final de la sesión. Vale pero contad confianza, vayan dejando aquí sus dudas"
+    },
+    {
+      "start": 194.31,
+      "end": 195.99,
+      "speaker": "Customer success Contalink",
+      "text": "va excelente. Entonces"
+    },
+    {
+      "start": 196.14,
+      "end": 214.56,
+      "speaker": "Customer success Contalink",
+      "text": "vamos a estar practicando hoy de lo que es la Dios y de cómo, o más bien, de cómo presentar nuestra diód a través de contar link Vale, en contra link, pues contamos con con esta función de de poder obtener nuestro reporte Diod, así como nuestro archivo Txt o en Excel, vale generarlo y enviarlo para obtener nuestra cruce."
+    },
+    {
+      "start": 215.02,
+      "end": 217.53,
+      "speaker": "Customer success Contalink",
+      "text": "Pero hoy queremos platicar también de"
+    },
+    {
+      "start": 217.75,
+      "end": 234.76,
+      "speaker": "Customer success Contalink",
+      "text": "de esta nueva funcionalidad que que lanzamos hace poco, llamada declaraciones automáticas. Vale, en donde vamos a poder pedirle al al sistema con tal link que haga nuestra presentación por nosotros. Vale es decir, que con tal Insell que entra el Sat Mande, el archivo T. X T,"
+    },
+    {
+      "start": 234.76,
+      "end": 238.96,
+      "speaker": "Customer success Contalink",
+      "text": "con o sin datos depende de las las configuraciones que le indiquemos"
+    },
+    {
+      "start": 239.5,
+      "end": 251.68,
+      "speaker": "Customer success Contalink",
+      "text": "y realice todo este proceso de envío y declaración para que nosotros, únicamente, pues obtengamos nuestra acuse de declaración directamente desde Contaly. Vale sin la necesidad de tener que entrar al Sat."
+    },
+    {
+      "start": 251.84,
+      "end": 266.95,
+      "speaker": "Customer success Contalink",
+      "text": "Por supuesto que con tal link, pues no está exento y se va a estar enfrentando a estas mismas situaciones que nosotros, como contadores nos enfrentamos, que si el sato está caído que si está lento el el la plataforma del Sat."
+    },
+    {
+      "start": 266.95,
+      "end": 275.78,
+      "speaker": "Customer success Contalink",
+      "text": "Pero a diferencia de nosotros, pues con talent va a estar programando una automatización o un envío, una programación de intentos"
+    },
+    {
+      "start": 275.78,
+      "end": 281.3,
+      "speaker": "Customer success Contalink",
+      "text": "cada vez que se encuentre con estos topes que, que, pues, desgraciadamente, la plataforma de Sat nos"
+    },
+    {
+      "start": 281.34,
+      "end": 283.38,
+      "speaker": "Customer success Contalink",
+      "text": "nos ofrece hoy en día, ¿verdad?"
+    },
+    {
+      "start": 283.48,
+      "end": 284.77,
+      "speaker": "Customer success Contalink",
+      "text": "Pero"
+    },
+    {
+      "start": 284.92,
+      "end": 300.06,
+      "speaker": "Customer success Contalink",
+      "text": "vamos. La intención es desvincularlos ustedes o quitarles esta carga de trabajo, o esta carga mental de tener que estar revisando la plataforma de Sat cuando funciona cuando sí y que sea con tal línea que absorba, pues esta esta tarea por ustedes, ¿verdad?"
+    },
+    {
+      "start": 300.59,
+      "end": 301.74,
+      "speaker": "Customer success Contalink",
+      "text": "Puf."
+    },
+    {
+      "start": 302.02,
+      "end": 315.0,
+      "speaker": "Customer success Contalink",
+      "text": "donde encontramos. La la dio. Nuestro reportero se encuentra en el menú en el apartado de contabilidad y en el apartado de reportes de impuestos. Aquí contamos con más reportes, pero hoy vamos a estar centrando, pues en adiós. Vale."
+    },
+    {
+      "start": 315.0,
+      "end": 327.58,
+      "speaker": "Customer success Contalink",
+      "text": "Aquí es donde nosotros ingresamos para generar nuestro reporte y posteriormente, ya sea enviarlo directamente o descargar nuestro archivo txt, o nuestros archivos en en Excel para una revisión, ¿verdad?"
+    },
+    {
+      "start": 328.4,
+      "end": 335.12,
+      "speaker": "Customer success Contalink",
+      "text": "No, Pues con Dalín trabaja el adiós de manera 20, 24 20, 25 o hacia atrás."
+    },
+    {
+      "start": 335.58,
+      "end": 345.96,
+      "speaker": "Customer success Contalink",
+      "text": "pues, como sabemos, el Sat modificó la plataforma de captura. Ahora el adiós ya nos envía a través de un punto Dx, sino que se hace a través de un Txt, ¿verdad?"
+    },
+    {
+      "start": 346.07,
+      "end": 364.84,
+      "speaker": "Customer success Contalink",
+      "text": "Txt, Pues tiene sus características para ciertos ejercicios. Es de 25 23 columnas y para los de 25 en adelante, pues son 54 columnas que el Sat solicitado hoy en día, verdad, con tal ingeniera este archivo con sus columnas correspondientes. Dependiendo del ejercicio que estemos trabajando o el periodo"
+    },
+    {
+      "start": 366.23,
+      "end": 378.35,
+      "speaker": "Customer success Contalink",
+      "text": "totalmente automático, no tenemos que configurar nada adicional. No tenemos que pedirle algo específico al sistema con también con el puro puramente con el ejercicio. Ya sabe cuántas columnas debe contener. Txt, ¿verdad?"
+    },
+    {
+      "start": 378.66,
+      "end": 379.77,
+      "speaker": "Customer success Contalink",
+      "text": "¿a"
+    },
+    {
+      "start": 380.78,
+      "end": 399.34,
+      "speaker": "Customer success Contalink",
+      "text": "qué otros cambios tuvo tuvo este archivo. Bueno, ahora es más fácil ver el el archivo o el desglose a través de un T X T o a través de un archivo excel como lo hacemos en contra link. Y ahora, además, se solicita información no sólo de los actos, sino también de los impuestos acreditables de los de los no acreditables y y hasta de los descuentos. ¿verdad?"
+    },
+    {
+      "start": 399.96,
+      "end": 407.05,
+      "speaker": "Customer success Contalink",
+      "text": "¿qué tenemos que hacer por nuestra parte, pues únicamente asegurarme de que mis datos se están cargando de forma correcta. En el Txt."
+    },
+    {
+      "start": 407.08,
+      "end": 425.0,
+      "speaker": "Customer success Contalink",
+      "text": "Optima información es correcta antes de enviar la verdad, es decir, nosotros como contadores, pues la intención es que cada vez tengamos un papel más de de revisión o de auditoría, en lugar de estar creando, procesando o trabajando directamente estos archivos, ¿verdad? ¿verdad?"
+    },
+    {
+      "start": 426.89,
+      "end": 440.18,
+      "speaker": "Customer success Contalink",
+      "text": "Pero adicional que hace contenido por mí, pues como lo platicábamos con también va a estar trabajando. Tu reporte de hoy, es decir, lo va a estar procesando, lo va a estar generando de forma automática cuando se lo se lo solicitemos. Por supuesto."
+    },
+    {
+      "start": 440.39,
+      "end": 457.63,
+      "speaker": "Customer success Contalink",
+      "text": "nos va a ofrecer la descarga en Txt o en Excel en Excel, podemos descargarla en 2 presentaciones, ya sea agrupado por R F. C, como se hace una presentación normal en exat o a detalle, ¿verdad? Con el detalle de cada una de nuestras operaciones que que va a integrar. Este Este reporte de otro"
+    },
+    {
+      "start": 457.7,
+      "end": 471.3,
+      "speaker": "Customer success Contalink",
+      "text": "ya incluye todas las columnas y los desgloses que solicita el portal del S A T y ya no es necesario convertir ningún tipo de documento. No hay que convertir un excel a Txt ni ni nada de esto con Tec. Lo hace directamente por nosotros."
+    },
+    {
+      "start": 471.89,
+      "end": 485.35,
+      "speaker": "Customer success Contalink",
+      "text": "Pero ahora adicional, pues con las declaraciones automáticas que estamos platicando, pues ahora con también se va a encargar de ser directamente este envío. Vale, además, va a descargar por nosotros el acuse oficial de la declaración."
+    },
+    {
+      "start": 485.84,
+      "end": 492.83,
+      "speaker": "Customer success Contalink",
+      "text": "sin tener que usar nosotros, sin sin la necesidad de nosotros tener que acceder al S A, D o o algún programa como el de en verdad."
+    },
+    {
+      "start": 493.03,
+      "end": 508.95,
+      "speaker": "Customer success Contalink",
+      "text": "a toda esta información de Diot, el sistema la va a obtener pues de manera automática. Solamente es necesario que nuestro periodo esté trabajado, que nosotros ya hayamos terminado de contabilizar o de conciliar nuestros movimientos."
+    },
+    {
+      "start": 509.2,
+      "end": 512.85,
+      "speaker": "Customer success Contalink",
+      "text": "En este caso, nuestros egresos nuestras en nuestros gastos."
+    },
+    {
+      "start": 513.09,
+      "end": 524.65,
+      "speaker": "Customer success Contalink",
+      "text": "Y de todo eso se va a alimentar con tal link de nuestras facturas de de gastos, de nuestras notas de crédito conciliadas o aplicadas de nuestras pólizas y y cuentas contables, ¿verdad?"
+    },
+    {
+      "start": 525.0,
+      "end": 532.72,
+      "speaker": "Customer success Contalink",
+      "text": "Y todo es lo que va a permitir al sistema automatizar el proceso para generar, validar y enviar, pues el acuse verdad y obtener el acuse"
+    },
+    {
+      "start": 533.33,
+      "end": 541.05,
+      "speaker": "Customer success Contalink",
+      "text": "aquí. Lo que estamos proponiendo, pues es que no realicemos cambios manualmente, sino que dejemos que con tal y haga todo por nosotros."
+    },
+    {
+      "start": 541.68,
+      "end": 554.29,
+      "speaker": "Customer success Contalink",
+      "text": "Obviamente, hasta donde nosotros lo lo creemos adecuado y, por supuesto que revisiones y cambios que queramos hacer son totalmente opcionales y posibles aquí en en nuestro reporte. Días, ¿verdad?"
+    },
+    {
+      "start": 554.59,
+      "end": 555.9,
+      "speaker": "Customer success Contalink",
+      "text": "Entonces"
+    },
+    {
+      "start": 556.27,
+      "end": 568.95,
+      "speaker": "Customer success Contalink",
+      "text": "lo que vamos a hacer es acceder al sistema. Si están de acuerdo. Vamos a hacer un ejemplo con una empresa, Una de nuestras empresas de prueba ¿vale? Y vamos a ver cómo sería esta presentación ya directamente en el sistema. Vale."
+    },
+    {
+      "start": 569.19,
+      "end": 587.94,
+      "speaker": "Customer success Contalink",
+      "text": "Entonces nosotros vamos a ingresar al sistema como ingresas. Normalmente vamos vamos a visualizar nuestras empresas de este lado y vamos a acceder a la empresa donde deseamos enviar nuestra declaración de otro para este ejemplo. Yo voy a simular que ya terminé mi operación, que ya terminé de contabilizar mis egresos o mis gastos."
+    },
+    {
+      "start": 588.37,
+      "end": 597.22,
+      "speaker": "Customer success Contalink",
+      "text": "y ya estoy listo para hacer mi declaración de hoy, ¿verdad? Entonces, como comentamos anteriormente, vamos a ingresar aquí a contabilidad y a reporte de impuestos."
+    },
+    {
+      "start": 597.79,
+      "end": 599.51,
+      "speaker": "Customer success Contalink",
+      "text": "¿vamos a ingresar de este lado."
+    },
+    {
+      "start": 600.49,
+      "end": 607.13,
+      "speaker": "Customer success Contalink",
+      "text": "Y bueno, dependiendo si son personas físicas o morales, van a aparecer más reportes aquí en el caso de las físicas honestas."
+    },
+    {
+      "start": 607.32,
+      "end": 611.66,
+      "speaker": "Customer success Contalink",
+      "text": "Son estos reportes. Y yo voy a acceder al reporte abierto. Vale."
+    },
+    {
+      "start": 613.86,
+      "end": 627.59,
+      "speaker": "Customer success Contalink",
+      "text": "yo ingreso de este lado, y pues nada. Voy a seleccionar el periodo que quiero enviar para este ejemplo para esta prueba. Yo voy a trabajar con el periodo en curso, aunque no haya terminado, selecciono enero, 20 26 selecciona este mes y genero. El reporte ¿verdad?"
+    },
+    {
+      "start": 627.91,
+      "end": 633.29,
+      "speaker": "Customer success Contalink",
+      "text": "Empezar a generar cada 1 de mis eventos. O Ca: Cada una de mis facturas"
+    },
+    {
+      "start": 633.6,
+      "end": 637.61,
+      "speaker": "Customer success Contalink",
+      "text": "o conciliaciones contra cuentos contables que yo haya realizado."
+    },
+    {
+      "start": 637.86,
+      "end": 640.38,
+      "speaker": "Customer success Contalink",
+      "text": "Y me las va a desglosar en este apartado"
+    },
+    {
+      "start": 640.69,
+      "end": 653.28,
+      "speaker": "Customer success Contalink",
+      "text": "hasta aquí. Yo lo único que tendría que hacer, pues, es revisar que mis datos son correctos, que todo lo que está aquí me cuadra, obviamente, sabiendo que co que el adiós redondea ¿verdad? Las cantidades, tener eso en cuenta nada más"
+    },
+    {
+      "start": 653.36,
+      "end": 663.74,
+      "speaker": "Customer success Contalink",
+      "text": "si quieres una revisión más profunda. A lo mejor son muchísimos movimientos, pues puedo hacer las descargas que comentábamos en excel a nivel detalle o agrupado por R, F, C. Vale."
+    },
+    {
+      "start": 664.11,
+      "end": 678.93,
+      "speaker": "Customer success Contalink",
+      "text": "Pero bueno, ya que tengo mis operaciones totalmente cuadradas y y quiero enviar ahora si una declaración, lo que hacíamos anteriormente era descargar aquí el formato Sap en esta flechita de descarga de otra, damos un clic, yo descargaba mi formato sap"
+    },
+    {
+      "start": 679.05,
+      "end": 682.54,
+      "speaker": "Customer success Contalink",
+      "text": "una vez cargado, pues tenía que ir por el a descargas aquí."
+    },
+    {
+      "start": 683.83,
+      "end": 688.92,
+      "speaker": "Customer success Contalink",
+      "text": "Y una vez que el documento estaba listo, yo puedo descargar y obtener mi txt aquí, ¿verdad?"
+    },
+    {
+      "start": 689.22,
+      "end": 694.33,
+      "speaker": "Customer success Contalink",
+      "text": "Y ahora sí, yo yo podía obtener este T. X T, y podía trabajar con él en"
+    },
+    {
+      "start": 694.71,
+      "end": 698.8,
+      "speaker": "Customer success Contalink",
+      "text": "aquí, en pantalla o podía directamente enviarlo ya al"
+    },
+    {
+      "start": 698.98,
+      "end": 715.55,
+      "speaker": "Customer success Contalink",
+      "text": "al Sat, verdad directamente. Entonces tendré que entrar a la página del Sat y cargarlo y hacer el proceso que ustedes ya conocen, vale ese proceso. Si bien es cierto que con de con talis nos lo facilita mucho, pues queríamos facilitarlo todavía más, ¿verdad? Entonces lo que vamos a hacer para programar."
+    },
+    {
+      "start": 715.55,
+      "end": 723.12,
+      "speaker": "Customer success Contalink",
+      "text": "programar o solicitar un envío del avión va a ser lo siguiente: vamos a agregamos un botoncito extra que dice Sat"
+    },
+    {
+      "start": 723.27,
+      "end": 728.02,
+      "speaker": "Customer success Contalink",
+      "text": "a presentar declaración online. Entonces vamos a dar un clic en él."
+    },
+    {
+      "start": 728.71,
+      "end": 731.63,
+      "speaker": "Customer success Contalink",
+      "text": "Damos un clic En esta opción"
+    },
+    {
+      "start": 731.98,
+      "end": 742.78,
+      "speaker": "Customer success Contalink",
+      "text": "se nos va a abrir un segundo modal, un segundo recuadro donde nos va a pedir completar nuestros datos, ¿verdad? En este caso nos va a pedir el tipo de declaración, si es normal o complementaria."
+    },
+    {
+      "start": 743.14,
+      "end": 751.13,
+      "speaker": "Customer success Contalink",
+      "text": "el tipo de envío, el tipo de yo contamos con 2. Si queremos hacer una revisión previa o si queremos hacer un envío definitivo."
+    },
+    {
+      "start": 751.39,
+      "end": 757.04,
+      "speaker": "Customer success Contalink",
+      "text": "¿cuál es la diferencia antes de enviar por completo la declaración?"
+    },
+    {
+      "start": 757.31,
+      "end": 776.0,
+      "speaker": "Customer success Contalink",
+      "text": "Si yo selecciono la opción, declaración previo a envío, yo tendría que darle a aceptar o consultar antes de hacer mi declaración, ¿verdad? Si yo le digo que sin sin revisión previa, pues ya el sistema, en cuanto yo le dé enviar declaración, lo va lo va a enviar directamente. Vale."
+    },
+    {
+      "start": 776.23,
+      "end": 790.17,
+      "speaker": "Customer success Contalink",
+      "text": "En este caso. Yo voy a seleccionar la primera opción, pero cualquiera de las 2 opciones son totalmente válidas y funcionales. Vale Y Por último, tengo que indicar el tipo de dato si va a ser una declaración con datos o si va a ser en ceros. Vale."
+    },
+    {
+      "start": 790.2,
+      "end": 799.42,
+      "speaker": "Customer success Contalink",
+      "text": "Yo voy a trabajar con datos para este ejemplo y con una revisión previa antes del envío definitivo, vale entonces voy a enviar declaración de este lado."
+    },
+    {
+      "start": 800.19,
+      "end": 807.45,
+      "speaker": "Customer success Contalink",
+      "text": "Y aquí arriba, donde tiene que aparecer un mensaje de éxito donde nos va a decir que mi solicitud ha sido creada correctamente. Vale."
+    },
+    {
+      "start": 807.66,
+      "end": 813.8,
+      "speaker": "Customer success Contalink",
+      "text": "en caso de que me marcara algún mensaje de error. Más adelante, en el siguiente módulo, vamos a poder ver ¿Por qué pasó este error?"
+    },
+    {
+      "start": 813.84,
+      "end": 833.76,
+      "speaker": "Customer success Contalink",
+      "text": "Vamos a continuar. En este caso nos marco éxito y continuamos. Ahora sí, ya hice mi solicitud, pero como yo seleccione el envío previo. Tengo que revisar mi declaración y después darle en aceptar si yo hubiera dado la opción de sin revisión previa ya con Talent, estaría conectado. Conectando con el Sat haciendo mi declaración. Vale."
+    },
+    {
+      "start": 834.34,
+      "end": 841.42,
+      "speaker": "Customer success Contalink",
+      "text": "para darle continuidad a esto, vamos a irnos a contabilidad y al nuevo módulo que dice declaraciones automáticas vale"
+    },
+    {
+      "start": 842.18,
+      "end": 855.13,
+      "speaker": "Customer success Contalink",
+      "text": "actualmente en declaraciones automáticas, pues únicamente vamos a visualizar lo que es el envío, del avión. Pero aquí posteriormente vamos a estar agregando, pues, declaraciones de impuestos o contabilidad electrónica."
+    },
+    {
+      "start": 855.24,
+      "end": 867.42,
+      "speaker": "Customer success Contalink",
+      "text": "Pero ya es un adelanto. Nada más. Estamos trabajando en ello. De momento vamos a centrarnos en la dial, ¿verdad? Entonces, aquí vamos a poder ver nuestras solicitudes o nuestras declaraciones de Ot enviadas"
+    },
+    {
+      "start": 867.76,
+      "end": 871.63,
+      "speaker": "Customer success Contalink",
+      "text": "o que no se pudieron enviar por alguna razón, ¿verdad? Entonces."
+    },
+    {
+      "start": 871.85,
+      "end": 890.47,
+      "speaker": "Customer success Contalink",
+      "text": "cuando ustedes seleccionan la opción que yo seleccioné, que dice hacer una revisión previa antes del envío. El estatus de ejecución tiene que ser de este color como azul morado con la leyenda declaración previa, lista. Es decir, contra terminó para que nosotros podamos revisarla y confirmar el envío, ¿verdad?"
+    },
+    {
+      "start": 890.64,
+      "end": 908.59,
+      "speaker": "Customer success Contalink",
+      "text": "Si yo realicé un envío, un tipo de envío definitivo, como fue aquí en el caso de octubre, pues directamente ya ya contaré que no me pide revisar nada, ya entiende que ya tengo la la información clara y directamente hace la presentación, ¿verdad? Y aquí te nos arroja el estatus de la ejecución. En este caso fue una presentación exitosa."
+    },
+    {
+      "start": 908.64,
+      "end": 914.0,
+      "speaker": "Customer success Contalink",
+      "text": "pero puede ocurrir que contenido pueda realizar la declaración. Por alguna razón."
+    },
+    {
+      "start": 914.08,
+      "end": 920.19,
+      "speaker": "Customer success Contalink",
+      "text": "vamos a platicar por qué en este caso nos estoy arrojando un mensaje en rojo"
+    },
+    {
+      "start": 920.38,
+      "end": 924.59,
+      "speaker": "Customer success Contalink",
+      "text": "para que nosotros podamos ver el detalle o el motivo de de este error Vale."
+    },
+    {
+      "start": 924.96,
+      "end": 935.37,
+      "speaker": "Customer success Contalink",
+      "text": "vamos a continuar con la declaración que hicimos de enero declaración previa lista. Entonces, para acceder a ella damos un clic sobre el nombre resaltado en azul. En este caso es declaración 11"
+    },
+    {
+      "start": 935.63,
+      "end": 937.25,
+      "speaker": "Customer success Contalink",
+      "text": "ingreso de este lado."
+    },
+    {
+      "start": 938.24,
+      "end": 942.1,
+      "speaker": "Customer success Contalink",
+      "text": "Y aquí voy a poder ver, pues, la declaración que"
+    },
+    {
+      "start": 942.25,
+      "end": 945.65,
+      "speaker": "Customer success Contalink",
+      "text": "qué hizo con Talín, por mí. ¿verdad?"
+    },
+    {
+      "start": 946.62,
+      "end": 948.81,
+      "speaker": "Customer success Contalink",
+      "text": "Aquí vamos a poder visualizar, pues."
+    },
+    {
+      "start": 949.06,
+      "end": 962.97,
+      "speaker": "Customer success Contalink",
+      "text": "del lado izquierdo la información de nuestra declaración es la declaración número 11, el periodo mensual enero, 20 26 fue un tipo de declaración normal, vale el tipo de envío, fue con confirmación previa"
+    },
+    {
+      "start": 963.54,
+      "end": 970.13,
+      "speaker": "Customer success Contalink",
+      "text": "y la fecha y hora de la solicitud, pues aquí nos indica a qué hora solicitamos el el envío verdad"
+    },
+    {
+      "start": 970.77,
+      "end": 985.86,
+      "speaker": "Customer success Contalink",
+      "text": "adicional de este lado. Vamos a poder obtener nuestro archivo Txt. Si damos un clic sobre este archivo color azul, se va a revisar la descarga de mi Txt, que es el mismo Txt que el Sat, perdón que contarin está enviando por nosotros al al Sat, ¿verdad?"
+    },
+    {
+      "start": 986.27,
+      "end": 987.31,
+      "speaker": "Customer success Contalink",
+      "text": "A a"
+    },
+    {
+      "start": 988.18,
+      "end": 999.14,
+      "speaker": "Customer success Contalink",
+      "text": "voy a cerrar acá y acá abajo nos va a mostrar el estado de nuestra de nuestra declaración. En este caso. Dice que la declaración está lista, todavía no se envía porque yo solicité una revisión previa, ¿verdad?"
+    },
+    {
+      "start": 999.46,
+      "end": 1006.99,
+      "speaker": "Customer success Contalink",
+      "text": "Y nos va a arrojar nuestro mensaje de Estado aquí, en este caso, con indicación de qué es lo que sigue para hacer la declaración, ¿verdad?"
+    },
+    {
+      "start": 1006.99,
+      "end": 1023.0,
+      "speaker": "Customer success Contalink",
+      "text": "Como yo solicito la revisión previa. Entonces, con tal link lo dejó como un estado de borrador. Y ahora, si yo de este lado puedo hacer mi revisión nada más verificar que los datos son correctos, que ya no tengo ninguna duda, o bien descargar esta acusa en P, D, F, ¿verdad? Si lo si lo requiero así."
+    },
+    {
+      "start": 1023.18,
+      "end": 1028.43,
+      "speaker": "Customer success Contalink",
+      "text": "Y cuando estoy seguro ahora, sí. Doy clic en presentar declaración en la parte superior derecha."
+    },
+    {
+      "start": 1028.66,
+      "end": 1030.25,
+      "speaker": "Customer success Contalink",
+      "text": "Damos un clic aquí"
+    },
+    {
+      "start": 1030.58,
+      "end": 1047.33,
+      "speaker": "Customer success Contalink",
+      "text": "y dice que éxito se ha enviado la nueva solicitud. ¿qué quiere decir? Si yo cierro aquí y actualizo mi navegador actualizo aquí la ventana. Ahora, el estatus cambió procesando. Vale, Ya no es una declaración previa lista, sino que ya está procesando el envío."
+    },
+    {
+      "start": 1047.89,
+      "end": 1063.33,
+      "speaker": "Customer success Contalink",
+      "text": "Ahora sí de nuestro lado, que queda únicamente esperar a que con talen termine, pues esta labor de presentación, ¿verdad? Yo puedo seguir trabajando con mis operaciones. Puedo irme a comer, Puedo regresar. Puedo hacer cualquier otro pendiente que tenga por ahí"
+    },
+    {
+      "start": 1063.71,
+      "end": 1078.17,
+      "speaker": "Customer success Contalink",
+      "text": "y únicamente esperar, pues, a que a que con tal termine de hacer la presentación por mí, vale como sé cuándo terminó, pues yo tengo que estar ingresando aquí el portal de declaraciones automáticas y actualizando o refrescando aquí la pantalla, ¿verdad?"
+    },
+    {
+      "start": 1078.2,
+      "end": 1087.78,
+      "speaker": "Customer success Contalink",
+      "text": "Dependiendo la fecha dependiendo cómo se encuentre el portal del Sap, pues a Contact le va a tomar más o menos terminar de hacer la la declaración."
+    },
+    {
+      "start": 1088.33,
+      "end": 1105.54,
+      "speaker": "Customer success Contalink",
+      "text": "pero ya no es un tema que nosotros tengamos que estar revisando, sino que también lo va a estar haciendo por nosotros y nosotros, únicamente cada cierto tiempo vamos a estar ingresando aquí al portal a al módulo de declaraciones automáticas para confirmar que ya haya terminado de hacer la la presentación"
+    },
+    {
+      "start": 1105.81,
+      "end": 1116.14,
+      "speaker": "Customer success Contalink",
+      "text": "en este caso. Yo acabo de actualizar el navegador y contálink. Enero, 2 026 ya lo pudo presentar. Se llama, aparece un estatus de ejecución con éxito."
+    },
+    {
+      "start": 1116.47,
+      "end": 1130.78,
+      "speaker": "Customer success Contalink",
+      "text": "Quiere decir que contanting entró al Sat. No tuvo mayor problema. No estaba al pie de la plataforma. No pasó absolutamente nada raro. Y lo pudo presentar. Si yo ingreso nuevamente acá a el nombre de la declaración, declaración. Once damos un clic."
+    },
+    {
+      "start": 1131.34,
+      "end": 1135.2,
+      "speaker": "Customer success Contalink",
+      "text": "Ahora, sí. El estado ya cambió. Parece presentar exitosamente"
+    },
+    {
+      "start": 1135.33,
+      "end": 1140.86,
+      "speaker": "Customer success Contalink",
+      "text": "aquí con Tec. Nos dice que ha podido presentar nuestra declaración y que ha descargado nuestra cusa"
+    },
+    {
+      "start": 1141.03,
+      "end": 1154.07,
+      "speaker": "Customer success Contalink",
+      "text": "y de este lado del lado derecho, Yo voy a poder visualizar, pues el acuse de la presentación ya no aparece sin validez, si no que ya directamente la acusa que nos arroja el Sat y Conta Nitroit acá al sistema por nosotros."
+    },
+    {
+      "start": 1154.49,
+      "end": 1165.89,
+      "speaker": "Customer success Contalink",
+      "text": "ya únicamente yo lo puedo imprimir. Yo lo puedo descargar acá en P. D, F, guardarlo y continuar con mis actividades, verdad, ya me ahorré la descarga del del Txt. Ya me ahorré ingresar al Sat"
+    },
+    {
+      "start": 1166.09,
+      "end": 1171.6,
+      "speaker": "Customer success Contalink",
+      "text": "y batallar con la plataforma. Ya fue con tal Linke el que bateó por mí, ¿verdad? Entonces"
+    },
+    {
+      "start": 1171.76,
+      "end": 1173.93,
+      "speaker": "Customer success Contalink",
+      "text": "aquí vamos a poder obtener esta cosa"
+    },
+    {
+      "start": 1174.6,
+      "end": 1192.0,
+      "speaker": "Customer success Contalink",
+      "text": "ahora. También cabe la posibilidad de que con Tally no pueda hacer la presentación por alguno de los supuestos que vamos a platicar. El primer supuesto, y el más normal es que Contarling nos diga que el sistema que intentó hacer nuestra declaración, pero que el sistema está"
+    },
+    {
+      "start": 1192.16,
+      "end": 1207.22,
+      "speaker": "Customer success Contalink",
+      "text": "ha caído, que hay una plataforma. Hay un problema con una plataforma del Sat o que está muy lento o que hay muchas solicitudes, etcétera. Cuando es un problema del S A, T y nosotros ingresemos al ver el detalle de nuestra declaración. Aquí nos va a mostrar el mensaje debido."
+    },
+    {
+      "start": 1207.46,
+      "end": 1220.14,
+      "speaker": "Customer success Contalink",
+      "text": "Nos va a decir, sabes qué intenté hacer una declaración. El saldo me lo permitió porque presenta alguna inconsistencia, pero no te preocupes. Contarin va a programar un segundo intento"
+    },
+    {
+      "start": 1220.41,
+      "end": 1239.42,
+      "speaker": "Customer success Contalink",
+      "text": "con una distancia de una hora o 2 h para hacer un segundo intento, y vuelvo a intentar hacer la la presentación. Vale entonces cuando tengamos un error, el estatus de ejecución es importante ingresar a a revisar. ¿vale? Porque, por ejemplo, en este caso nos dice que el error de esta declaración de noviembre. Dos 1 025"
+    },
+    {
+      "start": 1239.61,
+      "end": 1258.05,
+      "speaker": "Customer success Contalink",
+      "text": "es debido a que para este periodo no es posible presentar una declaración normal. Vale que quiere decir que yo, en noviembre quise presentar desde contening una normal, te dio, pero ya existía una normal que había hecho antes directamente en el Sat. Entonces me dice: oye, pues noviembre no me deja declarar una, no, no, no una normal."
+    },
+    {
+      "start": 1258.13,
+      "end": 1260.57,
+      "speaker": "Customer success Contalink",
+      "text": "Intentas con una complementaria, ¿verdad?"
+    },
+    {
+      "start": 1260.81,
+      "end": 1262.86,
+      "speaker": "Customer success Contalink",
+      "text": "Ese es el motivo de este error."
+    },
+    {
+      "start": 1262.97,
+      "end": 1267.33,
+      "speaker": "Customer success Contalink",
+      "text": "Cualquier tipo de error, pues aquí lo vamos a poder estar leyendo el desglosado."
+    },
+    {
+      "start": 1267.73,
+      "end": 1281.9,
+      "speaker": "Customer success Contalink",
+      "text": "El otro error, pues más común es el que les comento que aquí contenidos, diría: no hemos podido hacer una declaración por un problema en la plataforma. Pero no te preocupes. Hemos programado un segundo intento. Cuando se programa un segundo intento"
+    },
+    {
+      "start": 1281.9,
+      "end": 1293.94,
+      "speaker": "Customer success Contalink",
+      "text": "aquí en la columna del siguiente intento, vamos a poder ver la hora y fecha que se programó el segundo intento. ¿y qué pasa si en el segundo intento no puede se programa un tercero. Y así hasta el quinto intento"
+    },
+    {
+      "start": 1293.94,
+      "end": 1299.08,
+      "speaker": "Customer success Contalink",
+      "text": "voluntarios va a intentar 5 veces en el día hacer nuestra declaración."
+    },
+    {
+      "start": 1299.12,
+      "end": 1305.7,
+      "speaker": "Customer success Contalink",
+      "text": "que ya en 5 veces, pues ya sería muy muy raro que no, que no pudiera hacer la la presentación, ¿verdad?"
+    },
+    {
+      "start": 1306.05,
+      "end": 1322.82,
+      "speaker": "Customer success Contalink",
+      "text": "Pero bueno, tenemos previsto ese supuesto, Y si a los 5 intentos no logra hacer la declaración aquí, ya no sería. Sabes que después de 5 intentos no he logrado hacerla. Verifica que que todo esté bien, con pues con con tu con tu contribuyente, con el Sat, ¿verdad?"
+    },
+    {
+      "start": 1322.87,
+      "end": 1328.51,
+      "speaker": "Customer success Contalink",
+      "text": "Pero es muy raro, o sea, tiene que suceder en 1 de esos 5 inventos. La declaración."
+    },
+    {
+      "start": 1328.61,
+      "end": 1343.21,
+      "speaker": "Customer success Contalink",
+      "text": "Y ese es 1 de los supuestos que se van a poder encontrar. Entonces, ¿qué pasa si con tal línea cobra un segundo intento? Pues nada, yo sigo con mis actividades o regreso. Mañana me voy a comer. Y cuando regrese con tal link en automático, cuando llegue la hora y fecha del intento."
+    },
+    {
+      "start": 1343.21,
+      "end": 1350.71,
+      "speaker": "Customer success Contalink",
+      "text": "va a ser la presentación, yo no tengo que pedírselo de nuevo. No tengo que solicitarlo de nuevo, no cuando ya existe una"
+    },
+    {
+      "start": 1350.8,
+      "end": 1358.28,
+      "speaker": "Customer success Contalink",
+      "text": "a un intento programado, un segundo tercer cuarto intento programado ya contar en por él mismo lo va a estar realizando. Vale."
+    },
+    {
+      "start": 1359.2,
+      "end": 1368.34,
+      "speaker": "Customer success Contalink",
+      "text": "adicional este mismo puse que que obtuvimos aquí al declarar enero 2 000. 26 por ejemplo, este mismo acuse, lo van a obtener por correo electrónico. Vale."
+    },
+    {
+      "start": 1368.34,
+      "end": 1381.69,
+      "speaker": "Customer success Contalink",
+      "text": "¿Por qué nos sirve esto? Porque claro que lo puedo tener aquí. Pero cuando, por ejemplo, se programa un segundo intento y dice: ah, bueno, contra yo va a intentar hacer mi declaración en 2 h o en una hora y media."
+    },
+    {
+      "start": 1381.69,
+      "end": 1384.59,
+      "speaker": "Customer success Contalink",
+      "text": "Yo me puedo ir a comer, Puedo salir a hacer mis pendientes"
+    },
+    {
+      "start": 1384.59,
+      "end": 1397.04,
+      "speaker": "Customer success Contalink",
+      "text": "y por correo. Si con también casi mi declaración en ese intervalo que estoy fuera, pues, por correo voy a estar recibiendo el acuse y la notificación de que con Talent ya pudo realizar su nuestra declaración, ¿verdad?"
+    },
+    {
+      "start": 1397.29,
+      "end": 1398.17,
+      "speaker": "Customer success Contalink",
+      "text": "Vale"
+    },
+    {
+      "start": 1399.04,
+      "end": 1415.01,
+      "speaker": "Customer success Contalink",
+      "text": "y poco más. Este es el módulo que tenemos actualmente aquí mismo, en un futuro, pues adelantándoles, vamos a estar agregando declaraciones de impuestos. Probablemente empecemos por recico. Probablemente empecemos, empecemos por cuenta electrónica."
+    },
+    {
+      "start": 1415.85,
+      "end": 1426.07,
+      "speaker": "Customer success Contalink",
+      "text": "pero este es de momento. Lo que tenemos es dieta, y así es como vamos a estarlo trabajando Claro que cualquier duda que tengan. Nos pueden contactar a a su ejecutivo o a nosotros."
+    },
+    {
+      "start": 1426.29,
+      "end": 1429.42,
+      "speaker": "Customer success Contalink",
+      "text": "y con mucho gusto vamos a estarlos atendiendo. ¿vale?"
+    },
+    {
+      "start": 1429.67,
+      "end": 1435.0,
+      "speaker": "Customer success Contalink",
+      "text": "Entonces, si gustan de momento pueden ir colocando sus dudas y vamos a irlas leyendo. Vale."
+    },
+    {
+      "start": 1435.91,
+      "end": 1450.04,
+      "speaker": "Customer success Contalink",
+      "text": "Por ejemplo, acá nos dice que es el contador. Jesús. ¿qué pasa si pago facturas de egreso de periodos anteriores anteriores al mes, que estoy declarando, es decir, cómo se agregan a la radiote o el archivo Txt"
+    },
+    {
+      "start": 1450.45,
+      "end": 1460.78,
+      "speaker": "Customer success Contalink",
+      "text": "para también considerar estas actividades, y el I V a pagado al periodo que se va a declarar o que se esté declarando Si en nuestro reporte de hoy voy a cambiar de pestaña rapidito."
+    },
+    {
+      "start": 1461.56,
+      "end": 1467.47,
+      "speaker": "Customer success Contalink",
+      "text": "Nuestro reporte de hoy toma en cuenta para la declaración la fecha del"
+    },
+    {
+      "start": 1467.6,
+      "end": 1473.84,
+      "speaker": "Customer success Contalink",
+      "text": "la fecha del egreso vale hasta la fecha en que ocurrió dicho dicha transacción."
+    },
+    {
+      "start": 1474.02,
+      "end": 1488.68,
+      "speaker": "Customer success Contalink",
+      "text": "Entonces, por ejemplo, estas fechas ya sé que lo de aquí en el reporte de hoy lo descarga en excel. Son las fechas en que yo realicé el pago de esta factura o la aplicación de la nota de crédito o la devolución"
+    },
+    {
+      "start": 1488.9,
+      "end": 1504.16,
+      "speaker": "Customer success Contalink",
+      "text": "son las fechas de pago. Entonces puede ser una factura de diciembre y yo pagué en enero. Ah, Bueno, pues en enero me va a estar considerando porque la de se alimenta de la conciliación o lo que llamamos conciliación, pues, a relacionar el movimiento bancario con con nuestra factura, ¿verdad?"
+    },
+    {
+      "start": 1504.52,
+      "end": 1520.02,
+      "speaker": "Customer success Contalink",
+      "text": "Este reporte ya está aprovechando aquí la pregunta del contador como comento que se alimenta del adiós perdón, que se que se alimenta de lo conciliado y que toma las fechas de de las conciliaciones, o sea, de las las fechas en que ocurrieron los pagos."
+    },
+    {
+      "start": 1520.32,
+      "end": 1527.72,
+      "speaker": "Customer success Contalink",
+      "text": "Es bueno explicar que este reporte de otro ustedes lo pueden cuadrar, o pueden revisarlo contra la hoja de trabajo para impuestos."
+    },
+    {
+      "start": 1527.78,
+      "end": 1536.06,
+      "speaker": "Customer success Contalink",
+      "text": "Este reporte hoja de trabajo para impuestos se alimenta exactamente igual que la de hoy de lo conciliado ¿vale? Entonces"
+    },
+    {
+      "start": 1536.06,
+      "end": 1555.85,
+      "speaker": "Customer success Contalink",
+      "text": "yo, en hoja de trabajo para impuestos, tendría que tener lo que tengo en diod a no ser que yo tenga una póliza manual que no considere para Dios por alguna razón, o que yo, en mi reporte, yo seleccione estos movimientos y los elimine, porque es otra opción que podemos hacer: eliminar movimientos de nuestro reporte. Aquí en el botón, eliminar. Del lado superior derecha."
+    },
+    {
+      "start": 1556.51,
+      "end": 1566.69,
+      "speaker": "Customer success Contalink",
+      "text": "yo puedo eliminar el movimiento Y al eliminarlo, se me va a pasar a una ventanita que se llama egresos. No considerados que es esta. Y aquí van a aparecer los movimientos que yo haya eliminado. ¿vale?"
+    },
+    {
+      "start": 1567.3,
+      "end": 1572.63,
+      "speaker": "Customer success Contalink",
+      "text": "Y nos pregunta si considera la fecha del recibo de pago electrónico."
+    },
+    {
+      "start": 1572.73,
+      "end": 1588.5,
+      "speaker": "Customer success Contalink",
+      "text": "Sí, sí, sí. La fecha de recibo de pago del Okay. Si se refiere al se F I de pagos, si si también al complemento de pago, está basada en esa fecha, o sea, si la factura es p. P. D y tiene un complemento de pago social, pues va a tomar la fecha del del pago del complemento de pago. ¿verdad?"
+    },
+    {
+      "start": 1590.93,
+      "end": 1601.39,
+      "speaker": "Customer success Contalink",
+      "text": "Vale excelente. No sé si tengan alguna duda adicional. Las podemos ir colocando acá de igual forma en lo que terminan de colocar sus dudas. Si hubieran mas"
+    },
+    {
+      "start": 1601.83,
+      "end": 1617.92,
+      "speaker": "Customer success Contalink",
+      "text": "recordarle nada más que tenemos nuso nuestro programa de referidos. Si ustedes refieren a contar línea de algún colega, pues ustedes estarán obteniendo 1 000 pesos por cada compra nuevo que ustedes refieran ¿verdad? Son la un beneficio con el que cuentan todos ustedes únicamente para recordárselos."
+    },
+    {
+      "start": 1617.99,
+      "end": 1632.67,
+      "speaker": "Customer success Contalink",
+      "text": "Y por último, pues, dejarles acá. Mi mi correo electrónico. Diego. Punto ramos arroba contarle punto. Com: Yo soy el producto manager. Estoy me encargo de del funcionamiento de los reportes contables administrativos y de impuestos."
+    },
+    {
+      "start": 1633.02,
+      "end": 1647.55,
+      "speaker": "Customer success Contalink",
+      "text": "entonces cualquier duda que tengan o solicitud adicional a la que le hacen a sus ejecutivos. Los invito a que se sientan con la confianza de escribirlo por correo o a escribirme a través de su ejecutivo, de cuenta"
+    },
+    {
+      "start": 1647.8,
+      "end": 1656.14,
+      "speaker": "Customer success Contalink",
+      "text": "alguna recomendación, algún feedback o cualquier duda que quisieran platicar conmigo. Yo estoy totalmente abierto y encantado de platicar con ustedes. ¿vale?"
+    },
+    {
+      "start": 1657.59,
+      "end": 1674.34,
+      "speaker": "Customer success Contalink",
+      "text": "Pues, bueno, si no hay más dudas. Sería todo de mi lado un placer estar aquí con ustedes. Les agradezco mucho su tiempo. Perdón por acá. Nos preguntan cómo se actualizan las facturas canceladas si ya están contabilizados, va súper rápido. Esa duda, por si le sirve a los demás"
+    },
+    {
+      "start": 1674.37,
+      "end": 1676.08,
+      "speaker": "Customer success Contalink",
+      "text": "facturas canceladas"
+    },
+    {
+      "start": 1676.08,
+      "end": 1696.53,
+      "speaker": "Customer success Contalink",
+      "text": "con también corre un proceso que cada día va y actualiza en automático para ver qué factura está vigente y qué factura está cancelada. Es un proceso que actualmente se encontrará en mantenimiento. Vale, pero aún así, si el sistema no lo hiciera automáticamente, o ustedes quieren actualizarlas antes de antes de que contecn lo hagan."
+    },
+    {
+      "start": 1696.61,
+      "end": 1707.64,
+      "speaker": "Customer success Contalink",
+      "text": "De este lado. En el menú cuentan con el reporte de auditoría, el módulo de auditoría. Si damos un clic. Aquí tenemos la opción de C, F, D, Is cancelados."
+    },
+    {
+      "start": 1707.72,
+      "end": 1719.12,
+      "speaker": "Customer success Contalink",
+      "text": "Si yo voy a ser feliz, cancelados, tengo 2 opciones: statu status y C, F, 10 cancelados. Si yo voy a status ingreso, mi fecha que quiero actualizar o consultar, y cuando damos Clic en consultar."
+    },
+    {
+      "start": 1719.21,
+      "end": 1731.02,
+      "speaker": "Customer success Contalink",
+      "text": "¿va a hacer ese proceso? ¿va a verificar en ese momento si cada una de nuestras facturas está vigente o cancelada y aquí mismo me va a dar la opción. ¿me va a dar la opción de ir a la factura, a a revisarla"
+    },
+    {
+      "start": 1731.45,
+      "end": 1734.89,
+      "speaker": "Customer success Contalink",
+      "text": "o a irme a ver a revisar la que hay directamente al Sat, ¿verdad?"
+    },
+    {
+      "start": 1735.27,
+      "end": 1750.01,
+      "speaker": "Customer success Contalink",
+      "text": "Pero sería este proceso y Cfa y cancelados únicamente bay consultas si si con si tenemos algún C, F. D. I que se encuentre cancelado, Entonces, para el caso de ustedes, que es actualizar, sería en estatus estatus de las facturas."
+    },
+    {
+      "start": 1750.67,
+      "end": 1757.97,
+      "speaker": "Customer success Contalink",
+      "text": "Y ahí voy y le pido al sistema que me actualice, pues el estatus de todas mis facturas dentro del rango de fechas que yo seleccione, ¿verdad?"
+    },
+    {
+      "start": 1760.04,
+      "end": 1776.7,
+      "speaker": "Customer success Contalink",
+      "text": "Excelente, pues sería todo de mi lado contadores un placer estar con ustedes. Ojalá nos estemos escribiendo por acá por correo o o a través de sus ejecutivos de cuenta, y quedamos atentos a cualquier duda. Vale que tenga un excelente día contadores hasta luego."
+    }
+  ]
+}

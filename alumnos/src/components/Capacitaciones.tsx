@@ -7,6 +7,7 @@ import type { TrainingData } from './TrainingPlayer';
 import auditoria from '../data/capacitaciones/auditoria.json';
 import conciliacion from '../data/capacitaciones/conciliacion.json';
 import nomina from '../data/capacitaciones/nomina.json';
+import reporteImpuestos from '../data/capacitaciones/reporte-impuestos.json';
 
 // Fuentes por defecto (vacío = el alumno pega URL o abre el .mp4 local).
 // Ejemplo: auditoria: 'https://cdn…/auditoria_editado.mp4'
@@ -14,12 +15,14 @@ const VIDEO_SRC: Record<string, string> = {
   auditoria: '',
   conciliacion: '',
   nomina: '',
+  reporteImpuestos: '',
 };
 
 const MODULOS: { id: string; tab: string; data: TrainingData }[] = [
   { id: 'auditoria', tab: 'Auditoría', data: auditoria as TrainingData },
   { id: 'conciliacion', tab: 'Conciliación', data: conciliacion as TrainingData },
   { id: 'nomina', tab: 'Nómina', data: nomina as TrainingData },
+  { id: 'reporteImpuestos', tab: 'Reporte de impuestos', data: reporteImpuestos as TrainingData },
 ];
 
 export default function Capacitaciones() {
