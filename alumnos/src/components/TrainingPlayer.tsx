@@ -3,6 +3,7 @@
 // selector de fuente, índice de capítulos, transcripción buscable con
 // resaltado sincronizado. Responsive. Sin quiz (follow-up fuera de scope).
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { filtrarSegmentos, fmtTiempo, indiceActivo } from '../lib/capacitaciones';
 
 export interface TrainingCapitulo {
   titulo: string;
@@ -27,12 +28,6 @@ export interface TrainingData {
 interface Props {
   training: TrainingData;
   videoSrc?: string;
-}
-
-function fmt(total: number): string {
-  const m = Math.floor(total / 60);
-  const s = Math.floor(total % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export default function TrainingPlayer({ training, videoSrc }: Props) {
@@ -65,20 +60,15 @@ export default function TrainingPlayer({ training, videoSrc }: Props) {
     setNow(t);
   };
 
-  const filtrados = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return training.segmentos;
-    return training.segmentos.filter((s) => s.text.toLowerCase().includes(q));
-  }, [query, training.segmentos]);
+  const filtrados = useMemo(
+    () => filtrarSegmentos(training.segmentos, query),
+    [query, training.segmentos],
+  );
 
-  const activo = useMemo(() => {
-    let idx = -1;
-    for (let i = 0; i < training.segmentos.length; i++) {
-      if (training.segmentos[i].start <= now) idx = i;
-      else break;
-    }
-    return idx;
-  }, [now, training.segmentos]);
+  const activo = useMemo(
+    () => indiceActivo(training.segmentos, now),
+    [now, training.segmentos],
+  );
 
   const abrirLocal = (f: File | undefined) => {
     if (!f) return;
@@ -130,7 +120,7 @@ export default function TrainingPlayer({ training, videoSrc }: Props) {
               <li key={i}>
                 <button onClick={() => seek(c.inicio)} className="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-blue-50 flex justify-between gap-2">
                   <span className="text-slate-700">{i + 1}. {c.titulo}</span>
-                  <span className="font-mono text-slate-400 shrink-0">{fmt(c.inicio)}</span>
+                  <span className="font-mono text-slate-400 shrink-0">{fmtTiempo(c.inicio)}</span>
                 </button>
               </li>
             ))}
@@ -154,7 +144,7 @@ export default function TrainingPlayer({ training, videoSrc }: Props) {
                   onClick={() => seek(s.start)}
                   className={`w-full text-left px-2 py-1 rounded text-xs flex gap-2 ${isActive ? 'bg-blue-100 font-medium' : 'hover:bg-slate-50'}`}
                 >
-                  <span className="font-mono text-slate-400 shrink-0">{fmt(s.start)}</span>
+                  <span className="font-mono text-slate-400 shrink-0">{fmtTiempo(s.start)}</span>
                   <span className="text-slate-700">{s.text}</span>
                 </button>
               );
