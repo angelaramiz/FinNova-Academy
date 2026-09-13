@@ -186,8 +186,15 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
     } catch (e: any) { console.error(e); addToast(e.message || 'Error al elegir ruta', 'error'); }
   }
 
-  async function startTask(task: TaskInfo, skipEmailStep = false) {
-    setCurrentTask(task); setLoading(true);
+  // Abre una tarea por tipo: si está en el día se usa tal cual; si no,
+  // se arranca directo por tipo (módulos Contalink fuera del plan del día).
+  function openTaskByType(type: string) {
+    const t = tasks.find(t => t.type === type);
+    if (t) { startTask(t, true); return; }
+    startTask({ id: `direct-${type}`, title: type, type, difficulty: 2, time: 15 } as TaskInfo, true);
+  }
+
+  async function startTask(task: TaskInfo, skipEmailStep = false) {    setCurrentTask(task); setLoading(true);
     try {
       const trapQuery = task.isTrap && task.trapId ? `?trap=${encodeURIComponent(task.trapId)}` : '';
       const wf: any = await apiPost(`/api/workflows/${task.type}${trapQuery}`);
@@ -598,9 +605,9 @@ const appIcons = isPracticas
         {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'vacancies' && <div className="animate-slide-in h-full"><VacancyTracker theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'careercenter' && <div className="animate-slide-in h-full"><CareerCenter theme={theme} onBack={() => setScreen('desktop')} onOpenTool={(tool) => { prevScreen.current = 'careercenter'; setScreen(tool as Screen); }} /></div>}
-        {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} /></div>}
-        {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} initialTab="tracker" /></div>}
-        {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={(type) => { const t = tasks.find(t => t.type === type); if (t) startTask(t, true); }} initialTab="curso" /></div>}
+        {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} /></div>}
+        {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} initialTab="tracker" /></div>}
+        {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} initialTab="curso" /></div>}
         {screen === 'capacitaciones' && <div className="animate-slide-in h-full"><Capacitaciones /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
