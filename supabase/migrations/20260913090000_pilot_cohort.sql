@@ -1,7 +1,7 @@
 -- Puerta de piloto Contalink (TASK-2-1, 2026-09-13, orden TPM).
 -- Cohorte staff-gestionada: solo estos user_id ven las practicas Contalink.
--- NO APLICADA EN REMOTO (restriccion cero-prod del ciclo): la aplica
--- TPM/Dev Principal con el deploy. ASCII puro.
+-- APLICADA EN REMOTO 2026-09-13 (orden Angel): tabla verificada con RLS.
+-- ASCII puro.
 -- RLS: lectura propia (auth.uid() = user_id); staff opera con service role
 -- (bypasea RLS) desde endpoints con requireSupabaseAuth.
 
