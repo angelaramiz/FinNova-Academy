@@ -43,10 +43,20 @@ interface PracticaModulo {
   descripcion: string;
   objetivo: string;
   semanas: string;
+  plataforma?: string;
   skill: string;
   pasos: PracticaPaso[];
   prueba: PracticaPrueba;
   curso: PracticaCurso;
+}
+
+const PLATAFORMAS: { id: string; nombre: string; icono: string }[] = [
+  { id: 'contabilidad', nombre: 'Contabilidad general', icono: '📒' },
+  { id: 'contalink', nombre: 'Contalink', icono: '🔗' },
+];
+
+function plataformaDe(m: PracticaModulo): string {
+  return m.plataforma || 'contabilidad';
 }
 
 type Tab = 'modulos' | 'tracker' | 'curso';
@@ -161,8 +171,15 @@ export default function PracticasModules({ theme, onBack, onOpenTask, initialTab
         )}
 
         {tab === 'modulos' && !active && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {modules.map(m => {
+          <div className="space-y-6">
+            {PLATAFORMAS.map(plat => {
+              const mods = modules.filter(m => plataformaDe(m) === plat.id);
+              if (!mods.length) return null;
+              return (
+                <div key={plat.id}>
+                  <h3 className="text-[13px] font-bold mb-3" style={{ color: colors.text }}>{plat.icono} {plat.nombre} · {mods.length} módulos</h3>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {mods.map(m => {
               const done = moduleDone(m);
               const doneCount = (progress[m.id] || []).length;
               const pr = pruebaResult[m.id];
@@ -182,6 +199,10 @@ export default function PracticasModules({ theme, onBack, onOpenTask, initialTab
                     {pr && <span className="text-[8px] font-bold font-mono px-2 py-0.5 rounded-full" style={{ background: pr.aprobado ? '#22c55e30' : '#ef444430', color: pr.aprobado ? '#22c55e' : '#ef4444' }}>Prueba {pr.scorePct}%</span>}
                   </div>
                 </button>
+              );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
