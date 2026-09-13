@@ -1,5 +1,5 @@
 // R-12 — Valida que un SimulabV2 "prompt-driven" (como genera ChatGPT/Qwen con el
-// prompt de docs/prompt-vacante-simulab-v2.md) pasa validateSimulabV2 y enruta bien.
+// prompt de docs/legacy/simulab-v2-pausado/prompt-vacante-simulab-v2.md) pasa validateSimulabV2 y enruta bien.
 import { describe, it, expect } from 'vitest';
 import { validateSimulabV2, simId } from '../backend/src/services/simulabFormat';
 import { compileRoute } from '../backend/src/services/roadmapCompiler';
