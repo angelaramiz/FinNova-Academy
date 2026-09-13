@@ -299,6 +299,10 @@ describe('R-13 — Prácticas Profesionales (ruta guiada de contabilidad)', () =
       'mod-proveedores': { taskType: 'supplier_invoice', skill: 'proveedores' },
       'mod-nomina': { taskType: 'payroll', skill: 'nomina' },
       'mod-cierre': { taskType: 'bank_reconciliation', skill: 'conciliacion' },
+      'mod-conciliacion': { taskType: 'conciliacion_practica', skill: 'conciliacion' },
+      'mod-auditoria': { taskType: 'auditoria_practica', skill: 'fiscal' },
+      'mod-nomina-web': { taskType: 'nomina_practica', skill: 'nomina' },
+      'mod-reporte': { taskType: 'reporte_practica', skill: 'fiscal' },
     };
 
     it('cada módulo referencia la tarea correcta según su objetivo (no hay desalineación tema↔actividad)', () => {
