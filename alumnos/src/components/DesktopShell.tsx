@@ -56,6 +56,7 @@ function SimFallback() {
 }
 import { getWorkflowDocumentHtml, getWorkflowHighlightFields } from '../lib/workflowDoc';
 import { apiFetch } from '../lib/api';
+import { appsParaPiloto, esAppPiloto } from '../lib/piloto';
 import { useToast } from './Toast';
 import { simHeaderNow } from '../lib/simTime';
 
@@ -101,6 +102,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [cfdiData, setCfdiData] = useState<any>(null);
   const [showAccounting, setShowAccounting] = useState(false);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(true);
+  const [piloto, setPiloto] = useState<boolean | null>(null);
   const prevScreen = useRef<Screen>('desktop');
 
   const isData = specialty === 'data_engineering';
@@ -150,8 +152,17 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
     } catch { /* noop */ }
   }
 
+  async function loadPilot() {
+    if (!isPracticas) return;
+    try {
+      const data = await apiPost('/api/sim/pilot/me');
+      setPiloto(!!data.piloto);
+    } catch { /* noop: sin cohorte visible hasta confirmar */ }
+  }
+
   useEffect(() => {
     if (isData) { loadWorld(); loadCareerPath(); }
+    if (isPracticas) loadPilot();
     loadStory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [specialty, appSet]);
@@ -395,7 +406,11 @@ const scienceApps = [
     { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
   ];
 
-const appIcons = isPracticas ? practicasApps : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
+const appIcons = isPracticas
+    ? (piloto === false
+      ? [...practicasApps.filter((a) => !esAppPiloto(a.dataApp)), { label: 'Piloto — próximamente', icon: '🧪', action: () => addToast('Las prácticas Contalink están en piloto cerrado.', 'info'), dataApp: 'piloto' }]
+      : practicasApps)
+    : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
   return (
     <div className="h-full flex flex-col" style={{ background: colors.bg }}>
