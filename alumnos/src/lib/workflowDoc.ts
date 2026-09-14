@@ -1,4 +1,36 @@
 // Genera HTML de documento para la vista dual basado en el tipo de workflow
+
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Spreadsheets categóricos (módulos Contalink): mezclan conteos enteros,
+// texto (periodo, folio, clasificaciones) y montos. El renderer genérico de
+// dinero los rompía ($NaN / $23.00). Aquí cada valor se formatea por tipo.
+const CATEGORICAL_TYPES = new Set([
+  'conciliacion_practica',
+  'auditoria_practica',
+  'nomina_practica',
+  'reporte_practica',
+]);
+
+export function formatDocCell(taskType: string, cell_B: unknown): string {
+  if (cell_B === undefined || cell_B === null || cell_B === '') return '';
+  if (typeof cell_B === 'number') {
+    if (!Number.isFinite(cell_B)) return '';
+    if (CATEGORICAL_TYPES.has(taskType)) {
+      return escHtml(Number.isInteger(cell_B)
+        ? cell_B.toLocaleString('es-MX')
+        : cell_B.toLocaleString('es-MX', { minimumFractionDigits: 2 }));
+    }
+    return `$${cell_B.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+  }
+  if (CATEGORICAL_TYPES.has(taskType)) return escHtml(String(cell_B));
+  const n = Number(cell_B);
+  if (!Number.isFinite(n)) return '';
+  return `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+}
+
 export function getWorkflowDocumentHtml(taskType: string, stepData: any): string {
   const rows = stepData?.rows;
   const fields = stepData?.fields;
@@ -43,7 +75,7 @@ export function getWorkflowDocumentHtml(taskType: string, stepData: any): string
       const isComputed = !!r.formula;
       const val = isComputed
         ? '<span style="color:#b45309;background:#fef3c7;padding:2px 6px;border-radius:4px;font-size:10px">→ Calcúlalo</span>'
-        : r.cell_B !== undefined ? `$${Number(r.cell_B).toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '';
+        : formatDocCell(taskType, r.cell_B);
       const formula = r.formula ? `<span style="color:#666;font-size:9px">${r.formula}</span>` : '';
       return `<tr><td style="padding:6px 8px;border:1px solid #ddd;font-size:11px">${r.label}</td><td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">${val}</td><td style="padding:6px 8px;font-size:9px;color:#888">${formula}</td></tr>`;
     }).join('');
@@ -72,7 +104,7 @@ export function getWorkflowDocumentHtml(taskType: string, stepData: any): string
   return `<div style="padding:20px;text-align:center;color:#888;font-family:monospace">Documento no disponible para este tipo de tarea</div>`;
 }
 
-function getDocTitle(taskType: string): string {
+export function getDocTitle(taskType: string): string {
   const titles: Record<string, string> = {
     invoice_emission: '📋 FACTURA CFDI',
     payment_registration: '💳 RECIBO DE PAGO',
@@ -84,6 +116,10 @@ function getDocTitle(taskType: string): string {
     cash_cut: '🏧 CORTE DE CAJA',
     tax_calculation: '📊 BALANZA DE COMPROBACIÓN',
     depreciation: '📉 DEPRECIACIÓN DE ACTIVOS',
+    conciliacion_practica: '🏦 CONCILIACIÓN BBVA (WEBINAR)',
+    auditoria_practica: '🔍 AUDITORÍA E IMPUESTOS (WEBINAR)',
+    nomina_practica: '👥 NÓMINA SEMANAL (WEBINAR)',
+    reporte_practica: '📤 DIOT ONLINE (VIDEO)',
   };
   return titles[taskType] || '📄 DOCUMENTO';
 }
