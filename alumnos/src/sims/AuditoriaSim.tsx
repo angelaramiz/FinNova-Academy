@@ -13,6 +13,7 @@ import {
   type Modulo,
   type CasoABC,
 } from './auditoriaEngine';
+import { agrupadorDe } from './catalogoAgrupador';
 
 type Paso = 'portada' | 'selector' | 'cobrado' | 'deducible' | 'diot' | 'hoja' | 'ivaisr' | 'cuadre' | 'portal' | 'poliza' | 'casos' | 'certificado';
 const PASOS: Paso[] = ['portada', 'selector', 'cobrado', 'deducible', 'diot', 'hoja', 'ivaisr', 'cuadre', 'portal', 'poliza', 'casos', 'certificado'];
@@ -136,6 +137,7 @@ export default function AuditoriaSim() {
           <div>CFDIs vs cobrado/pagado. IVA a cargo: <b>{GOLDENS.ivaACargo}</b>.</div>
           <div>Links azules = drill-down a cada documento.</div>
           <div>Retenciones en cuenta <b>113</b> (IVA retenido cobrado + ISR retenido).</div>
+          <div className="text-[10px] text-slate-500">SAT Anexo 24 → {agrupadorDe('113.01')?.nombre} / {agrupadorDe('216.01')?.nombre}</div>
         </div>
       )}
 

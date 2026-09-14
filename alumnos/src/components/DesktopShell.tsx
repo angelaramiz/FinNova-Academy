@@ -485,7 +485,9 @@ const scienceApps = [
 const appIcons = isPracticas
     ? (piloto === false
       ? [...practicasApps.filter((a) => !esAppPiloto(a.dataApp)), { label: 'Piloto — próximamente', icon: '🧪', action: () => addToast('Las prácticas Contalink están en piloto cerrado.', 'info'), dataApp: 'piloto' }]
-      : practicasApps)
+      : osMode
+        ? practicasApps.filter((a) => a.label === 'Módulos')
+        : practicasApps)
     : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
   return (

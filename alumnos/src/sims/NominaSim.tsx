@@ -11,6 +11,7 @@ import {
   validarCuentas,
   timbrar,
 } from './nominaEngine';
+import { etiquetaAgrupador } from './catalogoAgrupador';
 
 type Paso = 'empresa' | 'confnomina' | 'periodos' | 'alta' | 'ficha' | 'percepciones' | 'fijas' | 'asimilados' | 'extraordinaria' | 'ordinaria' | 'incidencias' | 'cuentas' | 'timbrado';
 const PASOS: Paso[] = ['empresa', 'confnomina', 'periodos', 'alta', 'ficha', 'percepciones', 'fijas', 'asimilados', 'extraordinaria', 'ordinaria', 'incidencias', 'cuentas', 'timbrado'];
@@ -174,6 +175,7 @@ export default function NominaSim() {
         <div className={card}>
           {errCuentas.length === 0 ? <div className="text-green-600">✓ Todas con cuenta.</div> : errCuentas.map((e, i) => <div key={i} className="text-amber-700 dark:text-amber-300">⚠️ {e}</div>)}
           <div className="text-slate-500">Toda percepción/deducción lleva cuenta contable.</div>
+          <div className="text-[10px] text-slate-500">SAT Anexo 24 → Sueldos: {etiquetaAgrupador('501-01')} · ISR retenido: {etiquetaAgrupador('211-01')}</div>
         </div>
       )}
 
