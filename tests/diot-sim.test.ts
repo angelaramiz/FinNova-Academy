@@ -5,6 +5,9 @@ import {
   TIPOS_OP,
   TASAS_IVA,
   ESCENARIO_TUTORIAL,
+  TOUR_TUTORIAL,
+  EMPRESAS_DIOT,
+  describirPresentacion,
   generarEscenario,
   validarOperacion,
   construirTXT,
@@ -89,6 +92,46 @@ describe('diotEngine (TASK-D1)', () => {
     for (const op of esc.operaciones) {
       expect(op.fecha).toContain('/01/2026');
     }
+  });
+
+  it('escenario trae empresa visual (nombre + RFC del hero)', () => {
+    expect(ESCENARIO_TUTORIAL.empresa.nombre.length).toBeGreaterThan(5);
+    expect(ESCENARIO_TUTORIAL.empresa.rfc).toMatch(/^[A-Z]{3}[0-9]{6}[A-Z0-9]{3}$/);
+    const g = generarEscenario('practica', 7);
+    expect(g.empresa.nombre.length).toBeGreaterThan(5);
+  });
+
+  it('tour tutorial: 8 pasos en orden con ancla, teoria y referencia', () => {
+    expect(TOUR_TUTORIAL).toHaveLength(8);
+    expect(TOUR_TUTORIAL[0].ancla).toBe('spot-banner');
+    expect(TOUR_TUTORIAL[7].titulo).toContain('Completado');
+    for (const s of TOUR_TUTORIAL) {
+      expect(s.teoria.length).toBeGreaterThan(10);
+      expect(s.referencia.length).toBeGreaterThan(3);
+      expect(s.paso).toBeTruthy();
+    }
+    expect(TOUR_TUTORIAL.map((s) => s.paso)).toEqual(['metricas', 'metricas', 'tabla', 'tabla', 'descarga', 'presentar', 'revision', 'metricas']);
+  });
+
+  it('P5: catalogo 19 empresas con regimen (nacionalidad coherente)', () => {
+    expect(EMPRESAS_DIOT).toHaveLength(19);
+    for (const e of EMPRESAS_DIOT) {
+      expect(e.regimen).toMatch(/^(601|612)$/);
+      expect(['Nacional', 'Extranjero']).toContain(e.nacionalidad);
+    }
+    expect(EMPRESAS_DIOT.filter((e) => e.nacionalidad === 'Extranjero').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('P5: examen nivel 3 con 15 ops (default sigue 12)', () => {
+    const l3 = generarEscenario('examen', 3, 3);
+    expect(l3.operaciones).toHaveLength(15);
+    expect(l3.errores).toHaveLength(4);
+    expect(generarEscenario('examen', 3).operaciones).toHaveLength(12);
+  });
+
+  it('P5: describir presentacion Normal/Complementaria x Previa/Definitiva x datos', () => {
+    expect(describirPresentacion({ tipo: 'Normal', envio: 'Previa', conDatos: true })).toContain('Normal');
+    expect(describirPresentacion({ tipo: 'Complementaria', envio: 'Definitiva', conDatos: false })).toContain('En ceros');
   });
 
   it('puedePresentar bloquea si faltan errores por eliminar', () => {

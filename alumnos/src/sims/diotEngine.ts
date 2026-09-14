@@ -45,6 +45,7 @@ export interface ErrorInyectado {
 export interface EscenarioDIOT {
   periodo: string;
   ejercicio: number;
+  empresa: { nombre: string; rfc: string }; // P1: solo dato visual del hero
   operaciones: OperacionDIOT[];
   errores: ErrorInyectado[];
 }
@@ -64,18 +65,38 @@ export function makeRng(seed: number): () => number {
   };
 }
 
-const EMPRESAS: Array<{ nombre: string; pais: string; nacionalidad: 'Nacional' | 'Extranjero'; tipoContraparte: 'PF' | 'PM' }> = [
-  { nombre: 'DISTRIBUIDORA DE ALIMENTOS DEL NORTE SA DE CV', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'SERVICIOS LEGALES Y FISCALES INTEGRADOS SC', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
-  { nombre: 'TECNOLOGIA Y SISTEMAS AVANZADOS SA DE CV', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'CONSTRUCCIONES Y DESARROLLOS URBANOS SA', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'TRANSPORTES Y LOGISTICA DEL PACIFICO SA DE CV', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'PRODUCTOS QUIMICOS INDUSTRIALES SA', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'MATERIALES ELECTRICOS Y COMPONENTES SA DE CV', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
-  { nombre: 'GLOBAL TECH SOLUTIONS INC', pais: 'US', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
-  { nombre: 'EUROPEAN INDUSTRIAL SUPPLIES GMBH', pais: 'DE', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
-  { nombre: 'CONSULTORIA EMPRESARIAL MODERNA SC', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
+// P5: catalogo 19 empresas con regimen (maqueta :506-525 + adicionales MX).
+export interface EmpresaDIOT {
+  nombre: string;
+  regimen: '601' | '612';
+  pais: string;
+  nacionalidad: 'Nacional' | 'Extranjero';
+  tipoContraparte: 'PF' | 'PM';
+}
+
+const EMPRESAS: EmpresaDIOT[] = [
+  { nombre: 'DISTRIBUIDORA DE ALIMENTOS DEL NORTE SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'SERVICIOS LEGALES Y FISCALES INTEGRADOS SC', regimen: '612', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
+  { nombre: 'TECNOLOGIA Y SISTEMAS AVANZADOS SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'CONSTRUCCIONES Y DESARROLLOS URBANOS SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'TRANSPORTES Y LOGISTICA DEL PACIFICO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'PRODUCTOS QUIMICOS INDUSTRIALES SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'MATERIALES ELECTRICOS Y COMPONENTES SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'AGROINDUSTRIAL DEL VALLE DE MEXICO SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'TEXTILES Y CONFECCIONES DEL SUR SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'AUTOMOTRIZ Y REFACCIONES PREMIUM SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'FARMACEUTICA NACIONAL SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'PAPELERIA Y EMPAQUES DEL CENTRO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'METALURGICA Y ACEROS INDUSTRIALES SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'ALIMENTOS Y BEBIDAS DEL BAJIO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'CONSULTORIA EMPRESARIAL MODERNA SC', regimen: '612', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
+  { nombre: 'GLOBAL TECH SOLUTIONS INC', regimen: '601', pais: 'US', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+  { nombre: 'EUROPEAN INDUSTRIAL SUPPLIES GMBH', regimen: '601', pais: 'DE', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+  { nombre: 'ASIA PACIFIC TRADING CO LTD', regimen: '601', pais: 'CN', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+  { nombre: 'LOGISTICA DEL NORTE SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
 ];
+
+export const EMPRESAS_DIOT: EmpresaDIOT[] = EMPRESAS;
 
 const RFC_VALIDO = /^[A-Z]{3}[0-9]{6}[A-Z0-9]{3}$/;
 
@@ -124,6 +145,7 @@ const TUTORIAL_DATOS: Array<[number, TasaIVA, number, OperacionDIOT['origen'], n
 export const ESCENARIO_TUTORIAL: EscenarioDIOT = {
   periodo: 'Enero 2026',
   ejercicio: 2026,
+  empresa: { nombre: EMPRESAS[0].nombre, rfc: 'DAN010101ABC' },
   operaciones: TUTORIAL_DATOS.map(([monto, tasa, tipo, origen, empIdx, dia], i) => {
     const emp = EMPRESAS[empIdx];
     const pref = origen === 'Factura' ? 'A' : origen === 'Nota de crédito' ? 'NC' : 'POL';
@@ -150,10 +172,16 @@ export const ESCENARIO_TUTORIAL: EscenarioDIOT = {
 
 const CAMPOS_ERROR = ['rfc', 'monto', 'iva', 'tipo', 'tasa', 'nacionalidad'] as const;
 
-export function generarEscenario(modo: ModoDIOT, seed: number): EscenarioDIOT {
+// P5: niveles como la maqueta (cantOps [8,12,15][nivel-1]; examen default
+// nivel 2 = 12 ops para no mover el comportamiento actual).
+const OPS_POR_NIVEL = [8, 12, 15];
+
+export function generarEscenario(modo: ModoDIOT, seed: number, nivel?: number): EscenarioDIOT {
   if (modo === 'tutorial') return structuredClone(ESCENARIO_TUTORIAL);
+  const nv = nivel ?? (modo === 'examen' ? 2 : 1);
   const rng = makeRng(seed);
-  const nOps = modo === 'examen' ? 12 : 8;
+  const empresaBase = EMPRESAS[Math.floor(rng() * EMPRESAS.length)];
+  const nOps = modo === 'examen' ? OPS_POR_NIVEL[Math.min(3, Math.max(1, nv)) - 1] : 8;
   const nErrores = modo === 'examen' ? 4 : 2;
   const tipos = [1, 2, 3, 4, 5];
   const tasas = Object.keys(TASAS_IVA) as TasaIVA[];
@@ -196,7 +224,13 @@ export function generarEscenario(modo: ModoDIOT, seed: number): EscenarioDIOT {
     errores.push(injectarError(op, campo, rng));
   }
 
-  return { periodo: 'Enero 2026', ejercicio: 2026, operaciones, errores };
+  return {
+    periodo: 'Enero 2026',
+    ejercicio: 2026,
+    empresa: { nombre: empresaBase.nombre, rfc: rfcValido(rng) },
+    operaciones,
+    errores,
+  };
 }
 
 function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], rng: () => number): ErrorInyectado {
@@ -304,6 +338,96 @@ export function construirTXT(ops: OperacionDIOT[], ejercicio: number): string {
       return base.slice(0, nCols).join('|');
     })
     .join('\n');
+}
+
+// ---- Tour tutorial 8 pasos (maqueta PILOT_STEPS :706-800) ----
+// Solo cáscara: títulos, descripciones, teoría y referencia por paso.
+// No toca goldens ni lógica.
+export interface PasoTour {
+  ancla: string;
+  titulo: string;
+  descripcion: string;
+  teoria: string;
+  referencia: string;
+  paso: 'metricas' | 'tabla' | 'descarga' | 'presentar' | 'revision';
+}
+
+export const TOUR_TUTORIAL: PasoTour[] = [
+  {
+    ancla: 'spot-banner',
+    titulo: '🎯 Bienvenido al Reporte DIOT',
+    descripcion: 'Declaración Informativa de Operaciones con Terceros. ContaLink genera este reporte automáticamente de tus facturas de egresos, notas de crédito conciliadas y pólizas.',
+    teoria: 'El DIOT es una declaración informativa mensual (Art. 32 CFF).',
+    referencia: 'Art. 32 CFF · Anexo 1-A RMF 2025',
+    paso: 'metricas',
+  },
+  {
+    ancla: 'spot-stats',
+    titulo: '📊 Panel de Métricas',
+    descripcion: 'Resumen: operaciones, base gravable e IVA acreditable, calculados automáticamente.',
+    teoria: 'El DIOT 2025 tiene 54 columnas (vs 23 en 2024): nacionalidad, tipo de contraparte, tasa y desglose acreditables.',
+    referencia: 'Modificación SAT 2025 · 54 columnas',
+    paso: 'metricas',
+  },
+  {
+    ancla: 'spot-table',
+    titulo: '📋 Tabla de Operaciones',
+    descripcion: 'Cada fila es una factura o nota de crédito conciliada. Los datos aquí solo se revisan, no se editan.',
+    teoria: 'El DIOT toma la FECHA DE PAGO, no la de la factura.',
+    referencia: 'Art. 32 CFF · Fecha de pago',
+    paso: 'tabla',
+  },
+  {
+    ancla: 'operationsBody',
+    titulo: '🔍 Campos Clave',
+    descripcion: 'Fecha de pago, RFC (13 caracteres), Nombre, Tipo (1-5), Monto e IVA. Cada campo tiene reglas del SAT.',
+    teoria: 'Tipos: 1 Bienes · 2 Servicios · 3 Arrendamiento · 4 Fideicomisos · 5 Extranjeros.',
+    referencia: 'Anexo 1-A RMF',
+    paso: 'tabla',
+  },
+  {
+    ancla: 'spot-actions',
+    titulo: '⚙️ Opciones de Descarga',
+    descripcion: 'Excel agrupado por RFC, Excel a detalle o TXT oficial SAT.',
+    teoria: 'El TXT 2025 lleva 54 columnas separadas por pipe (|).',
+    referencia: 'Portal SAT · Formato TXT DIOT 2025',
+    paso: 'descarga',
+  },
+  {
+    ancla: 'btn-presentar',
+    titulo: '📤 Presentar Declaración',
+    descripcion: 'Configura: (1) Normal o Complementaria, (2) Previa o Definitiva, (3) Con datos o En ceros.',
+    teoria: 'Normal: primera del periodo. Complementaria: corrige una normal previa.',
+    referencia: 'Art. 32 CFF · Tipos de declaración',
+    paso: 'presentar',
+  },
+  {
+    ancla: 'spot-table',
+    titulo: '✅ Revisión Final',
+    descripcion: 'Antes de enviar se valida: RFCs de 13, montos positivos, IVA = tasa × monto. Lo malo se marca en rojo.',
+    teoria: 'RFC: 3 letras + 6 fecha + 3 homoclave. Monto positivo. IVA según tasa.',
+    referencia: 'Validación SAT · E01-E22',
+    paso: 'revision',
+  },
+  {
+    ancla: 'spot-banner',
+    titulo: '🎉 ¡Flujo Completado!',
+    descripcion: 'Observaste el flujo completo. En Práctica lo harás con datos diferentes y 2 errores intencionales.',
+    teoria: 'El DIOT se presenta dentro de los primeros 15 días del mes siguiente.',
+    referencia: 'Art. 32 CFF · Plazo: 15 días',
+    paso: 'metricas',
+  },
+];
+// P5: resumen de la combinacion de presentacion (Normal/Complementaria x
+// Previa/Definitiva x Con datos/En ceros) para ejercer la rama nov-2025.
+export interface OpcionesPresentacion {
+  tipo: 'Normal' | 'Complementaria';
+  envio: 'Previa' | 'Definitiva';
+  conDatos: boolean;
+}
+
+export function describirPresentacion(o: OpcionesPresentacion): string {
+  return `${o.tipo} · ${o.envio} · ${o.conDatos ? 'Con datos' : 'En ceros'}`;
 }
 
 // ---- Presentar: Normal vs Complementaria (CASO nov-2025) ----
