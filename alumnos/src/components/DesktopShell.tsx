@@ -558,7 +558,7 @@ const appIcons = isPracticas
           📊 Modo: Contador General Jr — Logística del Norte S.A.
         </div>
       )}
-      {specialty === 'data_engineering' && world && (
+      {specialty === 'data_engineering' && world && !osMode && (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: world.pipeline?.status === 'failed' ? '#ef444410' : '#22c55e10', color: world.pipeline?.status === 'failed' ? '#ef4444' : '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
           <span>🛫 lno_sales_pipeline · 05-jul:</span>
           <span>{world.pipeline?.status === 'failed' ? '🔴 en falla (dbt_test)' : '🟢 recuperado'}</span>
@@ -567,7 +567,7 @@ const appIcons = isPracticas
         </div>
       )}
 
-      {storyArc && (
+      {storyArc && !osMode && (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: '#a855f710', color: '#a855f7', borderBottom: `1px solid ${colors.border}` }}>
           <span>📖 Arco: {storyArc.nombre}</span>
           {storyArc.activeScene && <span>· escena: {storyArc.activeScene}</span>}
@@ -587,7 +587,7 @@ const appIcons = isPracticas
           <div className="h-full p-4 overflow-auto animate-slide-in">
             <div className="flex gap-5 mb-6 flex-wrap">
               {appsOrdenadas().map((app, i) => (
-                <div key={app.id} data-app={app.dataApp} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
+                <div key={app.id} data-app={app.dataApp} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={() => { if (osMode && app.dataApp === 'tareas') { setScreen('emailInbox'); return; } app.action(); }}>
                   <div className="w-12 h-12 rounded-xl border-2 flex items-center justify-center text-base" style={{ borderColor: colors.border, background: colors.cardBg, boxShadow: `2px 2px 0px 0px ${colors.border}` }}>{app.icon}</div>
                   <span className="text-[11px] font-bold font-mono text-center leading-tight" style={{ color: colors.text }}>{app.label}{app.count && app.count > 0 && app.label !== 'Tareas' ? <span className="ml-0.5" style={{ color: colors.primary }}>({app.count})</span> : null}</span>
                   {osMode && (
@@ -599,7 +599,8 @@ const appIcons = isPracticas
                 </div>
               ))}
             </div>
-            {isData && <AgendaDelDia tasks={tasks} onOpen={startTask} onOpenLearning={() => setScreen('learning')} theme={theme} phase={appSet === 'engineering' ? 'engineering' : appSet === 'science' ? 'science' : 'analyst'} />}
+            {isData && !osMode && <AgendaDelDia tasks={tasks} onOpen={startTask} onOpenLearning={() => setScreen('learning')} theme={theme} phase={appSet === 'engineering' ? 'engineering' : appSet === 'science' ? 'science' : 'analyst'} />}
+            {!osMode && (
             <div className="rounded-xl border-2 overflow-hidden" style={{ borderColor: colors.border }}>
               <div className="px-4 py-2 border-b-2 text-[13px] font-bold font-mono" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg, color: colors.text }}>📋 Pendientes del día</div>
               <div className="divide-y" style={{ borderColor: colors.border + '40' }}>
@@ -637,6 +638,7 @@ const appIcons = isPracticas
                 ))}
               </div>
             </div>
+            )}
             {loading && (
               <div className="px-4 py-3">
                 <div className="animate-pulse space-y-2">
