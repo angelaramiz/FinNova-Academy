@@ -59,7 +59,7 @@ import DIOTSim from '../sims/DIOTSim';
 import ConciliacionSim from '../sims/ConciliacionSim';
 import AuditoriaSim from '../sims/AuditoriaSim';
 import NominaSim from '../sims/NominaSim';
-import { simParaTarea } from '../sims/simsContalink';
+import { simParaTarea, SIM_POR_MODULO } from '../sims/simsContalink';
 function SimFallback() {
   return <div className="p-6 text-xs font-mono animate-pulse" style={{ color: '#64748b' }}>Cargando herramienta…</div>;
 }
@@ -691,9 +691,9 @@ const appIcons = isPracticas
         {screen === 'chronicle' && <div className="animate-slide-in h-full"><ChronicleSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'vacancies' && <div className="animate-slide-in h-full"><VacancyTracker theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'careercenter' && <div className="animate-slide-in h-full"><CareerCenter theme={theme} onBack={() => setScreen('desktop')} onOpenTool={(tool) => { prevScreen.current = 'careercenter'; setScreen(tool as Screen); }} /></div>}
-        {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} /></div>}
-        {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} initialTab="tracker" /></div>}
-        {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} initialTab="curso" /></div>}
+        {screen === 'practicas' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} /></div>}
+        {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="tracker" /></div>}
+        {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="curso" /></div>}
         {screen === 'capacitaciones' && <div className="animate-slide-in h-full"><Capacitaciones /></div>}
         {screen === 'sim-diot' && <div className="animate-slide-in h-full"><DIOTSim /></div>}
         {screen === 'sim-conciliacion' && <div className="animate-slide-in h-full"><ConciliacionSim /></div>}

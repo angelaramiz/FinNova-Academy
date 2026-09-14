@@ -65,6 +65,7 @@ interface PracticasModulesProps {
   theme: Theme;
   onBack: () => void;
   onOpenTask: (type: string) => void;
+  onOpenSim?: (moduleId: string) => void;
   initialTab?: Tab;
 }
 
@@ -79,7 +80,7 @@ function loadPruebaResults(): Record<string, { scorePct: number; aprobado: boole
   try { return JSON.parse(localStorage.getItem(PRUEBA_KEY) || '{}'); } catch { return {}; }
 }
 
-export default function PracticasModules({ theme, onBack, onOpenTask, initialTab = 'modulos' }: PracticasModulesProps) {
+export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim, initialTab = 'modulos' }: PracticasModulesProps) {
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -184,7 +185,7 @@ export default function PracticasModules({ theme, onBack, onOpenTask, initialTab
               const doneCount = (progress[m.id] || []).length;
               const pr = pruebaResult[m.id];
               return (
-                <button key={m.id} onClick={() => setActive(m)} className="text-left rounded-2xl border-2 p-5 cursor-pointer hover:opacity-85 transition"
+                <button key={m.id} onClick={() => { if (onOpenSim && plataformaDe(m) === 'contalink') { onOpenSim(m.id); return; } setActive(m); }} className="text-left rounded-2xl border-2 p-5 cursor-pointer hover:opacity-85 transition"
                   style={{ borderColor: done ? '#22c55e' : colors.border, background: colors.cardBg, boxShadow: `3px 3px 0px 0px ${colors.border}` }}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-2xl">{m.icono}</span>
