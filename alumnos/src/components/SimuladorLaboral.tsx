@@ -5,6 +5,9 @@ import { themeColors, Theme } from '../lib/theme';
 import { apiFetch } from '../lib/api';
 import { VERSION, BUILD_HASH } from '../version';
 import Onboarding from './Onboarding';
+import LockScreen from './LockScreen';
+import OsDesktop from './OsDesktop';
+import { osEntryEnabled } from '../lib/bloqueo';
 import Dashboard from './Dashboard';
 import DesktopShell from './DesktopShell';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -1143,6 +1146,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const [monitorHovered, setMonitorHovered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  // TASK-O1: bloqueo tras login/onboarding (antes de la oficina 3D).
+  const [desbloqueado, setDesbloqueado] = useState(false);
   const [evalResult, setEvalResult] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -1438,6 +1443,27 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   return (
     <div ref={containerRef} className="w-full h-[calc(100vh-120px)] relative overflow-hidden rounded-2xl border-2" style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.15)' }}>
+      {/* TASK-O1: entrada OS — bloqueo antes de la oficina */}
+      {!desbloqueado && (
+        <LockScreen
+          nombre={profile?.fullName || profile?.email || 'Practicante'}
+          specialty={specialty}
+          onEnter={() => setDesbloqueado(true)}
+        />
+      )}
+      {/* TASK-O2: con flag ON se salta la escena 3D y se monta el escritorio */}
+      {desbloqueado && osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
+        <OsDesktop
+          theme={theme}
+          tasks={tasks.map(t => ({ id: t.id, title: t.title, type: (t as any).taskType || (t as any).task_type, difficulty: t.difficulty, time: t.estimatedMinutes, isTrap: t.isTrap, trapId: t.trapId }))}
+          onClose={() => { setTasks([]); loadStats(); }}
+          onTaskComplete={loadStats}
+          specialty={specialty}
+          onSpecialtyChange={(s) => { setSpecialty(s as never); fetchJobs(); }}
+        />
+      )}
+      {desbloqueado && !osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
+      <>
       {/* Top bar - SOLO en modo oficina 3D */}
       {viewMode === 'office' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 pointer-events-none">
@@ -1549,6 +1575,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
       {toast && <NotificationToast notif={toast} theme={theme} />}
       {inboxOpen && <NotificationInbox theme={theme} onClose={() => setInboxOpen(false)} notifications={notifications} markAllRead={markAllRead} unreadCount={unreadCount} />}
+      </> // TASK-O1: cierra fragmento desbloqueado
+      )}
     </div>
   );
 }

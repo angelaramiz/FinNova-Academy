@@ -51,6 +51,9 @@ const PowerBISim = lazy(() => import('./PowerBISim'));
 const ForecastSim = lazy(() => import('./ForecastSim'));
 const AgentSim = lazy(() => import('./AgentSim'));
 import Capacitaciones from './Capacitaciones';
+// TASK-O3: ventana OS + personalización persistida.
+import { VentanaOSCondicional } from './OsWindow';
+import { cargarPrefs, guardarPrefs, ordenarApps, FONDOS_OS } from '../lib/bloqueo';
 // TASK-D5: Sims Contalink dedicados (regla dura: tarea real abre su Sim).
 import DIOTSim from '../sims/DIOTSim';
 import ConciliacionSim from '../sims/ConciliacionSim';
@@ -79,17 +82,70 @@ interface CareerPathState {
   breakdown?: { tasks: { done: number; total: number }; sims: { validated: number; total: number }; cases: { done: number; total: number } };
 }
 
-interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; }
+interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; osMode?: boolean; fondo?: string; onFondoChange?: (f: string) => void; screenInicial?: string; }
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso' | 'powerbi' | 'forecast' | 'automation' | 'agent' | 'prompt' |
 'capacitaciones' | 'sim-diot' | 'sim-conciliacion' | 'sim-auditoria' | 'sim-nomina';
 
-export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange }: DesktopShellProps) {
+export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange, osMode = false, fondo, onFondoChange, screenInicial }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering' | 'practicas') || 'accounting';
   const { tutorialActive, tutorialStep, totalSteps, currentStep, nextStep, skipTutorial } = useTutorial(specialty as 'accounting' | 'data_engineering');
   const { addToast } = useToast();
   const colors = themeColors[theme];
   const isDark = theme === 'dark';
-  const [screen, setScreen] = useState<Screen>('desktop');
+  const [screen, setScreen] = useState<Screen>(() => {
+    // TASK-O3: reabrir última app al entrar (solo pantallas seguras).
+    const seguras = ['practicas', 'practicasTracker', 'practicasCurso', 'capacitaciones', 'sql', 'dbt', 'catalog', 'notebook', 'bi', 'sim-diot', 'sim-conciliacion', 'sim-auditoria', 'sim-nomina'];
+    return (screenInicial && (seguras as string[]).includes(screenInicial) ? screenInicial : 'desktop') as Screen;
+  });
+  // TASK-O3: ventana minimizada + móvil + orden de iconos.
+  const [minimizada, setMinimizada] = useState<Screen | null>(null);
+  const [esMovil] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const [orden, setOrden] = useState<string[]>(() => cargarPrefs().ordenIconos);
+
+  // TASK-O3: persistir última app al cambiar de pantalla.
+  useEffect(() => {
+    guardarPrefs({ fondo: fondo ?? cargarPrefs().fondo, ordenIconos: orden, ultimaApp: screen });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+
+  // TASK-O3: al abrir otra app se descarta la minimizada.
+  useEffect(() => {
+    if (screen !== 'desktop') setMinimizada(null);
+  }, [screen]);
+
+  // TASK-O3: títulos de ventana por pantalla (fallback = id).
+  const TITULOS_OS: Record<string, string> = {
+    workflow: 'Tarea', banking: 'Banco', emailInbox: 'Correo', calendar: 'Calendario',
+    calculadora: 'Calculadora', archivo: 'Archivo', spreadsheet: 'Hoja de cálculo',
+    accounting: 'Sistema contable', dashboard: 'Panel', progress: 'Progreso',
+    pipeline: 'Foundry', sql: 'SQL', warehouse: 'Warehouse', monitor: 'Monitoreo',
+    dbt: 'dbt', catalog: 'Catálogo', notebook: 'Notebook', airflow: 'Airflow',
+    cloud: 'Nube', git: 'Git', bi: 'BI', capstone: 'Integrador', api: 'API',
+    dataops: 'DataOps', learning: 'Aprendizaje', stats: 'Estadística', ml: 'ML',
+    routes: 'Rutas', cv: 'Mi CV', interview: 'Entrevista', chronicle: 'Crónica',
+    vacancies: 'Vacantes', careercenter: 'Empleo', practicas: 'Módulos',
+    practicasTracker: 'Tracker', practicasCurso: 'Curso', powerbi: 'Power BI',
+    forecast: 'Pronóstico', automation: 'Automatización', agent: 'Agente',
+    prompt: 'Prompts', capacitaciones: 'Capacitaciones', 'sim-diot': 'DIOT',
+    'sim-conciliacion': 'Conciliación', 'sim-auditoria': 'Auditoría', 'sim-nomina': 'Nómina',
+  };
+
+  // TASK-O3: iconos en el orden guardado (nuevas al final).
+  // Función (no hook): appIcons se define más abajo en el componente.
+  function appsOrdenadas() {
+    return ordenarApps(appIcons.map((a) => ({ id: a.label, ...a })), orden);
+  }
+
+  function moverOrden(label: string, dir: -1 | 1) {
+    const ids = appsOrdenadas().map((a) => a.id);
+    const i = ids.indexOf(label);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    const next = [...ids];
+    [next[i], next[j]] = [next[j], next[i]];
+    setOrden(next);
+    guardarPrefs({ fondo: fondo ?? cargarPrefs().fondo, ordenIconos: next, ultimaApp: screen });
+  }
   const [currentTask, setCurrentTask] = useState<TaskInfo | null>(null);
   const [workflow, setWorkflow] = useState<any>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -109,6 +165,8 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [cfdiData, setCfdiData] = useState<any>(null);
   const [showAccounting, setShowAccounting] = useState(false);
   const [taskDrawerOpen, setTaskDrawerOpen] = useState(true);
+  // TASK-O2: menú inicio de la barra OS.
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [piloto, setPiloto] = useState<boolean | null>(null);
   const prevScreen = useRef<Screen>('desktop');
 
@@ -431,7 +489,7 @@ const appIcons = isPracticas
     : !isData ? accountingApps : appSet === 'engineering' ? engineeringApps : appSet === 'science' ? scienceApps : analystApps;
 
   return (
-    <div className="h-full flex flex-col" style={{ background: colors.bg }}>
+    <div className="h-full flex flex-col" style={{ background: osMode ? 'transparent' : colors.bg }}>
       {tutorialActive && currentStep && (
         <TutorialOverlay
           theme={theme}
@@ -445,7 +503,8 @@ const appIcons = isPracticas
           onSkip={skipTutorial}
         />
       )}
-      {/* Header */}
+      {/* Header (oculto en modo OS: la barra de tareas lo reemplaza) */}
+      {!osMode && (
       <div className="px-3 border-b-2 flex items-center justify-between shrink-0" style={{ borderColor: colors.border, background: isDark ? '#1a1a2e' : '#e5e7eb', height: collapsed ? '26px' : '34px' }}>
         <div className="flex items-center gap-2">
           <button onClick={() => setCollapsed(!collapsed)} className="text-[11px] px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>{collapsed ? '▶' : '◀'}</button>
@@ -457,6 +516,7 @@ const appIcons = isPracticas
           <button onClick={onClose} className="w-4 h-4 rounded flex items-center justify-center text-[11px] cursor-pointer hover:opacity-70" style={{ background: '#ef4444', color: '#fff' }}>✕</button>
         </div>
       </div>
+      )}
 
       {specialty === 'data_engineering' ? (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2 flex-wrap" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
@@ -515,14 +575,27 @@ const appIcons = isPracticas
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden relative" style={{ background: colors.bg }}>
+      <div className="flex-1 overflow-hidden relative" style={{ background: osMode ? 'transparent' : colors.bg }}>
+        <VentanaOSCondicional
+          activa={osMode && screen !== 'desktop' && !minimizada}
+          titulo={TITULOS_OS[screen] ?? screen}
+          movil={esMovil}
+          onCerrar={() => setScreen('desktop')}
+          onMinimizar={() => { setMinimizada(screen); setScreen('desktop'); }}
+        >
         {screen === 'desktop' && (
           <div className="h-full p-4 overflow-auto animate-slide-in">
             <div className="flex gap-5 mb-6 flex-wrap">
-              {appIcons.map((app, i) => (
-                <div key={i} data-app={app.dataApp} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
+              {appsOrdenadas().map((app, i) => (
+                <div key={app.id} data-app={app.dataApp} className="flex flex-col items-center gap-1.5 w-14 cursor-pointer hover:opacity-80 transition" onClick={app.action}>
                   <div className="w-12 h-12 rounded-xl border-2 flex items-center justify-center text-base" style={{ borderColor: colors.border, background: colors.cardBg, boxShadow: `2px 2px 0px 0px ${colors.border}` }}>{app.icon}</div>
                   <span className="text-[11px] font-bold font-mono text-center leading-tight" style={{ color: colors.text }}>{app.label}{app.count && app.count > 0 && app.label !== 'Tareas' ? <span className="ml-0.5" style={{ color: colors.primary }}>({app.count})</span> : null}</span>
+                  {osMode && (
+                    <span className="flex gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); moverOrden(app.id, -1); }} className="text-[9px] px-1 rounded border" style={{ borderColor: colors.border, color: colors.textMuted }} aria-label={`Mover ${app.label} antes`}>◀</button>
+                      <button onClick={(e) => { e.stopPropagation(); moverOrden(app.id, 1); }} className="text-[9px] px-1 rounded border" style={{ borderColor: colors.border, color: colors.textMuted }} aria-label={`Mover ${app.label} después`}>▶</button>
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -771,7 +844,73 @@ const appIcons = isPracticas
             </>)}
           </div>
         )}
+        </VentanaOSCondicional>
       </div>
+      {/* TASK-O2: barra de tareas (solo modo OS) */}
+      {osMode && (
+        <div className="shrink-0 relative">
+          {menuAbierto && (
+            <div className="absolute bottom-full left-2 mb-2 w-56 rounded-xl border-2 overflow-hidden z-50" style={{ borderColor: colors.border, background: colors.cardBg }}>
+              <div className="px-3 py-2 text-[10px] font-bold font-mono" style={{ color: colors.textMuted }}>Aplicaciones</div>
+              {appsOrdenadas().map((app) => (
+                <button
+                  key={app.id}
+                  onClick={() => { setMenuAbierto(false); setMinimizada(null); app.action(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px] hover:opacity-80 cursor-pointer"
+                  style={{ color: colors.text }}
+                >
+                  <span className="text-base">{app.icon}</span>
+                  <span className="font-mono">{app.label}</span>
+                </button>
+              ))}
+              {onFondoChange && (
+                <>
+                  <div className="px-3 py-2 text-[10px] font-bold font-mono" style={{ color: colors.textMuted }}>Fondo</div>
+                  <div className="flex gap-2 px-3 pb-2">
+                    {['default', ...FONDOS_OS].map((f, i) => (
+                      <button
+                        key={i}
+                        onClick={() => onFondoChange(f)}
+                        className="w-8 h-8 rounded-lg border-2 cursor-pointer"
+                        style={{
+                          background: f === 'default' ? 'linear-gradient(160deg, #64748b, #0f172a)' : f,
+                          borderColor: fondo === f ? colors.primary : colors.border,
+                        }}
+                        aria-label={f === 'default' ? 'Fondo por especialidad' : `Fondo ${i}`}
+                        title={f === 'default' ? 'Por especialidad' : `Fondo ${i}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-2 py-1.5 border-t-2" style={{ borderColor: colors.border, background: isDark ? 'rgba(10,15,25,0.85)' : 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}>
+            <button
+              onClick={() => setMenuAbierto((v) => !v)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-base cursor-pointer hover:opacity-80"
+              style={{ background: colors.primary, color: '#1B2632' }}
+              aria-label="Abrir menú de aplicaciones"
+            >
+              ▦
+            </button>
+            <span className="text-[11px] font-mono" style={{ color: colors.text }}>{simHeaderNow()}</span>
+            {minimizada && (
+              <button
+                onClick={() => { const m = minimizada; setMinimizada(null); setScreen(m); }}
+                className="text-[11px] font-mono px-2 py-0.5 rounded-lg border cursor-pointer hover:opacity-80"
+                style={{ borderColor: colors.primary, color: colors.primary }}
+              >
+                ▤ {TITULOS_OS[minimizada] ?? minimizada}
+              </button>
+            )}
+            <span className="ml-auto text-[11px] font-mono flex items-center gap-2" style={{ color: colors.textMuted }}>
+              <span>📶 ●●●</span>
+              <span>🔋 87%</span>
+            </span>
+          </div>
+        </div>
+      )}
       {isPracticas && <Glossary theme={theme} />}
     </div>
   );
