@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ContaLink DIOT - Simulador Educativo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'shake': 'shake 0.4s ease',
+      },
+      keyframes: {
+        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        shake: { '0%,100%': { transform: 'translateX(0)' }, '25%': { transform: 'translateX(-4px)' }, '75%': { transform: 'translateX(4px)' } }
+      }
+    }
+  }
+}
+</script>
+<style>
+@import url('https://cdn.jsdelivr.net/fontsource/inter@5.0.0/latin-400-500-600-700.css');
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; }
+
+.sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.sidebar-item { transition: all 0.15s ease; }
+.sidebar-item:hover { background: #f1f5f9; }
+.dark .sidebar-item:hover { background: #1e293b; }
+.sidebar-item.active { background: #eff6ff; color: #1e40af; border-right: 3px solid #1e40af; }
+.dark .sidebar-item.active { background: #1e3a8a; color: #93c5fd; }
+.sidebar-item.locked { opacity: 0.4; cursor: not-allowed; }
+
+.pilot-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15, 23, 42, 0.88);
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.pilot-overlay.active { opacity: 1; pointer-events: auto; }
+
+.pilot-spotlight {
+  position: absolute;
+  border: 3px solid #3b82f6;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.88), 0 0 40px rgba(59, 130, 246, 0.7);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 101; pointer-events: none;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pilot-tooltip {
+  position: fixed;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  z-index: 102;
+  animation: tooltipSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 420px;
+  width: calc(100% - 32px);
+}
+.dark .pilot-tooltip { background: #1e293b; color: #e2e8f0; }
+@keyframes tooltipSlide {
+  from { opacity: 0; transform: translateY(15px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pilot-tooltip::after {
+  content: ''; position: absolute;
+  width: 0; height: 0;
+  border: 12px solid transparent;
+}
+.pilot-tooltip.pos-top::after { bottom: -24px; left: 30px; border-top-color: white; }
+.dark .pilot-tooltip.pos-top::after { border-top-color: #1e293b; }
+.pilot-tooltip.pos-bottom::after { top: -24px; left: 30px; border-bottom-color: white; }
+.dark .pilot-tooltip.pos-bottom::after { border-bottom-color: #1e293b; }
+.pilot-tooltip.pos-left::after { right: -24px; top: 20px; border-left-color: white; }
+.dark .pilot-tooltip.pos-left::after { border-left-color: #1e293b; }
+.pilot-tooltip.pos-right::after { left: -24px; top: 20px; border-right-color: white; }
+.dark .pilot-tooltip.pos-right::after { border-right-color: #1e293b; }
+
+.pilot-highlight {
+  position: relative; z-index: 103;
+  background: white !important;
+  box-shadow: 0 0 0 4px #3b82f6, 0 0 30px rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  transition: all 0.5s ease;
+}
+.dark .pilot-highlight { background: #1e293b !important; }
+
+.virtual-cursor {
+  position: fixed; width: 32px; height: 32px;
+  background: #3b82f6; border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  z-index: 104; pointer-events: none;
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; align-items: center; justify-content: center;
+}
+.virtual-cursor::after {
+  content: ''; width: 8px; height: 8px;
+  background: white; border-radius: 50%;
+}
+.virtual-cursor.clicking { animation: cursorClick 0.3s ease; }
+@keyframes cursorClick {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.7); }
+}
+
+.step-dot { transition: all 0.2s ease; }
+.step-dot.completed { background: #10b981; }
+.step-dot.current { background: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); }
+.step-dot.pending { background: #cbd5e1; }
+.dark .step-dot.pending { background: #475569; }
+
+.action-simulated { animation: actionPulse 0.5s ease; }
+@keyframes actionPulse {
+  0%, 100% { background-color: inherit; }
+  50% { background-color: #dbeafe; }
+}
+.dark .action-simulated { background-color: #1e3a8a !important; }
+
+.theory-box {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-left: 4px solid #f59e0b;
+}
+.dark .theory-box { background: linear-gradient(135deg, #451a03, #78350f); border-left-color: #f59e0b; }
+.reference-box {
+  background: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+.dark .reference-box { background: #1e3a8a; border-left-color: #60a5fa; }
+
+.error-row { background: #fef2f2 !important; animation: shake 0.4s ease; }
+.dark .error-row { background: #450a0a !important; }
+
+.hint-bubble {
+  position: fixed;
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 50;
+  animation: hintPop 0.3s ease;
+  max-width: 280px;
+}
+.dark .hint-bubble { background: #451a03; border-color: #f59e0b; color: #fef3c7; }
+@keyframes hintPop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.feedback-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 200;
+  animation: slideUp 0.3s ease-out;
+  max-width: 400px;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.feedback-success { background: #10b981; color: white; }
+.feedback-error { background: #ef4444; color: white; }
+.feedback-info { background: #3b82f6; color: white; }
+
+.timer-display { font-variant-numeric: tabular-nums; }
+.timer-warning { animation: timerPulse 1s ease infinite; }
+@keyframes timerPulse {
+  0%, 100% { background-color: #fef3c7; }
+  50% { background-color: #fee2e2; }
+}
+.dark .timer-warning { background-color: #7f1d1d !important; }
+
+.certificate-badge {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+}
+
+@media (max-width: 768px) {
+  .pilot-tooltip { max-width: calc(100% - 24px); padding: 16px; }
+  .pilot-tooltip h3 { font-size: 15px; }
+  .pilot-tooltip p { font-size: 13px; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+.dark ::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors">
+
+<div id="app" class="flex h-screen overflow-hidden">
+  <aside class="sidebar w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col flex-shrink-0 hidden md:flex">
+    <div class="p-5 border-b border-slate-200 dark:border-slate-700">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i data-lucide="link" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-bold text-lg text-slate-800 dark:text-white">contalink</span>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Simulador Educativo</p>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-3">
+      <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Módulo DIOT</div>
+      <a id="menuPiloto" class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer" onclick="selectMode('piloto')">
+        <i data-lucide="play-circle" class="w-4 h-4"></i>
+        <span>Modo Piloto</span>
+        <span id="pilotoBadge" class="ml-auto text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hidden">✓</span>
+      </a>
+      <a id="menuPractica" class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer" onclick="selectMode('practica')">
+        <i data-lucide="target" class="w-4 h-4"></i>
+        <span>Modo Práctica</span>
+        <span id="practicaBadge" class="ml-auto text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hidden">✓</span>
+      </a>
+      <a id="menuExamen" class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer locked" onclick="selectMode('examen')">
+        <i data-lucide="lock" class="w-4 h-4"></i>
+        <span>Modo Examen</span>
+      </a>
+      
+      <div class="px-4 py-2 mt-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Contabilidad</div>
+      <a class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        <span>Dashboard</span>
+      </a>
+      <a class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer">
+        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+        <span>DIOT</span>
+      </a>
+      <div class="px-4 py-2 mt-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">SAT · Anexo 24</div>
+      <div class="px-4 pb-2">
+        <input id="sat-q" type="text" placeholder="Buscar agrupador…" class="w-full text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900" oninput="buscarAgrupador(this.value)">
+        <div id="sat-res" class="mt-1 max-h-40 overflow-auto text-[11px] space-y-1"></div>
+        <div class="mt-1 text-[10px] text-slate-500">IVA acreditable → <b>118.01</b> · IVA por pagar → <b>213.01</b> · Retenido → <b>216.10</b></div>
+      </div>
+    </nav>
+
+    <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">AA</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium truncate">Angel Aramiz</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Practicante · Nivel 1</div>
+        </div>
+        <button onclick="toggleDarkMode()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg" aria-label="Cambiar tema">
+          <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col overflow-hidden min-w-0">
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 sm:px-6 py-3 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <div class="flex items-center gap-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 min-w-0">
+          <span class="hidden sm:inline">Contabilidad</span>
+          <span class="hidden sm:inline">/</span>
+          <span class="hidden sm:inline">Reportes</span>
+          <span class="hidden sm:inline">/</span>
+        </div>
+        <div id="headerTitle" class="text-sm font-semibold text-blue-700 dark:text-blue-400 flex-shrink-0 truncate">DIOT</div>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <div id="modeBadge" class="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <i data-lucide="eye" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400"></i>
+          <span class="text-xs text-blue-700 dark:text-blue-300 font-medium">Observando</span>
+        </div>
+        <div id="timerDisplay" class="hidden items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <i data-lucide="clock" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400"></i>
+          <span id="timerValue" class="text-xs text-amber-700 dark:text-amber-300 font-medium timer-display">05:00</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="content" class="flex-1 overflow-y-auto p-3 sm:p-6">
+      <div id="diotInterface" class="animate-fade-in space-y-3 sm:space-y-6">
+        <div id="spot-banner" class="bg-gradient-to-br from-blue-700 to-blue-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-32 h-32 sm:w-64 sm:h-64 bg-white/5 rounded-full -mr-10 -mt-10 sm:-mr-20 sm:-mt-20"></div>
+          <div class="relative z-10">
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <span class="px-2 py-1 bg-white/20 rounded text-xs font-medium">Reporte DIOT</span>
+              <span id="periodoBadge" class="px-2 py-1 bg-green-500/20 rounded text-xs font-medium">Enero 2026</span>
+              <span class="px-2 py-1 bg-blue-500/20 rounded text-xs font-medium">54 columnas</span>
+            </div>
+            <h1 class="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">Declaración Informativa de Operaciones con Terceros</h1>
+            <p id="empresaNombre" class="text-blue-100 text-xs sm:text-sm">Reporte generado automáticamente.</p>
+          </div>
+        </div>
+
+        <div id="spot-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 dark:text-blue-400"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+            </div>
+            <div id="statOps" class="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">8</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">Operaciones</div>
+          </div>
+          <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 dark:text-green-400"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div id="statMonto" class="text-base sm:text-2xl font-bold text-slate-800 dark:text-white">$892k</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">Base gravable</div>
+          </div>
+          <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600 dark:text-amber-400"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+            </div>
+            <div id="statIva" class="text-base sm:text-2xl font-bold text-slate-800 dark:text-white">$142k</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">IVA acreditable</div>
+          </div>
+          <div class="stat-card bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600 dark:text-purple-400"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div id="statEstado" class="text-base sm:text-2xl font-bold text-purple-600 dark:text-purple-400">Listo</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1">Para revisar</div>
+          </div>
+        </div>
+
+        <div id="spot-actions" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <span class="hidden sm:inline">Excel agrupado</span><span class="sm:hidden">Agrupado</span>
+            </button>
+            <button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <span class="hidden sm:inline">Excel detalle</span><span class="sm:hidden">Detalle</span>
+            </button>
+            <button class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span class="hidden sm:inline">Descargar TXT</span><span class="sm:hidden">TXT</span>
+            </button>
+          </div>
+          <button id="btn-presentar" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-xs sm:text-sm font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Presentar declaración
+          </button>
+        </div>
+
+        <div id="spot-table" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div class="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-semibold text-slate-800 dark:text-white text-sm sm:text-base">Operaciones con terceros</h3>
+            <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Datos generados automáticamente. Revisa antes de enviar.</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs sm:text-sm min-w-[700px]">
+              <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Fecha</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">RFC</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Nombre</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Tipo</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Monto</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-right font-semibold text-slate-600 dark:text-slate-400">IVA</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-center font-semibold text-slate-600 dark:text-slate-400">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="operationsBody"></tbody>
+              <tfoot class="bg-slate-50 dark:bg-slate-900/50 border-t-2 border-slate-300 dark:border-slate-600">
+                <tr>
+                  <td colspan="5" class="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">TOTALES</td>
+                  <td id="totalMonto" class="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-xs sm:text-sm text-slate-800 dark:text-white">$892,130.50</td>
+                  <td id="totalIva" class="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-slate-800 dark:text-white text-xs sm:text-sm">$142,740.88</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 sm:p-5">
+          <div class="flex items-start gap-2 sm:gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>
+              <h4 class="font-semibold text-blue-900 dark:text-blue-200 mb-1 text-sm sm:text-base">¿Cómo se genera este reporte?</h4>
+              <ul class="text-xs sm:text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                <li>• Se alimenta automáticamente de facturas de egresos, notas de crédito conciliadas y pólizas</li>
+                <li>• Toma la fecha de pago/conciliación, no la fecha de la factura</li>
+                <li>• Puedes cuadrarlo contra la Hoja de Trabajo para Impuestos</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="pilotOverlay" class="pilot-overlay">
+  <div id="pilotSpotlight" class="pilot-spotlight"></div>
+  <div id="pilotTooltip" class="pilot-tooltip"></div>
+  <div id="virtualCursor" class="virtual-cursor hidden"></div>
+</div>
+
+<div id="startModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full animate-slide-up overflow-hidden max-h-[90vh] overflow-y-auto">
+    <div id="startHeader" class="bg-gradient-to-br from-blue-700 to-indigo-800 p-6 text-white">
+      <div class="flex items-center gap-3 mb-3">
+        <div id="startIcon" class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        </div>
+        <div>
+          <div id="startPhase" class="text-xs text-blue-200 uppercase tracking-wider">Fase 1 de 3</div>
+          <h2 id="startTitle" class="text-xl font-bold">Modo Piloto Automático</h2>
+        </div>
+      </div>
+      <p id="startDesc" class="text-sm text-blue-100">El sistema ejecutará el flujo completo. Tú solo observas y avanzas.</p>
+    </div>
+    
+    <div class="p-6 space-y-4">
+      <div id="startFeatures" class="space-y-3"></div>
+      
+      <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+        <div class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Escenario de práctica:</div>
+        <div id="scenarioInfo" class="text-xs text-slate-600 dark:text-slate-400 font-mono space-y-0.5"></div>
+      </div>
+    </div>
+    
+    <div class="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+      <button id="startBtn" onclick="startMode()" class="px-6 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span id="startBtnText">Iniciar Modo Piloto</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="completionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full animate-slide-up overflow-hidden">
+    <div id="completionHeader" class="bg-gradient-to-br from-green-600 to-emerald-700 p-6 text-white">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        </div>
+        <div>
+          <div class="text-xs text-green-200 uppercase tracking-wider">¡Completado!</div>
+          <h2 id="completionTitle" class="text-xl font-bold">Modo Piloto Finalizado</h2>
+        </div>
+      </div>
+    </div>
+    
+    <div class="p-6 space-y-4">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-center">
+          <div id="compSteps" class="text-2xl font-bold text-slate-800 dark:text-white">8/8</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Pasos</div>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-center">
+          <div id="compTime" class="text-2xl font-bold text-slate-800 dark:text-white">~4:30</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Tiempo</div>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-center">
+          <div id="compScore" class="text-2xl font-bold text-green-600 dark:text-green-400">✓</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">Puntaje</div>
+        </div>
+      </div>
+      
+      <div id="certificateSection" class="hidden certificate-badge rounded-lg p-4 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span class="font-bold text-white text-sm">¡CERTIFICADO DIOT BÁSICO!</span>
+        </div>
+        <div class="text-xs text-white/90">Has demostrado competencia en la presentación de DIOT</div>
+      </div>
+      
+      <div id="completionNext" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+        <div class="flex items-start gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.5.5 2.5 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
+          <div>
+            <div class="font-semibold text-amber-900 dark:text-amber-200 text-sm mb-1">¿Qué sigue?</div>
+            <div id="completionNextText" class="text-xs text-amber-800 dark:text-amber-300">Ahora harás el mismo flujo en Modo Práctica con datos diferentes.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-2">
+        <button onclick="location.reload()" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">
+          Repetir
+        </button>
+        <button id="nextModeBtn" onclick="goToNextMode()" class="flex-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span id="nextModeText">Ir a Práctica</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ SCENARIO ENGINE ============
+const EMPRESAS = [
+  { nombre: 'DISTRIBUIDORA DE ALIMENTOS DEL NORTE SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'SERVICIOS LEGALES Y FISCALES INTEGRADOS SC', regimen: '612', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
+  { nombre: 'TECNOLOGIA Y SISTEMAS AVANZADOS SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'CONSTRUCCIONES Y DESARROLLOS URBANOS SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'TRANSPORTES Y LOGISTICA DEL PACIFICO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'PRODUCTOS QUIMICOS INDUSTRIALES SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'MATERIALES ELECTRICOS Y COMPONENTES SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'AGROINDUSTRIAL DEL VALLE DE MEXICO SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'TEXTILES Y CONFECCIONES DEL SUR SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'AUTOMOTRIZ Y REFACCIONES PREMIUM SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'FARMACEUTICA NACIONAL SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'PAPELERIA Y EMPAQUES DEL CENTRO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'METALURGICA Y ACEROS INDUSTRIALES SA', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'ALIMENTOS Y BEBIDAS DEL BAJIO SA DE CV', regimen: '601', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PM' },
+  { nombre: 'CONSULTORIA EMPRESARIAL MODERNA SC', regimen: '612', pais: 'MX', nacionalidad: 'Nacional', tipoContraparte: 'PF' },
+  { nombre: 'GLOBAL TECH SOLUTIONS INC', regimen: '601', pais: 'US', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+  { nombre: 'EUROPEAN INDUSTRIAL SUPPLIES GMBH', regimen: '601', pais: 'DE', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+  { nombre: 'ASIA PACIFIC TRADING CO LTD', regimen: '601', pais: 'CN', nacionalidad: 'Extranjero', tipoContraparte: 'PM' },
+];
+
+const TIPOS_OP = {
+  1: { label: 'Bienes', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+  2: { label: 'Servicios', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+  3: { label: 'Arrendamiento', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+  4: { label: 'Fideicomisos', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+  5: { label: 'Extranjeros', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' }
+};
+
+const TASAS_IVA = { '16': 0.16, '8': 0.08, '0': 0, 'exento': 0 };
+
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randItem = arr => arr[Math.floor(Math.random() * arr.length)];
+const pad2 = n => n.toString().padStart(2, '0');
+
+function generarRFCValido() {
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const alfanum = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let rfc = '';
+  for (let i = 0; i < 3; i++) rfc += letras[rand(0, 25)];
+  rfc += pad2(rand(90, 99)) + pad2(rand(1, 12)) + pad2(rand(1, 28));
+  for (let i = 0; i < 3; i++) rfc += alfanum[rand(0, 35)];
+  return rfc;
+}
+
+function generarRFCInvalido(tipo) {
+  return { 'corto': 'CORP850622AB', 'formato': '1234567890123', 'fecha': 'CORP132599AB3', 'homoclave': 'CORP850622000' }[tipo] || 'INVALIDO';
+}
+
+function calcularIVA(monto, tasa) {
+  return Math.round(monto * TASAS_IVA[tasa] * 100) / 100;
+}
+
+function generarScenarioDIOT(fase, nivel = 1) {
+  const empresaBase = EMPRESAS[rand(0, 13)];
+  const empresa = { ...empresaBase, rfc: generarRFCValido() };
+  
+  const cantOps = [8, 12, 15][nivel - 1];
+  const cantErrores = { piloto: 0, practica: 2, examen: 4 }[fase] || 0;
+  
+  const operaciones = [];
+  const erroresInyectados = [];
+  const tiposOp = [1, 2, 3, 4, 5];
+  const tasas = ['16', '8', '0', 'exento'];
+  const origenes = ['Factura', 'Nota de crédito', 'Póliza'];
+  
+  for (let i = 0; i < cantOps; i++) {
+    const tipo = randItem(tiposOp);
+    const tasa = randItem(tasas);
+    const origen = randItem(origenes);
+    
+    const pool = tipo === 5 ? EMPRESAS.filter(e => e.nacionalidad === 'Extranjero') : EMPRESAS.filter(e => e.nacionalidad === 'Nacional');
+    const empresaOp = randItem(pool);
+    
+    const monto = rand(5000, 300000);
+    const iva = calcularIVA(monto, tasa);
+    
+    operaciones.push({
+      id: i + 1,
+      rfc: generarRFCValido(),
+      nombre: empresaOp.nombre,
+      pais: empresaOp.pais,
+      nacionalidad: empresaOp.nacionalidad,
+      tipoContraparte: empresaOp.tipoContraparte,
+      tipo, tasa, monto, iva,
+      origen,
+      folio: `${origen === 'Factura' ? 'A' : origen === 'Nota de crédito' ? 'NC' : 'POL'}-${rand(1000, 9999)}`,
+      fecha: `${pad2(rand(1, 28))}/01/2026`,
+    });
+  }
+  
+  if (cantErrores > 0) {
+    const tiposError = ['rfc', 'monto', 'iva', 'tipo', 'tasa', 'nacionalidad'];
+    const usados = new Set();
+    
+    for (let i = 0; i < cantErrores; i++) {
+      let opIndex;
+      do { opIndex = rand(0, operaciones.length - 1); } while (usados.has(opIndex));
+      usados.add(opIndex);
+      
+      const op = operaciones[opIndex];
+      const tipoError = randItem(tiposError);
+      
+      switch (tipoError) {
+        case 'rfc': {
+          const subtipo = randItem(['corto', 'formato', 'fecha', 'homoclave']);
+          const rfcMal = generarRFCInvalido(subtipo);
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'rfc',
+            error: 'RFC inválido',
+            pista: `El RFC "${rfcMal}" no tiene el formato correcto. Debe tener 13 caracteres: 3 letras + 6 fecha + 3 homoclave.`,
+            valorIncorrecto: rfcMal, valorCorrecto: op.rfc
+          });
+          op.rfc = rfcMal;
+          break;
+        }
+        case 'monto': {
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'monto',
+            error: 'Monto negativo',
+            pista: `El monto de $${op.monto} aparece como negativo. En DIOT todos los montos deben ser positivos.`,
+            valorIncorrecto: op.monto * -1, valorCorrecto: op.monto
+          });
+          op.monto = op.monto * -1;
+          break;
+        }
+        case 'iva': {
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'iva',
+            error: 'IVA incorrecto',
+            pista: `El IVA no coincide con la tasa ${op.tasa}%. Debería ser $${calcularIVA(Math.abs(op.monto), op.tasa)}.`,
+            valorIncorrecto: op.iva * 2, valorCorrecto: op.iva
+          });
+          op.iva = op.iva * 2;
+          break;
+        }
+        case 'tipo': {
+          const tipoMal = ((op.tipo % 5) + 1);
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'tipo',
+            error: 'Tipo de operación incorrecto',
+            pista: `Esta operación es "${TIPOS_OP[op.tipo].label}" pero está marcada como "${TIPOS_OP[tipoMal].label}".`,
+            valorIncorrecto: tipoMal, valorCorrecto: op.tipo
+          });
+          op.tipo = tipoMal;
+          break;
+        }
+        case 'tasa': {
+          const tasaMal = op.tasa === '16' ? '0' : '16';
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'tasa',
+            error: 'Tasa de IVA incorrecta',
+            pista: `La tasa ${tasaMal}% no corresponde a esta operación. Debería ser ${op.tasa}%.`,
+            valorIncorrecto: tasaMal, valorCorrecto: op.tasa
+          });
+          op.tasa = tasaMal;
+          op.iva = calcularIVA(Math.abs(op.monto), tasaMal);
+          break;
+        }
+        case 'nacionalidad': {
+          const nacMal = op.nacionalidad === 'Nacional' ? 'Extranjero' : 'Nacional';
+          erroresInyectados.push({
+            operacionId: op.id, campo: 'nacionalidad',
+            error: 'Nacionalidad incorrecta',
+            pista: `Este proveedor es ${op.nacionalidad} pero aparece como ${nacMal}.`,
+            valorIncorrecto: nacMal, valorCorrecto: op.nacionalidad
+          });
+          op.nacionalidad = nacMal;
+          break;
+        }
+      }
+    }
+  }
+  
+  return { empresa, operaciones, erroresInyectados, cantErrores };
+}
+
+// ============ STATE ============
+const state = {
+  mode: 'piloto',
+  scenario: null,
+  startTime: null,
+  timerInterval: null,
+  practice: {
+    encontrados: 0,
+    totales: 0,
+    hints: 0,
+    eliminaciones: [],
+    lastAction: null,
+  },
+  exam: {
+    timeLimit: 300,
+    timeRemaining: 300,
+  },
+  pilot: { active: false, step: 0 },
+  practiceMode: { active: false, step: 0 },
+  examMode: { active: false },
+};
+
+// ============ PILOT STEPS ============
+const PILOT_STEPS = [
+  {
+    selector: '#spot-banner', position: 'bottom',
+    titulo: '🎯 Bienvenido al Reporte DIOT',
+    descripcion: 'Este es el módulo de Declaración Informativa de Operaciones con Terceros. ContaLink genera este reporte automáticamente a partir de tus facturas de egresos, notas de crédito conciliadas y pólizas contables.',
+    teoria: 'El DIOT es una declaración informativa mensual que deben presentar las personas físicas y morales que realicen actividades empresariales, según el Art. 32 del Código Fiscal de la Federación (CFF).',
+    referencia: 'Art. 32 CFF · Anexo 1-A Resolución Miscelánea Fiscal 2025',
+    accion: null, accionLabel: 'Observando el banner'
+  },
+  {
+    selector: '#spot-stats', position: 'bottom',
+    titulo: '📊 Panel de Métricas',
+    descripcion: 'Aquí ves el resumen: total de operaciones, base gravable e IVA acreditable. El sistema calcula estos totales automáticamente.',
+    teoria: 'El DIOT 2025 tiene 54 columnas (vs 23 en 2024). Nuevos campos: nacionalidad, tipo de contraparte (PF/PM), tasa de IVA y desglose de impuestos acreditables vs no acreditables.',
+    referencia: 'Modificación SAT 2025 · 54 columnas obligatorias',
+    accion: () => {
+      document.querySelectorAll('#spot-stats .stat-card').forEach((c, i) => {
+        setTimeout(() => { c.classList.add('action-simulated'); setTimeout(() => c.classList.remove('action-simulated'), 500); }, i * 250);
+      });
+    },
+    accionLabel: 'Resaltando métricas'
+  },
+  {
+    selector: '#spot-table', position: 'top',
+    titulo: '📋 Tabla de Operaciones',
+    descripcion: 'Esta tabla muestra las operaciones generadas automáticamente. Cada fila es una factura o nota de crédito conciliada. Los datos NO se editan aquí — solo se revisan.',
+    teoria: 'El reporte DIOT se alimenta de la conciliación bancaria. Toma la FECHA DE PAGO, no la fecha de la factura. Una factura de diciembre pagada en enero aparece en el DIOT de enero.',
+    referencia: 'Art. 32 CFF · Fecha de pago vs fecha de factura',
+    accion: () => {
+      document.querySelectorAll('#operationsBody tr').forEach((r, i) => {
+        setTimeout(() => { r.style.backgroundColor = '#dbeafe'; setTimeout(() => { r.style.backgroundColor = ''; }, 400); }, i * 150);
+      });
+    },
+    accionLabel: 'Recorriendo operaciones'
+  },
+  {
+    selector: '#operationsBody', position: 'left',
+    titulo: '🔍 Campos Clave',
+    descripcion: 'Observa: Fecha de pago, RFC (13 caracteres), Nombre, Tipo de operación (1-5), Monto base e IVA. Cada campo tiene reglas específicas del SAT.',
+    teoria: 'Tipos de operación DIOT:\n• Tipo 1: Adquisición de bienes\n• Tipo 2: Adquisición de servicios\n• Tipo 3: Arrendamiento\n• Tipo 4: Fideicomisos\n• Tipo 5: Pagos a extranjeros',
+    referencia: 'Anexo 1-A RMF · Catálogo de tipos de operación',
+    accion: () => {
+      const first = document.querySelector('#operationsBody tr');
+      if (first) { first.style.backgroundColor = '#fef3c7'; setTimeout(() => { first.style.backgroundColor = ''; }, 1200); }
+    },
+    accionLabel: 'Analizando primera operación'
+  },
+  {
+    selector: '#spot-actions', position: 'bottom',
+    titulo: '⚙️ Opciones de Descarga',
+    descripcion: 'Descarga en 3 formatos: Excel agrupado por RFC (resumido), Excel a detalle (todas las operaciones), o TXT (formato oficial SAT).',
+    teoria: 'El archivo TXT es el formato oficial del SAT. Para 2025 debe contener 54 columnas separadas por pipe (|). ContaLink lo genera automáticamente.',
+    referencia: 'Portal SAT · Formato TXT DIOT 2025',
+    accion: () => {
+      document.querySelectorAll('#spot-actions button').forEach((b, i) => {
+        setTimeout(() => { b.classList.add('action-simulated'); setTimeout(() => b.classList.remove('action-simulated'), 400); }, i * 300);
+      });
+    },
+    accionLabel: 'Mostrando descargas'
+  },
+  {
+    selector: '#btn-presentar', position: 'top',
+    titulo: '📤 Presentar Declaración',
+    descripcion: 'Este botón abre el modal de envío. Configurarás: (1) Tipo: Normal o Complementaria, (2) Envío: Con revisión previa o Definitivo, (3) Dato: Con datos o En ceros.',
+    teoria: 'Normal: primera declaración del periodo. Complementaria: corrige una normal previa. Con revisión previa: ContaLink prepara y tú confirmas. Definitivo: envío inmediato.',
+    referencia: 'Art. 32 CFF · Tipos de declaración DIOT',
+    accion: () => {
+      const btn = document.getElementById('btn-presentar');
+      btn.classList.add('action-simulated');
+      setTimeout(() => btn.classList.remove('action-simulated'), 600);
+    },
+    accionLabel: 'Simulando clic en enviar'
+  },
+  {
+    selector: '#spot-table', position: 'top',
+    titulo: '✅ Revisión Final',
+    descripcion: 'Antes de enviar, ContaLink valida: RFCs válidos (13 caracteres), montos positivos, IVA correcto según tasa, campos obligatorios. Si hay errores, los marca en rojo.',
+    teoria: 'Validaciones automáticas:\n• RFC: 3 letras + 6 fecha + 3 homoclave\n• Monto: positivo, máximo 2 decimales\n• IVA: debe coincidir con tasa × monto\n• Nacionalidad: Nacional o Extranjero',
+    referencia: 'Validación SAT · Catálogo de errores E01-E22',
+    accion: () => {
+      document.querySelectorAll('#operationsBody tr').forEach((r, i) => {
+        setTimeout(() => { r.style.backgroundColor = '#dcfce7'; setTimeout(() => { r.style.backgroundColor = ''; }, 300); }, i * 100);
+      });
+    },
+    accionLabel: 'Validando operaciones'
+  },
+  {
+    selector: '#spot-banner', position: 'bottom',
+    titulo: '🎉 ¡Flujo Completado!',
+    descripcion: 'Has observado el flujo completo. En Modo Práctica harás esto con datos diferentes y deberás identificar 2 errores intencionales.',
+    teoria: 'Recuerda: el DIOT se presenta dentro de los primeros 15 días del mes siguiente. Para Enero 2026, el plazo es hasta el 15 de febrero de 2026.',
+    referencia: 'Art. 32 CFF · Plazo de presentación: 15 días',
+    accion: null, accionLabel: 'Resumen final'
+  }
+];
+
+const PRACTICE_STEPS = [
+  {
+    selector: '#spot-banner', position: 'bottom',
+    titulo: '🎯 Tu Turno: Revisa el Reporte',
+    descripcion: 'Este escenario tiene 2 errores intencionales. Identifícalos y elimínalos con el botón de papelera en cada fila.',
+    teoria: 'En la vida real, el contador revisa el reporte y elimina operaciones que no deben ir en el DIOT (pagos personales, facturas canceladas, errores de conciliación).',
+    referencia: 'Flujo real ContaLink · Revisión → Eliminación → Envío',
+    accion: null, accionLabel: 'Instrucciones'
+  },
+  {
+    selector: '#spot-table', position: 'top',
+    titulo: ' Busca los Errores',
+    descripcion: 'Revisa: RFCs inválidos (<13 caracteres o formato incorrecto), montos negativos, IVA que no coincida con la tasa, tipos de operación incorrectos.',
+    teoria: 'Pistas:\n• RFC válido: 3 letras + 6 números + 3 alfanuméricos = 13 caracteres\n• Monto: siempre positivo en DIOT\n• IVA: debe ser monto × tasa (16%, 8%, 0% o exento)\n• Tipo: debe corresponder a la operación real',
+    referencia: 'Validación SAT · Errores comunes E01-E22',
+    accion: null, accionLabel: 'Analizando tabla'
+  },
+  {
+    selector: '#spot-actions', position: 'bottom',
+    titulo: '📤 Cuando Estés Listo',
+    descripcion: 'Una vez eliminadas las operaciones incorrectas, haz clic en "Presentar declaración". El sistema validará que hayas encontrado todos los errores.',
+    teoria: 'Si intentas enviar con errores sin eliminar, el sistema te indicará cuántos faltan. Debes eliminar TODAS las incorrectas antes de enviar.',
+    referencia: 'Flujo ContaLink · Validación previa al envío',
+    accion: null, accionLabel: 'Instrucciones finales'
+  }
+];
+
+const EXAM_INTRO = [
+  {
+    selector: '#spot-banner', position: 'bottom',
+    titulo: ' Modo Examen',
+    descripcion: 'Desafío final: 4 errores sutiles en 5 minutos. Sin pistas ni ayuda. Demuestra tu competencia profesional.',
+    teoria: 'El examen simula una situación real donde el contador debe auditar el reporte DIOT de forma autónoma, identificando errores que podrían causar rechazo del SAT.',
+    referencia: 'Evaluación de competencia · Nivel profesional',
+    accion: null, accionLabel: 'Instrucciones del examen'
+  }
+];
+
+// ============ UI FUNCTIONS ============
+function populateOperations(operaciones, showDelete = false) {
+  const tbody = document.getElementById('operationsBody');
+  if (!tbody) return;
+  
+  const fragment = document.createDocumentFragment();
+  
+  operaciones.forEach(op => {
+    const tr = document.createElement('tr');
+    tr.id = `row-${op.id}`;
+    tr.className = 'border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors';
+    if (op.monto < 0) tr.classList.add('error-row');
+    tr.dataset.opId = op.id;
+    
+    tr.innerHTML = `
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs text-slate-600 dark:text-slate-400">${op.fecha}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 font-mono text-[10px] sm:text-xs text-slate-700 dark:text-slate-300">${op.rfc}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-slate-800 dark:text-slate-200 max-w-[150px] sm:max-w-none truncate">${op.nombre}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3"><span class="badge ${TIPOS_OP[op.tipo].color} text-[10px] sm:text-xs px-2 py-0.5 rounded">${TIPOS_OP[op.tipo].label}</span></td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-right font-mono text-[10px] sm:text-xs ${op.monto < 0 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-800 dark:text-slate-200'}">$${Math.abs(op.monto).toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-right font-mono text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">$${op.iva.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-center">
+        ${showDelete ? `<button onclick="eliminarOperacion(${op.id})" class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Eliminar operación" aria-label="Eliminar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` : '<span class="text-xs text-slate-400 dark:text-slate-600">—</span>'}
+      </td>
+    `;
+    fragment.appendChild(tr);
+  });
+  
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
+  updateStats();
+}
+
+function updateStats() {
+  if (!state.scenario) return;
+  
+  const ops = state.scenario.operaciones.filter(op => !state.practice.eliminaciones.includes(op.id));
+  const totalMonto = ops.reduce((s, o) => s + Math.abs(o.monto), 0);
+  const totalIva = ops.reduce((s, o) => s + o.iva, 0);
+  
+  const statOps = document.getElementById('statOps');
+  const statMonto = document.getElementById('statMonto');
+  const statIva = document.getElementById('statIva');
+  const totalMontoEl = document.getElementById('totalMonto');
+  const totalIvaEl = document.getElementById('totalIva');
+  
+  if (statOps) statOps.textContent = ops.length;
+  if (statMonto) statMonto.textContent = `$${(totalMonto/1000).toFixed(0)}k`;
+  if (statIva) statIva.textContent = `$${(totalIva/1000).toFixed(0)}k`;
+  if (totalMontoEl) totalMontoEl.textContent = `$${totalMonto.toLocaleString('es-MX',{minimumFractionDigits:2})}`;
+  if (totalIvaEl) totalIvaEl.textContent = `$${totalIva.toLocaleString('es-MX',{minimumFractionDigits:2})}`;
+}
+
+function showFeedback(msg, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `feedback-toast feedback-${type}`;
+  toast.setAttribute('role', 'alert');
+  toast.innerHTML = `<div class="flex items-center gap-2"><span class="text-sm">${msg}</span></div>`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+function showHint(pista) {
+  state.practice.hints++;
+  const hint = document.createElement('div');
+  hint.className = 'hint-bubble';
+  hint.style.bottom = '80px';
+  hint.style.right = '20px';
+  hint.innerHTML = `
+    <div class="flex items-start gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.5.5 2.5 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
+      <div>
+        <div class="text-xs font-semibold text-amber-900 dark:text-amber-200 mb-1">💡 Pista</div>
+        <div class="text-xs text-amber-800 dark:text-amber-300">${pista}</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(hint);
+  setTimeout(() => { hint.style.opacity = '0'; setTimeout(() => hint.remove(), 300); }, 6000);
+}
+
+function toggleDarkMode() {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+}
+
+// ============ MODE SELECTION ============
+function selectMode(mode) {
+  if (mode === 'examen') {
+    const pilotoOk = localStorage.getItem('diot_piloto') === 'true';
+    const practicaOk = localStorage.getItem('diot_practica') === 'true';
+    if (!pilotoOk || !practicaOk) {
+      showFeedback('Completa Piloto y Práctica primero para desbloquear el Examen', 'error');
+      return;
+    }
+  }
+  
+  state.mode = mode;
+  document.getElementById('menuPiloto').classList.toggle('active', mode === 'piloto');
+  document.getElementById('menuPractica').classList.toggle('active', mode === 'practica');
+  document.getElementById('menuExamen').classList.toggle('active', mode === 'examen');
+  showStartModal(mode);
+}
+
+function showStartModal(mode) {
+  const header = document.getElementById('startHeader');
+  const icon = document.getElementById('startIcon');
+  const phase = document.getElementById('startPhase');
+  const title = document.getElementById('startTitle');
+  const desc = document.getElementById('startDesc');
+  const features = document.getElementById('startFeatures');
+  const scenarioInfo = document.getElementById('scenarioInfo');
+  const btnText = document.getElementById('startBtnText');
+  
+  const configs = {
+    piloto: {
+      header: 'bg-gradient-to-br from-blue-700 to-indigo-800',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>',
+      phase: 'Fase 1 de 3',
+      title: 'Modo Piloto Automático',
+      desc: 'El sistema ejecutará el flujo completo. Tú solo observas y avanzas.',
+      btn: 'Iniciar Modo Piloto',
+      features: [
+        { icon: 'eye', color: 'blue', title: 'Observa el flujo', desc: 'Verás cada paso con explicación teórica' },
+        { icon: 'book-open', color: 'green', title: 'Aprende la teoría', desc: 'Cada paso incluye referencias legales' },
+        { icon: 'clock', color: 'amber', title: 'Duración estimada', desc: '~5 minutos · 8 pasos guiados' }
+      ]
+    },
+    practica: {
+      header: 'bg-gradient-to-br from-green-600 to-emerald-700',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      phase: 'Fase 2 de 3',
+      title: 'Modo Práctica',
+      desc: 'Tú harás el flujo. Identifica y elimina los errores intencionales.',
+      btn: 'Iniciar Modo Práctica',
+      features: [
+        { icon: 'search', color: 'green', title: 'Encuentra 2 errores', desc: 'Inyectados intencionalmente en los datos' },
+        { icon: 'trash-2', color: 'blue', title: 'Elimina los incorrectos', desc: 'Usa el botón de papelera en cada fila' },
+        { icon: 'lightbulb', color: 'amber', title: 'Pistas disponibles', desc: 'Si te atascas, recibirás ayuda automática' }
+      ]
+    },
+    examen: {
+      header: 'bg-gradient-to-br from-purple-600 to-indigo-700',
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+      phase: 'Fase 3 de 3',
+      title: 'Modo Examen',
+      desc: 'Desafío final: 4 errores sutiles, 5 minutos, sin pistas.',
+      btn: 'Iniciar Modo Examen',
+      features: [
+        { icon: 'clock', color: 'purple', title: '5 minutos límite', desc: 'Cronómetro en tiempo real' },
+        { icon: 'search', color: 'red', title: '4 errores sutiles', desc: 'Más difíciles de detectar' },
+        { icon: 'trophy', color: 'amber', title: 'Certificado al 90/100', desc: 'Demuestra competencia profesional' }
+      ]
+    }
+  };
+  
+  const cfg = configs[mode];
+  header.className = `${cfg.header} p-6 text-white`;
+  icon.innerHTML = cfg.icon;
+  phase.textContent = cfg.phase;
+  title.textContent = cfg.title;
+  desc.textContent = cfg.desc;
+  btnText.textContent = cfg.btn;
+  
+  features.innerHTML = cfg.features.map(f => `
+    <div class="flex items-start gap-3">
+      <div class="w-8 h-8 bg-${f.color}-100 dark:bg-${f.color}-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-${f.color}-600 dark:text-${f.color}-400"><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+      <div>
+        <div class="font-semibold text-slate-800 dark:text-white text-sm">${f.title}</div>
+        <div class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">${f.desc}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  state.scenario = generarScenarioDIOT(mode, 1);
+  state.practice = {
+    encontrados: 0,
+    totales: state.scenario.cantErrores,
+    hints: 0,
+    eliminaciones: [],
+    lastAction: Date.now(),
+  };
+  
+  document.getElementById('empresaNombre').textContent = state.scenario.empresa.nombre;
+  scenarioInfo.innerHTML = `
+    <div>Empresa: ${state.scenario.empresa.nombre}</div>
+    <div>RFC: ${state.scenario.empresa.rfc}</div>
+    <div>Periodo: Enero 2026</div>
+    <div>Operaciones: ${state.scenario.operaciones.length} | Errores: ${state.scenario.cantErrores}</div>
+  `;
+  
+  document.getElementById('startModal').classList.remove('hidden');
+  document.getElementById('startModal').classList.add('flex');
+}
+
+function startMode() {
+  document.getElementById('startModal').classList.add('hidden');
+  document.getElementById('startModal').classList.remove('flex');
+  
+  const titles = { piloto: 'DIOT · Modo Piloto', practica: 'DIOT · Modo Práctica', examen: 'DIOT · Modo Examen' };
+  document.getElementById('headerTitle').textContent = titles[state.mode];
+  
+  const badge = document.getElementById('modeBadge');
+  const timer = document.getElementById('timerDisplay');
+  
+  if (state.mode === 'piloto') {
+    badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 dark:text-blue-400"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span class="text-xs text-blue-700 dark:text-blue-300 font-medium">Observando</span>';
+    timer.classList.add('hidden');
+    timer.classList.remove('flex');
+    populateOperations(state.scenario.operaciones, false);
+    startPilot();
+  } else if (state.mode === 'practica') {
+    badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600 dark:text-green-400"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span class="text-xs text-green-700 dark:text-green-300 font-medium">Practicando</span>';
+    timer.classList.add('hidden');
+    timer.classList.remove('flex');
+    populateOperations(state.scenario.operaciones, true);
+    startPractice();
+  } else {
+    badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600 dark:text-purple-400"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg><span class="text-xs text-purple-700 dark:text-purple-300 font-medium">Examinando</span>';
+    timer.classList.remove('hidden');
+    timer.classList.add('flex');
+    populateOperations(state.scenario.operaciones, true);
+    startExam();
+  }
+}
+
+// ============ PILOT MODE ============
+function startPilot() {
+  state.pilot.active = true;
+  state.pilot.step = 0;
+  state.startTime = Date.now();
+  document.getElementById('pilotOverlay').classList.add('active');
+  setTimeout(() => showPilotStep(0), 400);
+}
+
+function showPilotStep(index) {
+  if (index >= PILOT_STEPS.length) { completePilot(); return; }
+  
+  state.pilot.step = index;
+  const step = PILOT_STEPS[index];
+  const element = document.querySelector(step.selector);
+  if (!element) { showPilotStep(index + 1); return; }
+  
+  const rect = element.getBoundingClientRect();
+  const spotlight = document.getElementById('pilotSpotlight');
+  const tooltip = document.getElementById('pilotTooltip');
+  const cursor = document.getElementById('virtualCursor');
+  const isMobile = window.innerWidth < 768;
+  const padding = isMobile ? 8 : 12;
+  
+  spotlight.style.width = `${Math.min(rect.width + padding * 2, window.innerWidth - padding * 2)}px`;
+  spotlight.style.height = `${Math.min(rect.height + padding * 2, window.innerHeight - rect.top - padding)}px`;
+  spotlight.style.left = `${Math.max(padding, rect.left - padding)}px`;
+  spotlight.style.top = `${Math.max(padding, rect.top - padding)}px`;
+  
+  element.classList.add('pilot-highlight');
+  
+  cursor.classList.remove('hidden');
+  cursor.style.left = `${rect.left + rect.width / 2 - 16}px`;
+  cursor.style.top = `${rect.top + rect.height / 2 - 16}px`;
+  setTimeout(() => { cursor.classList.add('clicking'); setTimeout(() => cursor.classList.remove('clicking'), 300); }, 500);
+  
+  const tooltipWidth = isMobile ? window.innerWidth - 24 : 420;
+  const margin = 12;
+  let tooltipLeft, tooltipTop, position;
+  
+  const spaceBelow = window.innerHeight - rect.bottom - margin;
+  const spaceAbove = rect.top - margin;
+  
+  if (step.position === 'bottom' && spaceBelow > 280) {
+    tooltipLeft = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin));
+    tooltipTop = rect.bottom + margin;
+    position = 'pos-top';
+  } else if (step.position === 'top' && spaceAbove > 280) {
+    tooltipLeft = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin));
+    tooltipTop = rect.top - 280 - margin;
+    position = 'pos-bottom';
+  } else if (step.position === 'left') {
+    tooltipLeft = Math.max(margin, rect.left - tooltipWidth - margin);
+    tooltipTop = Math.max(margin, rect.top);
+    position = 'pos-right';
+  } else {
+    tooltipLeft = margin;
+    tooltipTop = window.innerHeight - 300 - margin;
+    position = 'pos-top';
+  }
+  
+  tooltip.className = `pilot-tooltip ${position}`;
+  tooltip.style.left = `${tooltipLeft}px`;
+  tooltip.style.top = `${tooltipTop}px`;
+  tooltip.style.width = `${tooltipWidth}px`;
+  
+  if (step.accion) setTimeout(() => step.accion(), 600);
+  
+  const progress = Math.round((index / PILOT_STEPS.length) * 100);
+  
+  tooltip.innerHTML = `
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600">PASO ${index + 1} / ${PILOT_STEPS.length}</span>
+        <div class="flex gap-1">
+          ${PILOT_STEPS.map((_, i) => `<div class="step-dot w-2 h-2 rounded-full ${i < index ? 'completed' : i === index ? 'current' : 'pending'}"></div>`).join('')}
+        </div>
+      </div>
+      <button onclick="skipPilot()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1" aria-label="Saltar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    
+    <div class="mb-3">
+      <div class="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">${step.accionLabel}</div>
+      <h3 class="font-bold text-slate-800 dark:text-white mb-2 text-sm sm:text-base">${step.titulo}</h3>
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${step.descripcion}</p>
+    </div>
+    
+    <div class="theory-box rounded-lg p-3 mb-2">
+      <div class="flex items-start gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <div>
+          <div class="text-[10px] font-semibold text-amber-900 dark:text-amber-200 mb-1">📚 Teoría</div>
+          <div class="text-xs text-amber-900 dark:text-amber-100 whitespace-pre-line leading-relaxed">${step.teoria}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="reference-box rounded-lg p-2 mb-3">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700 dark:text-blue-400"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="text-[10px] text-blue-900 dark:text-blue-200 font-medium">${step.referencia}</span>
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+      <div class="text-[10px] text-slate-500 dark:text-slate-400">${progress}% completado</div>
+      <div class="flex gap-2">
+        <button onclick="skipPilot()" class="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Saltar</button>
+        <button onclick="nextPilotStep()" class="px-4 py-1.5 text-xs bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium flex items-center gap-1">
+          ${index === PILOT_STEPS.length - 1 ? 'Finalizar ✓' : 'Siguiente →'}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function nextPilotStep() {
+  const element = document.querySelector(PILOT_STEPS[state.pilot.step]?.selector);
+  if (element) element.classList.remove('pilot-highlight');
+  showPilotStep(state.pilot.step + 1);
+}
+
+function skipPilot() {
+  if (confirm('¿Seguro que quieres saltar el tutorial? Perderás el contexto educativo.')) {
+    endPilot();
+  }
+}
+
+function completePilot() {
+  state.pilot.active = false;
+  document.getElementById('pilotOverlay').classList.remove('active');
+  document.getElementById('pilotSpotlight').style.width = '0';
+  document.getElementById('pilotSpotlight').style.height = '0';
+  document.getElementById('virtualCursor').classList.add('hidden');
+  
+  const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  
+  document.getElementById('compSteps').textContent = `${PILOT_STEPS.length}/${PILOT_STEPS.length}`;
+  document.getElementById('compTime').textContent = `${minutes}:${pad2(seconds)}`;
+  document.getElementById('compScore').textContent = '✓';
+  document.getElementById('completionTitle').textContent = 'Modo Piloto Finalizado';
+  document.getElementById('completionNextText').textContent = 'Ahora harás el mismo flujo en Modo Práctica con datos diferentes. Deberás identificar 2 errores intencionales.';
+  document.getElementById('nextModeText').textContent = 'Ir a Práctica';
+  document.getElementById('certificateSection').classList.add('hidden');
+  document.getElementById('completionHeader').className = 'bg-gradient-to-br from-green-600 to-emerald-700 p-6 text-white';
+  
+  document.getElementById('completionModal').classList.remove('hidden');
+  document.getElementById('completionModal').classList.add('flex');
+  
+  localStorage.setItem('diot_piloto', 'true');
+  updateMenuBadges();
+}
+
+function endPilot() {
+  state.pilot.active = false;
+  document.getElementById('pilotOverlay').classList.remove('active');
+  document.getElementById('pilotSpotlight').style.width = '0';
+  document.getElementById('pilotSpotlight').style.height = '0';
+  document.getElementById('virtualCursor').classList.add('hidden');
+  document.querySelectorAll('.pilot-highlight').forEach(el => el.classList.remove('pilot-highlight'));
+}
+
+// ============ PRACTICE MODE ============
+function startPractice() {
+  state.practiceMode.active = true;
+  state.practiceMode.step = 0;
+  state.startTime = Date.now();
+  state.practice.lastAction = Date.now();
+  
+  setTimeout(() => showPracticeStep(0), 400);
+}
+
+function showPracticeStep(index) {
+  if (index >= PRACTICE_STEPS.length) { endPracticeTutorial(); return; }
+  
+  state.practiceMode.step = index;
+  const step = PRACTICE_STEPS[index];
+  const element = document.querySelector(step.selector);
+  if (!element) { showPracticeStep(index + 1); return; }
+  
+  const rect = element.getBoundingClientRect();
+  const spotlight = document.getElementById('pilotSpotlight');
+  const tooltip = document.getElementById('pilotTooltip');
+  const isMobile = window.innerWidth < 768;
+  const padding = isMobile ? 8 : 12;
+  
+  spotlight.style.width = `${Math.min(rect.width + padding * 2, window.innerWidth - padding * 2)}px`;
+  spotlight.style.height = `${Math.min(rect.height + padding * 2, window.innerHeight - rect.top - padding)}px`;
+  spotlight.style.left = `${Math.max(padding, rect.left - padding)}px`;
+  spotlight.style.top = `${Math.max(padding, rect.top - padding)}px`;
+  
+  element.classList.add('pilot-highlight');
+  
+  const tooltipWidth = isMobile ? window.innerWidth - 24 : 420;
+  const margin = 12;
+  const spaceBelow = window.innerHeight - rect.bottom - margin;
+  let tooltipLeft, tooltipTop, position;
+  
+  if (step.position === 'bottom' && spaceBelow > 280) {
+    tooltipLeft = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin));
+    tooltipTop = rect.bottom + margin;
+    position = 'pos-top';
+  } else if (step.position === 'top') {
+    tooltipLeft = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin));
+    tooltipTop = Math.max(margin, rect.top - 280 - margin);
+    position = 'pos-bottom';
+  } else {
+    tooltipLeft = margin;
+    tooltipTop = window.innerHeight - 300 - margin;
+    position = 'pos-top';
+  }
+  
+  tooltip.className = `pilot-tooltip ${position}`;
+  tooltip.style.left = `${tooltipLeft}px`;
+  tooltip.style.top = `${tooltipTop}px`;
+  tooltip.style.width = `${tooltipWidth}px`;
+  
+  const progress = Math.round((index / PRACTICE_STEPS.length) * 100);
+  
+  tooltip.innerHTML = `
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-green-600 to-emerald-600">PRÁCTICA ${index + 1} / ${PRACTICE_STEPS.length}</span>
+      </div>
+      <button onclick="skipPracticeTutorial()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    
+    <div class="mb-3">
+      <div class="text-[10px] uppercase tracking-wider text-green-600 dark:text-green-400 font-semibold mb-1">${step.accionLabel}</div>
+      <h3 class="font-bold text-slate-800 dark:text-white mb-2 text-sm sm:text-base">${step.titulo}</h3>
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${step.descripcion}</p>
+    </div>
+    
+    <div class="theory-box rounded-lg p-3 mb-2">
+      <div class="flex items-start gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <div>
+          <div class="text-[10px] font-semibold text-amber-900 dark:text-amber-200 mb-1">📚 Teoría</div>
+          <div class="text-xs text-amber-900 dark:text-amber-100 whitespace-pre-line leading-relaxed">${step.teoria}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="reference-box rounded-lg p-2 mb-3">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700 dark:text-blue-400"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="text-[10px] text-blue-900 dark:text-blue-200 font-medium">${step.referencia}</span>
+      </div>
+    </div>
+    
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+      <div class="flex items-center gap-2 text-xs text-blue-900 dark:text-blue-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span class="font-semibold">Objetivo:</span>
+        <span>Encuentra y elimina ${state.practice.totales} operaciones incorrectas</span>
+      </div>
+      <div class="mt-2 text-xs text-blue-700 dark:text-blue-300">
+        Errores encontrados: <span class="font-bold">${state.practice.encontrados}</span> / ${state.practice.totales}
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+      <div class="text-[10px] text-slate-500 dark:text-slate-400">${progress}% completado</div>
+      <button onclick="nextPracticeStep()" class="px-4 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-1">
+        ${index === PRACTICE_STEPS.length - 1 ? 'Comenzar Práctica →' : 'Siguiente →'}
+      </button>
+    </div>
+  `;
+}
+
+function nextPracticeStep() {
+  const element = document.querySelector(PRACTICE_STEPS[state.practiceMode.step]?.selector);
+  if (element) element.classList.remove('pilot-highlight');
+  showPracticeStep(state.practiceMode.step + 1);
+}
+
+function skipPracticeTutorial() {
+  if (confirm('¿Saltar la introducción de práctica?')) endPracticeTutorial();
+}
+
+function endPracticeTutorial() {
+  state.practiceMode.active = false;
+  document.getElementById('pilotOverlay').classList.remove('active');
+  document.getElementById('pilotSpotlight').style.width = '0';
+  document.getElementById('pilotSpotlight').style.height = '0';
+  document.querySelectorAll('.pilot-highlight').forEach(el => el.classList.remove('pilot-highlight'));
+  
+  showFeedback(`Práctica iniciada. Encuentra ${state.practice.totales} errores en las operaciones.`, 'info');
+  
+  state.timerInterval = setInterval(() => {
+    if (Date.now() - state.practice.lastAction > 15000 && state.practice.hints < 3) {
+      const errorOp = state.scenario.erroresInyectados[state.practice.hints];
+      if (errorOp) {
+        showHint(errorOp.pista);
+        state.practice.lastAction = Date.now();
+      }
+    }
+  }, 1000);
+}
+
+// ============ EXAM MODE ============
+function startExam() {
+  state.examMode.active = true;
+  state.startTime = Date.now();
+  state.exam.timeRemaining = state.exam.timeLimit;
+  state.practice.lastAction = Date.now();
+  
+  document.getElementById('pilotOverlay').classList.add('active');
+  setTimeout(() => showExamStep(0), 400);
+  
+  state.timerInterval = setInterval(() => {
+    state.exam.timeRemaining--;
+    const minutes = Math.floor(state.exam.timeRemaining / 60);
+    const seconds = state.exam.timeRemaining % 60;
+    document.getElementById('timerValue').textContent = `${pad2(minutes)}:${pad2(seconds)}`;
+    
+    if (state.exam.timeRemaining < 60) {
+      document.getElementById('timerDisplay').classList.add('timer-warning');
+    }
+    
+    if (state.exam.timeRemaining <= 0) {
+      clearInterval(state.timerInterval);
+      completeExam(true);
+    }
+  }, 1000);
+}
+
+function showExamStep(index) {
+  if (index >= EXAM_INTRO.length) { endExamIntro(); return; }
+  
+  const step = EXAM_INTRO[index];
+  const element = document.querySelector(step.selector);
+  if (!element) { endExamIntro(); return; }
+  
+  const rect = element.getBoundingClientRect();
+  const spotlight = document.getElementById('pilotSpotlight');
+  const tooltip = document.getElementById('pilotTooltip');
+  const isMobile = window.innerWidth < 768;
+  const padding = isMobile ? 8 : 12;
+  
+  spotlight.style.width = `${Math.min(rect.width + padding * 2, window.innerWidth - padding * 2)}px`;
+  spotlight.style.height = `${Math.min(rect.height + padding * 2, window.innerHeight - rect.top - padding)}px`;
+  spotlight.style.left = `${Math.max(padding, rect.left - padding)}px`;
+  spotlight.style.top = `${Math.max(padding, rect.top - padding)}px`;
+  
+  element.classList.add('pilot-highlight');
+  
+  const tooltipWidth = isMobile ? window.innerWidth - 24 : 420;
+  const margin = 12;
+  const spaceBelow = window.innerHeight - rect.bottom - margin;
+  let tooltipLeft, tooltipTop, position;
+  
+  if (spaceBelow > 280) {
+    tooltipLeft = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin));
+    tooltipTop = rect.bottom + margin;
+    position = 'pos-top';
+  } else {
+    tooltipLeft = margin;
+    tooltipTop = window.innerHeight - 300 - margin;
+    position = 'pos-top';
+  }
+  
+  tooltip.className = `pilot-tooltip ${position}`;
+  tooltip.style.left = `${tooltipLeft}px`;
+  tooltip.style.top = `${tooltipTop}px`;
+  tooltip.style.width = `${tooltipWidth}px`;
+  
+  tooltip.innerHTML = `
+    <div class="flex items-start justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600">EXAMEN FINAL</span>
+      </div>
+    </div>
+    
+    <div class="mb-3">
+      <div class="text-[10px] uppercase tracking-wider text-purple-600 dark:text-purple-400 font-semibold mb-1">${step.accionLabel}</div>
+      <h3 class="font-bold text-slate-800 dark:text-white mb-2 text-sm sm:text-base">${step.titulo}</h3>
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">${step.descripcion}</p>
+    </div>
+    
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-3">
+      <div class="flex items-center gap-2 text-xs text-red-900 dark:text-red-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span class="font-semibold">⚠️ Sin ayuda:</span>
+        <span>No habrá pistas ni validación en tiempo real</span>
+      </div>
+    </div>
+    
+    <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3 mb-3">
+      <div class="flex items-center gap-2 text-xs text-purple-900 dark:text-purple-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="font-semibold">Tiempo límite:</span>
+        <span>5 minutos</span>
+      </div>
+      <div class="mt-2 text-xs text-purple-700 dark:text-purple-300">
+        Errores a encontrar: <span class="font-bold">${state.practice.totales}</span>
+      </div>
+    </div>
+    
+    <div class="flex items-center justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
+      <button onclick="endExamIntro()" class="px-4 py-1.5 text-xs bg-purple-700 text-white rounded-lg hover:bg-purple-800 font-medium flex items-center gap-1">
+        Comenzar Examen →
+      </button>
+    </div>
+  `;
+}
+
+function endExamIntro() {
+  state.examMode.active = false;
+  document.getElementById('pilotOverlay').classList.remove('active');
+  document.getElementById('pilotSpotlight').style.width = '0';
+  document.getElementById('pilotSpotlight').style.height = '0';
+  document.querySelectorAll('.pilot-highlight').forEach(el => el.classList.remove('pilot-highlight'));
+  
+  showFeedback('Examen iniciado. Tienes 5 minutos. ¡Buena suerte!', 'info');
+}
+
+// ============ PRACTICE/EXAM ACTIONS ============
+function eliminarOperacion(opId) {
+  state.practice.lastAction = Date.now();
+  
+  const op = state.scenario.operaciones.find(o => o.id === opId);
+  if (!op) return;
+  
+  const errorInfo = state.scenario.erroresInyectados.find(e => e.operacionId === opId);
+  
+  if (errorInfo) {
+    state.practice.encontrados++;
+    state.practice.eliminaciones.push(opId);
+    
+    const row = document.getElementById(`row-${opId}`);
+    if (row) {
+      row.style.transition = 'all 0.4s ease';
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(100px)';
+      setTimeout(() => row.remove(), 400);
+    }
+    
+    if (state.mode === 'practica') {
+      showFeedback(`✅ ¡Correcto! ${errorInfo.error}. ${errorInfo.pista}`, 'success');
+    }
+    
+    updateStats();
+    
+    if (state.practice.encontrados === state.practice.totales) {
+      setTimeout(() => {
+        if (state.mode === 'practica') {
+          showFeedback('🎉 ¡Encontraste todos los errores! Ahora puedes presentar la declaración.', 'success');
+        }
+        document.getElementById('statEstado').textContent = 'Listo';
+        document.getElementById('statEstado').className = 'text-base sm:text-2xl font-bold text-green-600 dark:text-green-400';
+      }, 800);
+    }
+  } else {
+    const row = document.getElementById(`row-${opId}`);
+    if (row) {
+      row.classList.add('error-row');
+      setTimeout(() => row.classList.remove('error-row'), 800);
+    }
+    
+    if (state.mode === 'practica') {
+      showFeedback('❌ Esta operación era correcta. No deberías haberla eliminado.', 'error');
+    }
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#btn-presentar') || e.target.closest('#btn-presentar *')) {
+    if ((state.mode === 'practica' || state.mode === 'examen') && (state.practiceMode.active || state.examMode.active)) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (state.practice.encontrados < state.practice.totales) {
+        const faltantes = state.practice.totales - state.practice.encontrados;
+        if (state.mode === 'practica') {
+          showFeedback(`⚠️ Aún faltan ${faltantes} error(es) por identificar. Revisa las operaciones.`, 'error');
+        } else {
+          const minutes = Math.floor(state.exam.timeRemaining / 60);
+          const seconds = state.exam.timeRemaining % 60;
+          showFeedback(`⏱️ Tiempo restante: ${minutes}:${pad2(seconds)}`, 'info');
+        }
+      } else {
+        if (state.mode === 'practica') completePractice();
+        else completeExam(false);
+      }
+    }
+  }
+});
+
+function completePractice() {
+  clearInterval(state.timerInterval);
+  state.practiceMode.active = false;
+  
+  const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  
+  const precision = 100;
+  const timeBonus = elapsed < 120 ? 20 : elapsed < 180 ? 10 : 0;
+  const hintPenalty = state.practice.hints * 5;
+  const score = Math.max(0, precision + timeBonus - hintPenalty);
+  
+  document.getElementById('compSteps').textContent = `${state.practice.encontrados}/${state.practice.totales}`;
+  document.getElementById('compTime').textContent = `${minutes}:${pad2(seconds)}`;
+  document.getElementById('compScore').textContent = `${score}/100`;
+  document.getElementById('completionTitle').textContent = 'Modo Práctica Completado';
+  document.getElementById('completionNextText').textContent = `Encontraste ${state.practice.encontrados} errores en ${minutes}:${pad2(seconds)}. Usaste ${state.practice.hints} pistas. ¡Listo para el Modo Examen!`;
+  document.getElementById('nextModeText').textContent = 'Ir a Examen';
+  document.getElementById('certificateSection').classList.add('hidden');
+  document.getElementById('completionHeader').className = 'bg-gradient-to-br from-green-600 to-emerald-700 p-6 text-white';
+  
+  document.getElementById('completionModal').classList.remove('hidden');
+  document.getElementById('completionModal').classList.add('flex');
+  
+  localStorage.setItem('diot_practica', 'true');
+  localStorage.setItem('diot_practica_score', score.toString());
+  updateMenuBadges();
+}
+
+function completeExam(timeUp = false) {
+  clearInterval(state.timerInterval);
+  state.examMode.active = false;
+  
+  const elapsed = Math.round((Date.now() - state.startTime) / 1000);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  
+  const errorsFound = state.practice.encontrados;
+  const errorsTotal = state.practice.totales;
+  const precision = Math.round((errorsFound / errorsTotal) * 100);
+  const timeBonus = state.exam.timeRemaining > 120 ? 15 : state.exam.timeRemaining > 60 ? 10 : 0;
+  const score = Math.min(100, precision + timeBonus);
+  
+  document.getElementById('compSteps').textContent = `${errorsFound}/${errorsTotal}`;
+  document.getElementById('compTime').textContent = `${minutes}:${pad2(seconds)}`;
+  document.getElementById('compScore').textContent = `${score}/100`;
+  
+  if (timeUp) {
+    document.getElementById('completionTitle').textContent = '⏰ Tiempo Agotado';
+    document.getElementById('completionNextText').textContent = `Encontraste ${errorsFound} de ${errorsTotal} errores antes de que se acabara el tiempo. Puntaje: ${score}/100.`;
+  } else {
+    document.getElementById('completionTitle').textContent = 'Examen Completado';
+    document.getElementById('completionNextText').textContent = `Encontraste ${errorsFound} de ${errorsTotal} errores en ${minutes}:${pad2(seconds)}. Puntaje final: ${score}/100.`;
+  }
+  
+  document.getElementById('nextModeText').textContent = 'Repetir';
+  
+  if (score >= 90) {
+    document.getElementById('certificateSection').classList.remove('hidden');
+    document.getElementById('completionHeader').className = 'bg-gradient-to-br from-amber-500 to-yellow-600 p-6 text-white';
+  } else {
+    document.getElementById('certificateSection').classList.add('hidden');
+    document.getElementById('completionHeader').className = 'bg-gradient-to-br from-purple-600 to-indigo-700 p-6 text-white';
+  }
+  
+  document.getElementById('completionModal').classList.remove('hidden');
+  document.getElementById('completionModal').classList.add('flex');
+  
+  localStorage.setItem('diot_examen', 'true');
+  localStorage.setItem('diot_examen_score', score.toString());
+  updateMenuBadges();
+}
+
+function updateMenuBadges() {
+  const pilotoOk = localStorage.getItem('diot_piloto') === 'true';
+  const practicaOk = localStorage.getItem('diot_practica') === 'true';
+  
+  if (pilotoOk) {
+    document.getElementById('pilotoBadge').classList.remove('hidden');
+  }
+  if (practicaOk) {
+    document.getElementById('practicaBadge').classList.remove('hidden');
+    document.getElementById('menuExamen').classList.remove('locked');
+  }
+}
+
+function goToNextMode() {
+  if (state.mode === 'piloto') selectMode('practica');
+  else if (state.mode === 'practica') selectMode('examen');
+  else location.reload();
+}
+
+// ============ PUENTE SIMULADOR (catálogo Anexo 24 desde la app) ============
+// La app padre envía {type:'CATALOGO_AGRUPADOR', catalog:[{codigo,nivel,nombre}], mapeo:{}}
+// por postMessage al cargar el iframe. Sin catálogo, el sim funciona igual.
+window.CATALOGO_AGRUPADOR = [];
+window.MAPEO_INTERNO = {};
+window.addEventListener('message', (ev) => {
+  const d = ev.data || {};
+  if (d.type === 'CATALOGO_AGRUPADOR' && Array.isArray(d.catalog)) {
+    window.CATALOGO_AGRUPADOR = d.catalog;
+    window.MAPEO_INTERNO = d.mapeo || {};
+    buscarAgrupador(document.getElementById('sat-q')?.value || '');
+  }
+});
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'DIOT_READY' }, '*');
+}
+function buscarAgrupador(q) {
+  const box = document.getElementById('sat-res');
+  if (!box) return;
+  q = (q || '').trim().toLowerCase();
+  const cat = window.CATALOGO_AGRUPADOR;
+  if (!cat.length) { box.innerHTML = '<div class="text-slate-400">Catálogo no conectado.</div>'; return; }
+  const hits = (q ? cat.filter((e) => e.codigo.includes(q) || e.nombre.toLowerCase().includes(q)) : cat.filter((e) => ['102.01','118.01','213.01','216.10','899.01'].includes(e.codigo))).slice(0, 12);
+  box.innerHTML = hits.map((e) => `<div class="px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700"><b>${e.codigo}</b> · ${e.nombre}</div>`).join('') || '<div class="text-slate-400">Sin resultados.</div>';
+}
+
+// ============ INIT ============
+if (localStorage.getItem('darkMode') === 'true') {
+  document.documentElement.classList.add('dark');
+}
+
+updateMenuBadges();
+selectMode('piloto');
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (state.pilot.active) showPilotStep(state.pilot.step);
+    else if (state.practiceMode.active && state.practiceMode.step < PRACTICE_STEPS.length) showPracticeStep(state.practiceMode.step);
+  }, 200);
+});
+</script>
+</body>
+</html>
