@@ -10,6 +10,7 @@ import {
   validarCierre,
   CASOS,
 } from './conciliacionEngine';
+import { etiquetaAgrupador } from './catalogoAgrupador';
 
 type Paso = 'alta' | 'convertidor' | 'carga' | 'manual' | 'auto' | 'casos' | 'cierre';
 const PASOS: Paso[] = ['alta', 'convertidor', 'carga', 'manual', 'auto', 'casos', 'cierre'];
@@ -98,6 +99,7 @@ export default function ConciliacionSim() {
         <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
           {num(banco.nombre, (v) => setBanco({ ...banco, nombre: v }), 'Nombre (ej. BBVA débito)')}
           {num(banco.cuenta, (v) => setBanco({ ...banco, cuenta: v }), 'Cuenta contable (102-01-001)')}
+          {etiquetaAgrupador(banco.cuenta) && <div className="text-[10px] text-slate-500">SAT Anexo 24 → {etiquetaAgrupador(banco.cuenta)}</div>}
           {num(banco.saldoInicial, (v) => setBanco({ ...banco, saldoInicial: v }), 'Saldo inicial (50000)')}
           {num(banco.clabe, (v) => setBanco({ ...banco, clabe: v }), 'CLABE 10/16/18 (o vacía)')}
           <div className="text-[10px] text-slate-500">Moneda MN/USD: no editable tras conciliar · fintech sin banco → General</div>
