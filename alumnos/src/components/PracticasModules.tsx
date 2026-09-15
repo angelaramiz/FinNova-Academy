@@ -50,10 +50,34 @@ interface PracticaModulo {
   curso: PracticaCurso;
 }
 
-const PLATAFORMAS: { id: string; nombre: string; icono: string }[] = [
-  { id: 'contabilidad', nombre: 'Prácticas Contabilidad', icono: '📒' },
-  { id: 'contalink', nombre: 'Prácticas Contalink', icono: '🔗' },
-];
+// Registro de metadata por plataforma. Las carpetas se derivan DINAMICAMENTE de
+// los módulos que trae la API: si mañana se agrega otra plataforma (ej. 'odoo'),
+// su icono aparece solo — con nombre e icono por defecto si no está registrada aquí.
+const META_PLAT: Record<string, { nombre: string; icono: string }> = {
+  contabilidad: { nombre: 'Prácticas Contabilidad', icono: '📒' },
+  contalink: { nombre: 'Prácticas Contalink', icono: '🔗' },
+};
+const ORDEN_PLAT = ['contabilidad', 'contalink'];
+
+function metaPlat(id: string): { id: string; nombre: string; icono: string } {
+  const meta = META_PLAT[id];
+  if (meta) return { id, nombre: meta.nombre, icono: meta.icono };
+  const bonito = id.charAt(0).toUpperCase() + id.slice(1);
+  return { id, nombre: `Prácticas ${bonito}`, icono: '📁' };
+}
+
+function platsDe(modulos: PracticaModulo[]): string[] {
+  const vistos: string[] = [];
+  modulos.forEach(m => {
+    const p = plataformaDe(m);
+    if (!vistos.includes(p)) vistos.push(p);
+  });
+  // Conocidas primero en orden fijo; las nuevas al final por aparición.
+  return vistos.sort((a, b) => {
+    const ia = ORDEN_PLAT.indexOf(a), ib = ORDEN_PLAT.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+}
 
 function plataformaDe(m: PracticaModulo): string {
   return m.plataforma || 'contabilidad';
@@ -177,8 +201,9 @@ export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim,
         {tab === 'modulos' && !active && !platSel && (
           <div>
             <p className="text-[11px] font-mono mb-4" style={{ color: colors.textMuted }}>🖥️ Elige una práctica para ver sus módulos:</p>
-            <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
-              {PLATAFORMAS.map(plat => {
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 max-w-3xl">
+              {platsDe(modules).map(pid => {
+                const plat = metaPlat(pid);
                 const mods = modules.filter(m => plataformaDe(m) === plat.id);
                 const doneCount = mods.filter(moduleDone).length;
                 const totalPasos = mods.reduce((a, m) => a + m.pasos.length, 0);
@@ -204,7 +229,7 @@ export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim,
           <div>
             <button onClick={() => setPlatSel(null)} className="text-[11px] font-mono mb-4 cursor-pointer hover:opacity-70" style={{ color: colors.textMuted }}>← Plataformas</button>
             {(() => {
-              const plat = PLATAFORMAS.find(p => p.id === platSel) || PLATAFORMAS[0];
+              const plat = metaPlat(platSel || 'contabilidad');
               const mods = modules.filter(m => plataformaDe(m) === plat.id);
               return (
                 <div key={plat.id}>
