@@ -98,6 +98,8 @@ body { font-family: 'Inter', sans-serif; }
   animation: tooltipSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   max-width: 420px;
   width: calc(100% - 32px);
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
 }
 .dark .pilot-tooltip { background: #1e293b; color: #e2e8f0; }
 @keyframes tooltipSlide {
@@ -1215,6 +1217,23 @@ function showPilotStep(index) {
       </div>
     </div>
   `;
+  clampTooltip(tooltip, margin);
+}
+
+// Mantiene el tooltip dentro del encuadre: mide el alto/ancho real y lo recorre
+// si se sale (el fallback asumia 300px y cortaba los botones). Con el max-height
+// del CSS el tooltip ya no excede el viewport y hace scroll interno si hace falta.
+function clampTooltip(tooltip, margin) {
+  const h = tooltip.offsetHeight || 0;
+  const w = tooltip.offsetWidth || 0;
+  let t = parseFloat(tooltip.style.top) || margin;
+  let l = parseFloat(tooltip.style.left) || margin;
+  if (t + h > window.innerHeight - margin) t = window.innerHeight - h - margin;
+  if (t < margin) t = margin;
+  if (l + w > window.innerWidth - margin) l = window.innerWidth - w - margin;
+  if (l < margin) l = margin;
+  tooltip.style.top = `${t}px`;
+  tooltip.style.left = `${l}px`;
 }
 
 function nextPilotStep() {
@@ -1373,6 +1392,7 @@ function showPracticeStep(index) {
       </button>
     </div>
   `;
+  clampTooltip(tooltip, margin);
 }
 
 function nextPracticeStep() {
@@ -1510,6 +1530,7 @@ function showExamStep(index) {
       </button>
     </div>
   `;
+  clampTooltip(tooltip, margin);
 }
 
 function endExamIntro() {
