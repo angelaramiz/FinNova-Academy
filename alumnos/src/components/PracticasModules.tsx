@@ -51,8 +51,8 @@ interface PracticaModulo {
 }
 
 const PLATAFORMAS: { id: string; nombre: string; icono: string }[] = [
-  { id: 'contabilidad', nombre: 'Contabilidad general', icono: '📒' },
-  { id: 'contalink', nombre: 'Contalink', icono: '🔗' },
+  { id: 'contabilidad', nombre: 'Prácticas Contabilidad', icono: '📒' },
+  { id: 'contalink', nombre: 'Prácticas Contalink', icono: '🔗' },
 ];
 
 function plataformaDe(m: PracticaModulo): string {
@@ -86,6 +86,9 @@ export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim,
   const [tab, setTab] = useState<Tab>(initialTab);
   const [modules, setModules] = useState<PracticaModulo[]>([]);
   const [active, setActive] = useState<PracticaModulo | null>(null);
+  // Ventana estilo OS: sin selección se ven las 2 carpetas de práctica;
+  // al elegir una se muestran solo sus módulos (ya no mezclados).
+  const [platSel, setPlatSel] = useState<string | null>(null);
   const [course, setCourse] = useState<PracticaCurso | null>(null);
   const [pruebaAnswers, setPruebaAnswers] = useState<Record<string, number>>({});
   const [pruebaResult, setPruebaResult] = useState<Record<string, { scorePct: number; aprobado: boolean }>>(loadPruebaResults());
@@ -171,11 +174,38 @@ export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim,
           <div className="p-3 rounded-xl border-2 text-[11px] font-mono" style={{ borderColor: '#ef4444', background: '#ef444410', color: '#ef4444' }}>⚠ {error}</div>
         )}
 
-        {tab === 'modulos' && !active && (
-          <div className="space-y-6">
-            {PLATAFORMAS.map(plat => {
+        {tab === 'modulos' && !active && !platSel && (
+          <div>
+            <p className="text-[11px] font-mono mb-4" style={{ color: colors.textMuted }}>🖥️ Elige una práctica para ver sus módulos:</p>
+            <div className="grid gap-4 sm:grid-cols-2 max-w-xl">
+              {PLATAFORMAS.map(plat => {
+                const mods = modules.filter(m => plataformaDe(m) === plat.id);
+                const doneCount = mods.filter(moduleDone).length;
+                const totalPasos = mods.reduce((a, m) => a + m.pasos.length, 0);
+                const donePasos = mods.reduce((a, m) => a + (progress[m.id] || []).length, 0);
+                const completa = mods.length > 0 && doneCount === mods.length;
+                return (
+                  <button key={plat.id} onClick={() => setPlatSel(plat.id)} className="rounded-2xl border-2 p-6 cursor-pointer hover:opacity-85 transition text-center"
+                    style={{ borderColor: colors.border, background: colors.cardBg, boxShadow: `3px 3px 0px 0px ${colors.border}` }}>
+                    <div className="text-5xl mb-3">📁</div>
+                    <div className="text-[15px] font-bold mb-1" style={{ color: colors.text }}>{plat.icono} {plat.nombre}</div>
+                    <div className="text-[10px] font-mono mb-2" style={{ color: colors.textMuted }}>{mods.length} módulos · {donePasos}/{totalPasos} pasos</div>
+                    <span className="inline-block text-[9px] font-bold font-mono px-2 py-0.5 rounded-full" style={{ background: completa ? '#22c55e30' : '#f59e0b20', color: completa ? '#22c55e' : '#f59e0b' }}>
+                      {completa ? '✓ Completada' : `${doneCount}/${mods.length} módulos`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'modulos' && !active && platSel && (
+          <div>
+            <button onClick={() => setPlatSel(null)} className="text-[11px] font-mono mb-4 cursor-pointer hover:opacity-70" style={{ color: colors.textMuted }}>← Plataformas</button>
+            {(() => {
+              const plat = PLATAFORMAS.find(p => p.id === platSel) || PLATAFORMAS[0];
               const mods = modules.filter(m => plataformaDe(m) === plat.id);
-              if (!mods.length) return null;
               return (
                 <div key={plat.id}>
                   <h3 className="text-[13px] font-bold mb-3" style={{ color: colors.text }}>{plat.icono} {plat.nombre} · {mods.length} módulos</h3>
@@ -205,7 +235,7 @@ export default function PracticasModules({ theme, onBack, onOpenTask, onOpenSim,
                   </div>
                 </div>
               );
-            })}
+            })()}
           </div>
         )}
 
