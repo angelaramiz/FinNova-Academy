@@ -1154,6 +1154,14 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
   const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
+  // Modo inmersivo: con ventana abierta el header de plataforma se colapsa y
+  // el contenedor crece (~44px extra) para pantalla casi completa.
+  const [appAbierta, setAppAbierta] = useState(false);
+  useEffect(() => {
+    const h = (e: Event) => setAppAbierta((e as CustomEvent<string>).detail !== 'desktop');
+    window.addEventListener('os-screen', h);
+    return () => window.removeEventListener('os-screen', h);
+  }, []);
   const [specialty, setSpecialty] = useState<'accounting' | 'data_engineering' | 'practicas'>(() => {
     // Usar specialty del profile si está disponible
     if (profile?.specialty === 'data_engineering') return 'data_engineering';
@@ -1442,7 +1450,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-[calc(100vh-120px)] relative overflow-hidden rounded-2xl border-2" style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.15)' }}>
+    <div ref={containerRef} className={`w-full ${appAbierta ? 'h-[calc(100vh-76px)]' : 'h-[calc(100vh-120px)]'} relative overflow-hidden rounded-2xl border-2`} style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.15)' }}>
       {/* TASK-O1: entrada OS — bloqueo antes de la oficina */}
       {!desbloqueado && (
         <LockScreen

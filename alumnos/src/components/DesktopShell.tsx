@@ -103,8 +103,11 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
   const [orden, setOrden] = useState<string[]>(() => cargarPrefs().ordenIconos);
 
   // TASK-O3: persistir última app al cambiar de pantalla.
+  // Modo inmersivo: avisa a la plataforma (StudentPanel/SimuladorLaboral) qué
+  // pantalla está abierta para colapsar headers cuando hay ventana abierta.
   useEffect(() => {
     guardarPrefs({ fondo: fondo ?? cargarPrefs().fondo, ordenIconos: orden, ultimaApp: screen });
+    window.dispatchEvent(new CustomEvent('os-screen', { detail: screen }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]);
 
@@ -520,7 +523,8 @@ const appIcons = isPracticas
       </div>
       )}
 
-      {specialty === 'data_engineering' ? (
+      {/* Banner de rol: solo en escritorio (modo inmersivo: con ventana abierta se oculta para dar espacio) */}
+      {screen === 'desktop' && (specialty === 'data_engineering' ? (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2 flex-wrap" style={{ background: '#3b82f610', color: '#3b82f6', borderBottom: `1px solid ${colors.border}` }}>
           <span>{careerPath?.chosenBranch === 'data_engineering' ? '🔀' : careerPath?.chosenBranch === 'data_science' ? '🧪' : '🧭'} {roleTitle}</span>
           <button onClick={() => setScreen('routes')} className="px-1.5 py-0.5 rounded border cursor-pointer hover:opacity-80" style={{ borderColor: '#3b82f650', color: '#3b82f6', background: 'transparent' }} title="Abrir panel de rutas">🧭 Rutas</button>
@@ -559,7 +563,7 @@ const appIcons = isPracticas
         <div className="px-3 py-1 text-[8px] font-mono" style={{ background: '#22c55e10', color: '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
           📊 Modo: Contador General Jr — Logística del Norte S.A.
         </div>
-      )}
+      ))}
       {specialty === 'data_engineering' && world && !osMode && (
         <div className="px-3 py-1 text-[8px] font-mono flex items-center gap-2" style={{ background: world.pipeline?.status === 'failed' ? '#ef444410' : '#22c55e10', color: world.pipeline?.status === 'failed' ? '#ef4444' : '#22c55e', borderBottom: `1px solid ${colors.border}` }}>
           <span>🛫 lno_sales_pipeline · 05-jul:</span>

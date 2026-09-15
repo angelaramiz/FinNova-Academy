@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Briefcase } from 'lucide-react';
 // P1-3: la oficina 3D (three) no entra al initial; carga diferida.
 const SimuladorLaboral = lazy(() => import('./SimuladorLaboral'));
@@ -11,19 +11,38 @@ interface StudentPanelProps {
 
 export default function StudentPanel({ theme, profile }: StudentPanelProps) {
   const colors = themeColors[theme];
+  // Modo inmersivo: con ventana abierta el header se colapsa a una franja fina
+  // y reaparece al pasar el cursor (evento 'os-screen' de DesktopShell).
+  const [appAbierta, setAppAbierta] = useState(false);
+  useEffect(() => {
+    const h = (e: Event) => setAppAbierta((e as CustomEvent<string>).detail !== 'desktop');
+    window.addEventListener('os-screen', h);
+    return () => window.removeEventListener('os-screen', h);
+  }, []);
+
+  const header = (
+    <div className="flex items-center gap-2 px-4 py-3 border-b-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: colors.primary, color: '#1B2632' }}>
+        <Briefcase className="w-4 h-4" />
+      </div>
+      <span className="text-xs font-bold font-mono tracking-wider" style={{ color: colors.text }}>SIMULADOR LABORAL</span>
+      <div className="ml-auto flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+        <span className="text-[9px] font-mono" style={{ color: colors.textMuted }}>En línea</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-60px)]" style={{ background: colors.bg }}>
-      <div className="flex items-center gap-2 px-4 py-3 border-b-2" style={{ borderColor: colors.border, background: colors.cardBg }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: colors.primary, color: '#1B2632' }}>
-          <Briefcase className="w-4 h-4" />
+      {appAbierta ? (
+        <div className="group relative shrink-0">
+          <div className="h-1.5" style={{ background: colors.border }} title="Pasa el cursor para mostrar la barra" />
+          <div className="absolute top-full left-0 right-0 z-50 hidden group-hover:block shadow-lg">
+            {header}
+          </div>
         </div>
-        <span className="text-xs font-bold font-mono tracking-wider" style={{ color: colors.text }}>SIMULADOR LABORAL</span>
-        <div className="ml-auto flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-          <span className="text-[9px] font-mono" style={{ color: colors.textMuted }}>En línea</span>
-        </div>
-      </div>
+      ) : header}
       <div className="flex-1">
         <Suspense fallback={<div className="p-6 text-xs font-mono animate-pulse" style={{ color: colors.textMuted }}>Cargando oficina 3D…</div>}>
           <SimuladorLaboral theme={theme} profile={profile} />
