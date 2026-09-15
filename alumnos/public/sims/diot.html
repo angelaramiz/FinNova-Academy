@@ -102,6 +102,9 @@ body { font-family: 'Inter', sans-serif; }
   overflow-y: auto;
 }
 .dark .pilot-tooltip { background: #1e293b; color: #e2e8f0; }
+/* Ventana arrastrable estilo escritorio: el encabezado es el agarre */
+.pilot-drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pilot-drag-handle:active { cursor: grabbing; }
 @keyframes tooltipSlide {
   from { opacity: 0; transform: translateY(15px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -1172,7 +1175,7 @@ function showPilotStep(index) {
   const progress = Math.round((index / PILOT_STEPS.length) * 100);
   
   tooltip.innerHTML = `
-    <div class="flex items-start justify-between mb-3">
+    <div class="flex items-start justify-between mb-3 pilot-drag-handle">
       <div class="flex items-center gap-2">
         <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600">PASO ${index + 1} / ${PILOT_STEPS.length}</span>
         <div class="flex gap-1">
@@ -1235,6 +1238,38 @@ function clampTooltip(tooltip, margin) {
   tooltip.style.top = `${t}px`;
   tooltip.style.left = `${l}px`;
 }
+
+// Ventana arrastrable estilo escritorio: el usuario mueve la tarjeta libremente
+// desde su encabezado (los botones no inician arrastre). Al soltar se re-aplica
+// el clamp para que nunca quede fuera del encuadre. Delegado en #pilotTooltip,
+// asi sobrevive a los innerHTML de cada paso (piloto, practica y examen).
+(function initTooltipDrag() {
+  const tooltip = document.getElementById('pilotTooltip');
+  if (!tooltip || tooltip.dataset.dragInit) return;
+  tooltip.dataset.dragInit = '1';
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  tooltip.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('.pilot-drag-handle') || e.target.closest('button')) return;
+    dragging = true;
+    sx = e.clientX; sy = e.clientY;
+    ox = parseFloat(tooltip.style.left) || 0;
+    oy = parseFloat(tooltip.style.top) || 0;
+    try { tooltip.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  tooltip.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tooltip.style.left = `${ox + e.clientX - sx}px`;
+    tooltip.style.top = `${oy + e.clientY - sy}px`;
+  });
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    clampTooltip(tooltip, 12);
+  };
+  tooltip.addEventListener('pointerup', endDrag);
+  tooltip.addEventListener('pointercancel', endDrag);
+})();
 
 function nextPilotStep() {
   const element = document.querySelector(PILOT_STEPS[state.pilot.step]?.selector);
@@ -1342,7 +1377,7 @@ function showPracticeStep(index) {
   const progress = Math.round((index / PRACTICE_STEPS.length) * 100);
   
   tooltip.innerHTML = `
-    <div class="flex items-start justify-between mb-3">
+    <div class="flex items-start justify-between mb-3 pilot-drag-handle">
       <div class="flex items-center gap-2">
         <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-green-600 to-emerald-600">PRÁCTICA ${index + 1} / ${PRACTICE_STEPS.length}</span>
       </div>
@@ -1493,7 +1528,7 @@ function showExamStep(index) {
   tooltip.style.width = `${tooltipWidth}px`;
   
   tooltip.innerHTML = `
-    <div class="flex items-start justify-between mb-3">
+    <div class="flex items-start justify-between mb-3 pilot-drag-handle">
       <div class="flex items-center gap-2">
         <span class="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600">EXAMEN FINAL</span>
       </div>
