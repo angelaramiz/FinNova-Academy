@@ -16,6 +16,7 @@ import {
   type Empleado,
 } from './nominaEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
+import { reportarSim } from './reportarSim';
 
 type Paso = 'empresa' | 'confnomina' | 'periodos' | 'alta' | 'ficha' | 'percepciones' | 'fijas' | 'asimilados' | 'extraordinaria' | 'ordinaria' | 'incidencias' | 'cuentas' | 'timbrado';
 const PASOS: Paso[] = ['empresa', 'confnomina', 'periodos', 'alta', 'ficha', 'percepciones', 'fijas', 'asimilados', 'extraordinaria', 'ordinaria', 'incidencias', 'cuentas', 'timbrado'];
@@ -285,7 +286,7 @@ export default function NominaSim() {
         <div className={card}>
           <div>Palomita: todos o uno por uno. En efectivo → contra caja con fecha del XML.</div>
           <div>Modalidad CFDIs = pago automático.</div>
-          <button onClick={() => setResTimbrado(timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }).mensaje)} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Timbrar 3/3</button>
+          <button onClick={() => { const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }); setResTimbrado(r.mensaje); if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true }); }} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Timbrar 3/3</button>
           {resTimbrado && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">✅ {resTimbrado}</div>}
         </div>
       )}

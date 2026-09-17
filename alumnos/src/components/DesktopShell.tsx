@@ -56,6 +56,7 @@ import { VentanaOSCondicional } from './OsWindow';
 import { cargarPrefs, guardarPrefs, ordenarApps, FONDOS_OS } from '../lib/bloqueo';
 // TASK-D5: Sims Contalink dedicados (regla dura: tarea real abre su Sim).
 import ContalinkFrame from '../sims/ContalinkFrame';
+import { reportarSim } from '../sims/reportarSim';
 import ConciliacionSim from '../sims/ConciliacionSim';
 import AuditoriaSim from '../sims/AuditoriaSim';
 import NominaSim from '../sims/NominaSim';
@@ -701,7 +702,7 @@ const appIcons = isPracticas
         {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="tracker" /></div>}
         {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="curso" /></div>}
         {screen === 'capacitaciones' && <div className="animate-slide-in h-full"><Capacitaciones /></div>}
-        {screen === 'sim-diot' && <div className="animate-slide-in h-full"><ContalinkFrame src="/sims/diot.html" title="DIOT Contalink" /></div>}
+        {screen === 'sim-diot' && <div className="animate-slide-in h-full"><ContalinkFrame src="/sims/diot.html" title="DIOT Contalink" onCompletado={({ mode, score }) => { reportarSim({ taskType: 'reporte_practica', title: `DIOT Contalink — ${mode}`, score, passed: score >= 70 }); addToast(`DIOT ${mode} registrado (${score}/100)`, 'success'); }} /></div>}
         {screen === 'sim-conciliacion' && <div className="animate-slide-in h-full"><ConciliacionSim /></div>}
         {screen === 'sim-auditoria' && <div className="animate-slide-in h-full"><AuditoriaSim /></div>}
         {screen === 'sim-nomina' && <div className="animate-slide-in h-full"><NominaSim /></div>}

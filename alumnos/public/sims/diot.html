@@ -1697,6 +1697,7 @@ function completePractice() {
   mostrarFolio();
   localStorage.setItem('diot_practica', 'true');
   localStorage.setItem('diot_practica_score', score.toString());
+  window.parent.postMessage({ type: 'DIOT_COMPLETADO', mode: 'practica', score }, '*');
   updateMenuBadges();
 }
 
@@ -1742,6 +1743,7 @@ function completeExam(timeUp = false) {
   mostrarFolio();
   localStorage.setItem('diot_examen', 'true');
   localStorage.setItem('diot_examen_score', score.toString());
+  window.parent.postMessage({ type: 'DIOT_COMPLETADO', mode: 'examen', score }, '*');
   updateMenuBadges();
 }
 

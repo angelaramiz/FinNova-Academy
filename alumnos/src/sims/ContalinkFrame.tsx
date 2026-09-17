@@ -7,9 +7,10 @@ import { CATALOGO_AGRUPADOR, CUENTA_INTERNA_A_AGRUPADOR } from './catalogoAgrupa
 interface Props {
   src: string;
   title: string;
+  onCompletado?: (info: { mode: string; score: number }) => void;
 }
 
-export default function ContalinkFrame({ src, title }: Props) {
+export default function ContalinkFrame({ src, title, onCompletado }: Props) {
   const ref = useRef<HTMLIFrameElement | null>(null);
 
   const enviarCatalogo = useCallback(() => {
@@ -23,10 +24,11 @@ export default function ContalinkFrame({ src, title }: Props) {
     const onMsg = (ev: MessageEvent) => {
       if (ev.origin !== window.location.origin) return;
       if (ev.data?.type === 'DIOT_READY') enviarCatalogo();
+      if (ev.data?.type === 'DIOT_COMPLETADO') onCompletado?.({ mode: String(ev.data.mode || ''), score: Number(ev.data.score || 0) });
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [enviarCatalogo]);
+  }, [enviarCatalogo, onCompletado]);
 
   return (
     <iframe
