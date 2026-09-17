@@ -517,7 +517,7 @@ body { font-family: 'Inter', sans-serif; }
         <div class="text-xs text-white/90">Has demostrado competencia en la presentación de DIOT</div>
       </div>
 
-      <div class="rounded-lg p-3 text-center font-mono text-sm" style="background:#eff6ff;border:1px solid #1e40af;color:#1e40af">Folio acuse: <b id="compFolio">—</b></div>
+      <div id="folioRow" class="rounded-lg p-3 text-center font-mono text-sm" style="background:#eff6ff;border:1px solid #1e40af;color:#1e40af">Folio acuse: <b id="compFolio">—</b></div>
       
       <div id="completionNext" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
         <div class="flex items-start gap-2">
@@ -1296,8 +1296,10 @@ function skipPilot() {
 }
 
 // Folio determinista del escenario actual en el modal de finalización.
+// Solo visible al presentar (práctica/examen); el piloto lo oculta.
 function mostrarFolio() {
   if (!state.scenario) return;
+  document.getElementById('folioRow').style.display = '';
   document.getElementById('compFolio').textContent = folioAcuse(state.mode, state.scenario.operaciones);
 }
 
@@ -1324,7 +1326,8 @@ function completePilot() {
   document.getElementById('completionModal').classList.remove('hidden');
   document.getElementById('completionModal').classList.add('flex');
   
-  // El piloto es observación: no genera acuse (solo Práctica/Examen presentan).
+  // El piloto es observación: sin fila de acuse (solo Práctica/Examen presentan).
+  document.getElementById('folioRow').style.display = 'none';
   document.getElementById('compFolio').textContent = '—';
   localStorage.setItem('diot_piloto', 'true');
   updateMenuBadges();
