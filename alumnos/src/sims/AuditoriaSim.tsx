@@ -17,6 +17,8 @@ import {
 } from './auditoriaEngine';
 import { agrupadorDe } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
+import TourSim from './TourSim';
+import { TOURS } from './toursContalink';
 
 type Paso = 'portada' | 'selector' | 'cobrado' | 'deducible' | 'diot' | 'hoja' | 'ivaisr' | 'cuadre' | 'portal' | 'poliza' | 'casos' | 'certificado';
 const PASOS: Paso[] = ['portada', 'selector', 'cobrado', 'deducible', 'diot', 'hoja', 'ivaisr', 'cuadre', 'portal', 'poliza', 'casos', 'certificado'];
@@ -84,7 +86,7 @@ export default function AuditoriaSim() {
   return (
     <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
       {/* Hero ContaLink */}
-      <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
+      <div data-tour="auditoria-hero" className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
         <div className="flex gap-1.5 flex-wrap mb-1.5">
           {['Auditoría Contable', 'Cobrado / Pagado', 'Anexo 24'].map((b) => (
             <span key={b} className="px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.2)' }}>{b}</span>
@@ -94,8 +96,10 @@ export default function AuditoriaSim() {
         <p className="text-xs opacity-90">DIOT = hoja = reporte · modalidad {modulo}{mod.bloqueado ? ' (DIOT bloqueado)' : ' con DIOT habilitado'}</p>
       </div>
 
+      <TourSim titulo={TOURS.auditoria.titulo} pasos={TOURS.auditoria.pasos} storageKey={TOURS.auditoria.storageKey} onNavegar={(p) => setPaso(p as Paso)} />
+
       {/* Stat-cards vivas de goldens */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="auditoria-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { v: String(GOLDENS.diotBase16), l: 'Base DIOT 16%', c: '#1e293b' },
           { v: String(GOLDENS.ivaACargo), l: 'IVA a cargo', c: '#991b1b' },
@@ -110,7 +114,7 @@ export default function AuditoriaSim() {
       </div>
 
       {/* Fases ContaLink */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="auditoria-fases" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {FASES.map((f) => (
           <button key={f.id} onClick={() => setPaso(f.pasos[0])}
             className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
@@ -171,7 +175,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'hoja' && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+        <div data-tour="auditoria-hoja" className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
           {num(hoja.ingresos, (v) => setHoja({ ...hoja, ingresos: v }), 'Ingresos (10000)')}
           {num(hoja.ivaTrasladado, (v) => setHoja({ ...hoja, ivaTrasladado: v }), 'IVA trasladado (1600)')}
           {num(hoja.egresos, (v) => setHoja({ ...hoja, egresos: v }), 'Egresos (2787.88)')}
@@ -193,13 +197,13 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'cuadre' && (
-        <div className={card}>
+        <div data-tour="auditoria-cuadre" className={card}>
           {lista(errCuadre, `DIOT = hoja = reporte (${GOLDENS.diotBase16}). Trasladado ${GOLDENS.ivaTrasladado}; 464 = 464 → 0.`)}
         </div>
       )}
 
       {paso === 'portal' && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+        <div data-tour="auditoria-portal" className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
           {num(sat.ingresos, (v) => setSat({ ...sat, ingresos: v }), 'Ingresos (10000)')}
           {num(sat.compras, (v) => setSat({ ...sat, compras: v }), 'Compras (2714)')}
           {num(sat.iva, (v) => setSat({ ...sat, iva: v }), 'IVA (434 ±1)')}
@@ -243,7 +247,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'certificado' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 text-center text-xs space-y-1">
+        <div data-tour="auditoria-certificado" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 text-center text-xs space-y-1">
           <div className="text-2xl">✓</div>
           <div>Auditoría cerrada: DIOT, hoja, reporte y SAT cuadran.</div>
           <div className="text-slate-500">Neto {GOLDENS.neto} ({GOLDENS.netoRecargos} con recargos) · Póliza de ajuste_cancelación de cuentas vivas lista.</div>
