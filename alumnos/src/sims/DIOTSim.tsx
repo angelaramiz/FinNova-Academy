@@ -1,5 +1,6 @@
-// TASK-D1 — DIOTSim: recrea la pantalla y el flujo reales del modulo DIOT
-// de Contalink (fuente: contex_Font/diot.html + goldens del video).
+// TASK-D1 — DIOTSim (DEPRECADO como vista: la implementación viva es
+// alumnos/public/sims/diot.html embebido vía ContalinkFrame; este archivo
+// queda solo como referencia del flujo y NO se importa en prod).
 // 8 pantallas + 3 modos (tutorial/practica/examen) + 6 errores inyectables.
 // Anti-desvio: sin SpreadsheetWidget/DualViewLayout, sin CDNs, sin numeros
 // inventados (motor en ./diotEngine.ts). Cero LLM.
