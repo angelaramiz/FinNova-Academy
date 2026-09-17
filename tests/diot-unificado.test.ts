@@ -102,11 +102,12 @@ describe('diot unificado (prod HTML)', () => {
 
   it('el piloto (observación) no genera acuse: solo práctica/examen presentan', () => {
     const llamadas = SRC.match(/^\s*mostrarFolio\(\);/gm) || [];
-    // Exactamente 2: completePractice y completeExam. completePilot resetea a '—'.
+    // Exactamente 2: completePractice y completeExam. completePilot oculta la fila.
     expect(llamadas).toHaveLength(2);
     const pilotFn = SRC.slice(SRC.indexOf('function completePilot'), SRC.indexOf('function endPilot'));
     expect(pilotFn).not.toContain('mostrarFolio()');
-    expect(pilotFn).toContain("compFolio').textContent = '—'");
+    expect(pilotFn).toContain("folioRow').style.display = 'none'");
+    expect(SRC).toContain('id="folioRow"');
   });
 
   it('folio de acuse determinista con formato ACU-2026-XXXX y visible en el modal', () => {    const sb = buildSandbox();
