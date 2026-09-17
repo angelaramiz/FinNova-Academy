@@ -101,6 +101,14 @@ body { font-family: 'Inter', sans-serif; }
   max-height: calc(100vh - 24px);
   overflow-y: auto;
 }
+/* Densidad PC: en pantallas amplias la base tipográfica baja a 14px y todo
+   Tailwind (rem) compacta proporcionalmente: métricas, sidebar, tablas,
+   tooltip y modales. Tabletas/móvil (<1024px) conservan tamaños táctiles.
+   No se usa zoom para no descuadrar las coordenadas del tour. */
+@media (min-width: 1024px) {
+  html { font-size: 14px; }
+  .pilot-tooltip { max-width: 380px; padding: 16px; }
+}
 .dark .pilot-tooltip { background: #1e293b; color: #e2e8f0; }
 /* Ventana arrastrable estilo escritorio: el encabezado es el agarre */
 .pilot-drag-handle { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }

@@ -100,6 +100,11 @@ describe('diot unificado (prod HTML)', () => {
     }
   });
 
+  it('densidad PC: base 14px en pantallas amplias sin zoom (no rompe el tour)', () => {
+    expect(SRC).toMatch(/@media\s*\(min-width:\s*1024px\)[\s\S]*?html\s*\{\s*font-size:\s*14px/);
+    expect(SRC).not.toMatch(/body\s*\{\s*[^}]*zoom\s*:/);
+  });
+
   it('el piloto (observación) no genera acuse: solo práctica/examen presentan', () => {
     const llamadas = SRC.match(/^\s*mostrarFolio\(\);/gm) || [];
     // Exactamente 2: completePractice y completeExam. completePilot oculta la fila.
