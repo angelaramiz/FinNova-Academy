@@ -74,18 +74,19 @@ export default function AuditoriaSim() {
   const faseDe = (p: Paso) => FASES.find((f) => f.pasos.includes(p))!;
   const faseActiva = faseDe(paso);
   const num = (v: string, set: (s: string) => void, label: string) => (
-    <label className="block text-xs text-slate-600 dark:text-slate-300">
+    <label className="block text-xs text-slate-600">
       {label}
-      <input value={v} onChange={(e) => set(e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm" />
+      <input value={v} onChange={(e) => set(e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm" />
     </label>
   );
-  const card = 'rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1';
+  // Sistema claro ContaLink (mas.html): tarjetas blancas, borde #e2e8f0.
+  const card = 'rounded-xl border border-slate-200 bg-white p-3 text-xs space-y-1';
   const lista = (errs: string[], okMsg: string) =>
     errs.length === 0 ? <div className="text-green-600">✓ {okMsg}</div> : errs.map((e, i) => <div key={i} className="text-red-600">• {e}</div>);
 
   return (
-    <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
-      {/* Hero ContaLink */}
+    <div className="fade-in" style={{ display: 'grid', gap: 12 }}>
+      {/* Hero ContaLink (mas.html: gradiente morado auditoría #7c3aed→#a855f7) */}
       <div data-tour="auditoria-hero" className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
         <div className="flex gap-1.5 flex-wrap mb-1.5">
           {['Auditoría Contable', 'Cobrado / Pagado', 'Anexo 24'].map((b) => (
@@ -98,17 +99,21 @@ export default function AuditoriaSim() {
 
       <TourSim titulo={TOURS.auditoria.titulo} pasos={TOURS.auditoria.pasos} storageKey={TOURS.auditoria.storageKey} onNavegar={(p) => setPaso(p as Paso)} />
 
-      {/* Stat-cards vivas de goldens */}
+      {/* Stat-cards blancas con icono en cuadro de color (mas.html) */}
       <div data-tour="auditoria-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
-          { v: String(GOLDENS.diotBase16), l: 'Base DIOT 16%', c: '#1e293b' },
-          { v: String(GOLDENS.ivaACargo), l: 'IVA a cargo', c: '#991b1b' },
-          { v: `${sat.isr} / ${sat.retIsr}`, l: 'ISR / Ret. ISR', c: '#065f46' },
-          { v: String(poliza.porPagar || GOLDENS.neto), l: 'Neto por pagar', c: '#6b21a8' },
+          { v: String(GOLDENS.diotBase16), l: 'Base DIOT 16%', c: '#1e293b', bg: '#eff6ff', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', ic: '#1e40af' },
+          { v: String(GOLDENS.ivaACargo), l: 'IVA a cargo', c: '#991b1b', bg: '#fef2f2', icon: 'M13 10V3L4 14h7v7l9-11h-7z', ic: '#ef4444' },
+          { v: `${sat.isr} / ${sat.retIsr}`, l: 'ISR / Ret. ISR', c: '#065f46', bg: '#f0fdf4', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', ic: '#10b981' },
+          { v: String(poliza.porPagar || GOLDENS.neto), l: 'Neto por pagar', c: '#6b21a8', bg: '#faf5ff', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', ic: '#8b5cf6' },
         ].map((s) => (
-          <div key={s.l} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5">
-            <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
-            <div className="text-[10px] text-slate-500">{s.l}</div>
+          <div key={s.l} className="stat-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+              <div><div className="stat-value" style={{ color: s.c }}>{s.v}</div><div className="stat-label">{s.l}</div></div>
+              <div style={{ width: 40, height: 40, background: s.bg, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={s.ic} strokeWidth="2"><path d={s.icon} /></svg>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -117,9 +122,9 @@ export default function AuditoriaSim() {
       <div data-tour="auditoria-fases" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {FASES.map((f) => (
           <button key={f.id} onClick={() => setPaso(f.pasos[0])}
-            className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
-            style={{ borderColor: faseActiva.id === f.id ? f.color : undefined, background: faseActiva.id === f.id ? `${f.color}12` : undefined }}>
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-100" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
+            className={`text-left p-2.5 rounded-xl border-2 transition bg-white ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
+            style={{ borderColor: faseActiva.id === f.id ? f.color : '#e2e8f0', background: faseActiva.id === f.id ? `${f.color}12` : 'white' }}>
+            <div className="text-xs font-bold text-slate-800" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
             <div className="text-[10px] text-slate-500 mt-0.5" style={{ paddingLeft: 10 }}>{f.detalle}</div>
             <div className="flex gap-1 mt-1.5" style={{ paddingLeft: 10 }}>
               {f.pasos.map((p) => (
@@ -130,7 +135,7 @@ export default function AuditoriaSim() {
         ))}
       </div>
 
-      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
+      <div className="text-sm font-semibold text-slate-700">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
 
       {paso === 'portada' && (
         <div className={card}>
@@ -141,12 +146,12 @@ export default function AuditoriaSim() {
 
       {paso === 'selector' && (
         <div className={`${card} space-y-2`}>
-          <div className="flex gap-1">
+          <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
             {(['M1', 'M2', 'M3'] as Modulo[]).map((m) => (
-              <button key={m} onClick={() => setModulo(m)} className={`px-3 py-1.5 rounded border ${m === modulo ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-300 dark:border-slate-600'}`}>{m}</button>
+              <button key={m} onClick={() => setModulo(m)} className={`tab-btn ${m === modulo ? 'active' : ''}`}>{m}</button>
             ))}
           </div>
-          {mod.bloqueado ? <div className="text-red-600">⛔ {mod.aviso}</div> : <div className="text-green-600">✓ {modulo} con DIOT habilitado.</div>}
+          {mod.bloqueado ? <div><span className="status-badge status-error">⛔ {mod.aviso}</span></div> : <div><span className="status-badge status-ok">✓ {modulo} con DIOT habilitado.</span></div>}
           <div className="text-slate-500">M1 = solo CFDIs. Cambio en Configuración → Contabilidad → Automatización.</div>
         </div>
       )}
@@ -175,7 +180,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'hoja' && (
-        <div data-tour="auditoria-hoja" className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+        <div data-tour="auditoria-hoja" className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
           {num(hoja.ingresos, (v) => setHoja({ ...hoja, ingresos: v }), 'Ingresos (10000)')}
           {num(hoja.ivaTrasladado, (v) => setHoja({ ...hoja, ivaTrasladado: v }), 'IVA trasladado (1600)')}
           {num(hoja.egresos, (v) => setHoja({ ...hoja, egresos: v }), 'Egresos (2787.88)')}
@@ -198,12 +203,26 @@ export default function AuditoriaSim() {
 
       {paso === 'cuadre' && (
         <div data-tour="auditoria-cuadre" className={card}>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="data-table">
+              <thead><tr><th>Fuente</th><th style={{ textAlign: 'right' }}>Base 16%</th><th style={{ textAlign: 'center' }}>Estado</th></tr></thead>
+              <tbody>
+                {['DIOT', 'Hoja', 'Reporte'].map((f) => (
+                  <tr key={f}>
+                    <td style={{ fontSize: 12 }}>{f}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 700 }}>{GOLDENS.diotBase16}</td>
+                    <td style={{ textAlign: 'center' }}><span className="status-badge status-ok">✓ cuadra</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {lista(errCuadre, `DIOT = hoja = reporte (${GOLDENS.diotBase16}). Trasladado ${GOLDENS.ivaTrasladado}; 464 = 464 → 0.`)}
         </div>
       )}
 
       {paso === 'portal' && (
-        <div data-tour="auditoria-portal" className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+        <div data-tour="auditoria-portal" className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
           {num(sat.ingresos, (v) => setSat({ ...sat, ingresos: v }), 'Ingresos (10000)')}
           {num(sat.compras, (v) => setSat({ ...sat, compras: v }), 'Compras (2714)')}
           {num(sat.iva, (v) => setSat({ ...sat, iva: v }), 'IVA (434 ±1)')}
@@ -219,7 +238,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'poliza' && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
           {num(poliza.trasladado, (v) => setPoliza({ ...poliza, trasladado: v }), 'Trasladado (1600)')}
           {num(poliza.retenido, (v) => setPoliza({ ...poliza, retenido: v }), 'Retenido (1066.67)')}
           {num(poliza.acreditable, (v) => setPoliza({ ...poliza, acreditable: v }), 'Acreditable')}
@@ -229,29 +248,29 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'casos' && (
-        <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs">
-          <div className="flex gap-1">
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 text-xs">
+          <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0' }}>
             {(['a', 'b', 'c'] as CasoABC[]).map((c) => (
-              <button key={c} onClick={() => { setCaso(c); setAccion(''); setResCaso(null); }} className={`px-2 py-1 rounded border ${c === caso ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-300 dark:border-slate-600'}`}>
+              <button key={c} onClick={() => { setCaso(c); setAccion(''); setResCaso(null); }} className={`tab-btn ${c === caso ? 'active' : ''}`}>
                 Caso {c.toUpperCase()}
               </button>
             ))}
           </div>
-          <select value={accion} onChange={(e) => setAccion(e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs">
+          <select value={accion} onChange={(e) => setAccion(e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs">
             <option value="">Elige salida…</option>
             {opcionesCasoABC(caso).map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
-          <button onClick={() => { const r = resolverCasoABC(caso, accion); setResCaso(r.mensaje); if (r.ok) reportarSim({ taskType: 'auditoria_practica', title: `Auditoría — caso ${caso.toUpperCase()}`, score: 100, passed: true }); }} disabled={!accion} className="px-3 py-1.5 text-white rounded-lg text-xs disabled:opacity-40" style={{ background: '#7c3aed' }}>Resolver</button>
-          {resCaso && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">{resCaso}</div>}
+          <button onClick={() => { const r = resolverCasoABC(caso, accion); setResCaso(r.mensaje); if (r.ok) reportarSim({ taskType: 'auditoria_practica', title: `Auditoría — caso ${caso.toUpperCase()}`, score: 100, passed: true }); }} disabled={!accion} className="btn btn-purple" style={{ opacity: accion ? undefined : 0.4 }}>Resolver</button>
+          {resCaso && <div className="p-2 rounded bg-slate-50">{resCaso}</div>}
         </div>
       )}
 
       {paso === 'certificado' && (
-        <div data-tour="auditoria-certificado" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 text-center text-xs space-y-1">
+        <div data-tour="auditoria-certificado" className="rounded-xl border border-slate-200 bg-white p-4 text-center text-xs space-y-1">
           <div className="text-2xl">✓</div>
           <div>Auditoría cerrada: DIOT, hoja, reporte y SAT cuadran.</div>
           <div className="text-slate-500">Neto {GOLDENS.neto} ({GOLDENS.netoRecargos} con recargos) · Póliza de ajuste_cancelación de cuentas vivas lista.</div>
-          <button onClick={() => reportarSim({ taskType: 'auditoria_practica', title: 'Auditoría — cierre cobrado/pagado', score: 100, passed: true })} className="mt-2 px-3 py-1.5 text-white rounded-lg text-xs" style={{ background: '#7c3aed' }}>Registrar auditoría</button>
+          <button onClick={() => reportarSim({ taskType: 'auditoria_practica', title: 'Auditoría — cierre cobrado/pagado', score: 100, passed: true })} className="btn btn-purple mt-2">Registrar auditoría</button>
         </div>
       )}
 
@@ -261,8 +280,8 @@ export default function AuditoriaSim() {
       </div>
 
       <div className="flex justify-between">
-        <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">← Atrás</button>
-        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="px-3 py-1.5 text-white rounded-lg text-xs" style={{ background: '#7c3aed' }}>Siguiente →</button>}
+        <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="btn btn-secondary">← Atrás</button>
+        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="btn btn-purple">Siguiente →</button>}
       </div>
     </div>
   );
