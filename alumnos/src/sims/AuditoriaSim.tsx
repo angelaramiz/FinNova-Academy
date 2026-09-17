@@ -16,6 +16,7 @@ import {
   type CasoABC,
 } from './auditoriaEngine';
 import { agrupadorDe } from './catalogoAgrupador';
+import { reportarSim } from './reportarSim';
 
 type Paso = 'portada' | 'selector' | 'cobrado' | 'deducible' | 'diot' | 'hoja' | 'ivaisr' | 'cuadre' | 'portal' | 'poliza' | 'casos' | 'certificado';
 const PASOS: Paso[] = ['portada', 'selector', 'cobrado', 'deducible', 'diot', 'hoja', 'ivaisr', 'cuadre', 'portal', 'poliza', 'casos', 'certificado'];
@@ -236,7 +237,7 @@ export default function AuditoriaSim() {
             <option value="">Elige salida…</option>
             {opcionesCasoABC(caso).map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
-          <button onClick={() => setResCaso(resolverCasoABC(caso, accion).mensaje)} disabled={!accion} className="px-3 py-1.5 text-white rounded-lg text-xs disabled:opacity-40" style={{ background: '#7c3aed' }}>Resolver</button>
+          <button onClick={() => { const r = resolverCasoABC(caso, accion); setResCaso(r.mensaje); if (r.ok) reportarSim({ taskType: 'auditoria_practica', title: `Auditoría — caso ${caso.toUpperCase()}`, score: 100, passed: true }); }} disabled={!accion} className="px-3 py-1.5 text-white rounded-lg text-xs disabled:opacity-40" style={{ background: '#7c3aed' }}>Resolver</button>
           {resCaso && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">{resCaso}</div>}
         </div>
       )}
@@ -246,6 +247,7 @@ export default function AuditoriaSim() {
           <div className="text-2xl">✓</div>
           <div>Auditoría cerrada: DIOT, hoja, reporte y SAT cuadran.</div>
           <div className="text-slate-500">Neto {GOLDENS.neto} ({GOLDENS.netoRecargos} con recargos) · Póliza de ajuste_cancelación de cuentas vivas lista.</div>
+          <button onClick={() => reportarSim({ taskType: 'auditoria_practica', title: 'Auditoría — cierre cobrado/pagado', score: 100, passed: true })} className="mt-2 px-3 py-1.5 text-white rounded-lg text-xs" style={{ background: '#7c3aed' }}>Registrar auditoría</button>
         </div>
       )}
 
