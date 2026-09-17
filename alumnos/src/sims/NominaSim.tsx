@@ -1,5 +1,8 @@
 // TASK-D4 — NominaSim: flujo de la capacitacion de nomina (transcripcion
 // verificada). 13 pantallas + tarifa ISR R-14 obligatoria. Cero LLM.
+// Diseno ContaLink (mas.html): hero verde, stat-cards vivas del motor,
+// 4 fases, alta de empleados con formulario real (RFC 13 / CURP 18 /
+// NSS 11). Matematicas SIEMPRE del motor (NUNCA 10% fijo ni UUID random).
 import { useMemo, useState } from 'react';
 import {
   calcularISR,
@@ -10,6 +13,7 @@ import {
   aplicarIncidencias,
   validarCuentas,
   timbrar,
+  type Empleado,
 } from './nominaEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
 
@@ -31,13 +35,29 @@ const TITULOS: Record<Paso, string> = {
   timbrado: 'Timbrado y pago',
 };
 
-const EMPLEADOS = [
-  { nombre: 'Ana', periodicidad: 'semanal' as const },
-  { nombre: 'Beto', periodicidad: 'quincenal' as const },
-  { nombre: 'Camila', periodicidad: 'semanal' as const },
-  { nombre: 'Emilio', periodicidad: 'quincenal' as const },
-  { nombre: 'Julia Martínez', periodicidad: 'semanal' as const },
-  { nombre: 'Luis', periodicidad: 'quincenal' as const },
+// Fases visuales ContaLink que agrupan los 13 pasos del video.
+const FASES: { id: string; titulo: string; detalle: string; color: string; pasos: Paso[] }[] = [
+  { id: 'config', titulo: '1. Configuración', detalle: 'Empresa, nómina y periodos', color: '#3b82f6', pasos: ['empresa', 'confnomina', 'periodos'] },
+  { id: 'empleados', titulo: '2. Empleados', detalle: 'RFC, CURP, NSS, salario', color: '#10b981', pasos: ['alta', 'ficha'] },
+  { id: 'calculo', titulo: '3. Cálculo', detalle: 'ISR tarifa, IMSS, neto', color: '#f59e0b', pasos: ['percepciones', 'fijas', 'asimilados', 'extraordinaria', 'ordinaria', 'incidencias'] },
+  { id: 'timbrado', titulo: '4. Timbrado', detalle: 'CFDI Nómina 4.0', color: '#7c3aed', pasos: ['cuentas', 'timbrado'] },
+];
+
+interface EmpleadoFiscal extends Empleado {
+  rfc: string;
+  curp: string;
+  nss: string;
+  diario: number;
+}
+
+// Seed del video (6 empleados con periodicidad); el alta agrega con datos fiscales.
+const EMPLEADOS_SEED: EmpleadoFiscal[] = [
+  { nombre: 'Ana', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: 0 },
+  { nombre: 'Beto', periodicidad: 'quincenal', rfc: '', curp: '', nss: '', diario: 0 },
+  { nombre: 'Camila', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: 0 },
+  { nombre: 'Emilio', periodicidad: 'quincenal', rfc: '', curp: '', nss: '', diario: 0 },
+  { nombre: 'Julia Martínez', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: 0 },
+  { nombre: 'Luis', periodicidad: 'quincenal', rfc: '', curp: '', nss: '', diario: 0 },
 ];
 
 export default function NominaSim() {
@@ -48,16 +68,42 @@ export default function NominaSim() {
   const [ficha, setFicha] = useState({ diario: '318.19', vacaciones: '22', ptu: true });
   const [finiquito, setFiniquito] = useState({ fechaTermino: '2026-07-15', exento: '5000', gravable: '12000' });
   const [resTimbrado, setResTimbrado] = useState<string | null>(null);
+  const [empleados, setEmpleados] = useState<EmpleadoFiscal[]>(EMPLEADOS_SEED);
+  const [nuevo, setNuevo] = useState({ nombre: '', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: '' });
+  const [errAlta, setErrAlta] = useState<string[]>([]);
 
   const errEmp = useMemo(() => validarEmpresa({ razon: emp.razon, regimen: emp.regimen, cp: emp.cp, cer: emp.cer, key: emp.key, pass: emp.pass, logoMB: Number(emp.logoMB) }), [emp]);
   const nom = useMemo(() => calcularNomina({ diario: Number(ficha.diario), dias: 7, esMinimo: false, causaISR: true, asimilada: false }), [ficha]);
   const nomMin = useMemo(() => calcularNomina({ diario: 248.93, dias: 7, esMinimo: true, causaISR: false, asimilada: false }), []);
   const asi = useMemo(() => calcularNomina({ diario: 0, dias: 0, esMinimo: false, causaISR: true, asimilada: true, montoAsimilada: 10000 }), []);
-  const semanales = useMemo(() => filtroOrdinaria(EMPLEADOS, 'semanal'), []);
+  const semanales = useMemo(() => filtroOrdinaria(empleados, 'semanal'), [empleados]);
   const inc = useMemo(() => aplicarIncidencias('20–26 jul', { vacaciones: 3, he: 2, festivo: 1 }), []);
   const errCuentas = useMemo(() => validarCuentas([{ concepto: 'Sueldos', cuenta: '501-01' }, { concepto: 'ISR retenido', cuenta: '211-01' }, { concepto: 'Finiquito', cuenta: '' }]), []);
 
   const idx = PASOS.indexOf(paso);
+  const faseDe = (p: Paso) => FASES.find((f) => f.pasos.includes(p))!;
+  const faseActiva = faseDe(paso);
+
+  function agregarEmpleado() {
+    const errs: string[] = [];
+    if (!nuevo.nombre.trim()) errs.push('nombre requerido');
+    if (nuevo.rfc.trim().length !== 13) errs.push('RFC debe tener 13 caracteres (PF)');
+    if (nuevo.curp.trim().length !== 18) errs.push('CURP debe tener 18 caracteres');
+    if (!/^\d{11}$/.test(nuevo.nss.trim())) errs.push('NSS debe tener 11 dígitos');
+    if (!(Number(nuevo.diario) > 0)) errs.push('salario diario debe ser mayor a 0');
+    setErrAlta(errs);
+    if (errs.length > 0) return;
+    setEmpleados([...empleados, {
+      nombre: nuevo.nombre.trim(),
+      periodicidad: nuevo.periodicidad as 'semanal' | 'quincenal',
+      rfc: nuevo.rfc.trim().toUpperCase(),
+      curp: nuevo.curp.trim().toUpperCase(),
+      nss: nuevo.nss.trim(),
+      diario: Number(nuevo.diario),
+    }]);
+    setNuevo({ nombre: '', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: '' });
+  }
+
   const num = (v: string, set: (s: string) => void, label: string) => (
     <label className="block text-xs text-slate-600 dark:text-slate-300">
       {label}
@@ -67,14 +113,51 @@ export default function NominaSim() {
   const card = 'rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-2';
 
   return (
-    <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold text-slate-800 dark:text-white">Nómina · ISR por tarifa (nunca % fijo)</h2>
-      <div className="flex gap-0.5">
-        {PASOS.map((p, i) => (
-          <button key={p} onClick={() => setPaso(p)} className={`flex-1 h-1.5 rounded-full ${i <= idx ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`} aria-label={TITULOS[p]} />
+    <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
+      {/* Hero ContaLink */}
+      <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+        <div className="flex gap-1.5 flex-wrap mb-1.5">
+          {['Módulo de Nómina', 'Anexo 20 RMF 2026', 'CFDI Nómina 4.0'].map((b) => (
+            <span key={b} className="px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.2)' }}>{b}</span>
+          ))}
+        </div>
+        <h2 className="text-lg font-bold">Gestión y Emisión de Nómina</h2>
+        <p className="text-xs opacity-90">ISR por tarifa progresiva (Art. 96 LISR) — nunca % fijo · Art. 99 LISR</p>
+      </div>
+
+      {/* Stat-cards vivas del motor */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { v: String(empleados.length), l: 'Empleados', c: '#1e293b' },
+          { v: `$${nom.bruto.toFixed(0)}`, l: 'Percepción ejemplo', c: '#065f46' },
+          { v: `$${(nom.isr + nom.imss).toFixed(0)}`, l: 'Deducciones (ISR+IMSS)', c: '#991b1b' },
+          { v: `$${nom.neto.toFixed(0)}`, l: 'Neto ejemplo', c: '#6b21a8' },
+        ].map((s) => (
+          <div key={s.l} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5">
+            <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
+            <div className="text-[10px] text-slate-500">{s.l}</div>
+          </div>
         ))}
       </div>
-      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]}</div>
+
+      {/* Fases ContaLink */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {FASES.map((f) => (
+          <button key={f.id} onClick={() => setPaso(f.pasos[0])}
+            className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
+            style={{ borderColor: faseActiva.id === f.id ? f.color : undefined, background: faseActiva.id === f.id ? `${f.color}12` : undefined }}>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-100" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
+            <div className="text-[10px] text-slate-500 mt-0.5" style={{ paddingLeft: 10 }}>{f.detalle}</div>
+            <div className="flex gap-1 mt-1.5" style={{ paddingLeft: 10 }}>
+              {f.pasos.map((p) => (
+                <span key={p} title={TITULOS[p]} className="h-1.5 flex-1 rounded-full" style={{ background: PASOS.indexOf(p) <= idx ? f.color : undefined }} />
+              ))}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
 
       {paso === 'empresa' && (
         <div className={card}>
@@ -113,6 +196,25 @@ export default function NominaSim() {
           <div><b>1. XML:</b> muñeco + → actualiza catálogo (CURP, RFC, contrato, régimen).</div>
           <div><b>2. Manual:</b> todos los campos del empleado.</div>
           <div><b>3. Masiva:</b> Excel con rojos obligatorios (empleados o asimilados).</div>
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+            <div className="font-bold text-slate-700 dark:text-slate-200">➕ Agregar empleado (PF: RFC 13 · CURP 18 · NSS 11 dígitos)</div>
+            <div className="grid grid-cols-2 gap-2">
+              {num(nuevo.nombre, (v) => setNuevo({ ...nuevo, nombre: v }), 'Nombre completo')}
+              <label className="block text-xs text-slate-600 dark:text-slate-300">Periodicidad
+                <select value={nuevo.periodicidad} onChange={(e) => setNuevo({ ...nuevo, periodicidad: e.target.value })} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm">
+                  <option value="semanal">Semanal</option>
+                  <option value="quincenal">Quincenal</option>
+                </select>
+              </label>
+              {num(nuevo.rfc, (v) => setNuevo({ ...nuevo, rfc: v }), 'RFC (13 caracteres)')}
+              {num(nuevo.curp, (v) => setNuevo({ ...nuevo, curp: v }), 'CURP (18 caracteres)')}
+              {num(nuevo.nss, (v) => setNuevo({ ...nuevo, nss: v }), 'NSS (11 dígitos)')}
+              {num(nuevo.diario, (v) => setNuevo({ ...nuevo, diario: v }), 'Salario diario')}
+            </div>
+            {errAlta.length > 0 && errAlta.map((e, i) => <div key={i} className="text-red-600">• {e}</div>)}
+            <button onClick={agregarEmpleado} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold">Agregar empleado</button>
+            <div className="text-slate-500">Plantilla actual: {empleados.map((e) => e.nombre).join(', ')}</div>
+          </div>
         </div>
       )}
 
@@ -159,7 +261,7 @@ export default function NominaSim() {
 
       {paso === 'ordinaria' && (
         <div className={card}>
-          <div>Filtro periodicidad semanal: 6 empleados → entran <b>{semanales.map((e) => e.nombre).join(', ')}</b> (3).</div>
+          <div>Filtro periodicidad semanal: {empleados.length} empleados → entran <b>{semanales.map((e) => e.nombre).join(', ')}</b> ({semanales.length}).</div>
           <div className="text-slate-500">Lista de raya: PDF / Excel.</div>
         </div>
       )}
@@ -187,6 +289,11 @@ export default function NominaSim() {
           {resTimbrado && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">✅ {resTimbrado}</div>}
         </div>
       )}
+
+      {/* Teoría importada de mas.html */}
+      <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#ecfdf5', border: '1px solid #10b981', color: '#065f46' }}>
+        <b>📚 ¿Qué es el Módulo de Nómina?</b> Gestiona empleados, calcula percepciones y deducciones (ISR Art. 96 LISR, IMSS Art. 13 LSS), emite recibos timbrados (CFDI Nómina 4.0). Empleados PF: RFC 13 · CURP 18 · NSS 11 dígitos. Conceptos Anexo 20: percepciones 001-099, deducciones 019-051.
+      </div>
 
       <div className="flex justify-between">
         <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">← Atrás</button>
