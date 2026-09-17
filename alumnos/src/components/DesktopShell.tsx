@@ -55,12 +55,24 @@ import Capacitaciones from './Capacitaciones';
 import { VentanaOSCondicional } from './OsWindow';
 import { cargarPrefs, guardarPrefs, ordenarApps, FONDOS_OS } from '../lib/bloqueo';
 // TASK-D5: Sims Contalink dedicados (regla dura: tarea real abre su Sim).
-import ContalinkFrame from '../sims/ContalinkFrame';
+// Shell único ContaLink OS claro (clon de contex_Font/mas.html): las 4
+// pantallas sim-* montan ContalinkShell; el ruteo (simsContalink) intacto.
+import ContalinkShell, { type ModuloContalink } from '../sims/ContalinkShell';
 import { reportarSim } from '../sims/reportarSim';
-import ConciliacionSim from '../sims/ConciliacionSim';
-import AuditoriaSim from '../sims/AuditoriaSim';
-import NominaSim from '../sims/NominaSim';
 import { simParaTarea, SIM_POR_MODULO } from '../sims/simsContalink';
+// Pantalla sim-* -> módulo del shell único (y de vuelta).
+const MODULO_POR_SCREEN: Record<string, ModuloContalink> = {
+  'sim-conciliacion': 'conciliacion',
+  'sim-diot': 'diot',
+  'sim-auditoria': 'auditoria',
+  'sim-nomina': 'nomina',
+};
+const SCREEN_POR_MODULO: Record<ModuloContalink, string> = {
+  conciliacion: 'sim-conciliacion',
+  diot: 'sim-diot',
+  auditoria: 'sim-auditoria',
+  nomina: 'sim-nomina',
+};
 function SimFallback() {
   return <div className="p-6 text-xs font-mono animate-pulse" style={{ color: '#64748b' }}>Cargando herramienta…</div>;
 }
@@ -702,10 +714,10 @@ const appIcons = isPracticas
         {screen === 'practicasTracker' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="tracker" /></div>}
         {screen === 'practicasCurso' && <div className="animate-slide-in h-full"><PracticasModules theme={theme} onBack={() => setScreen('desktop')} onOpenTask={openTaskByType} onOpenSim={(id) => { const s = SIM_POR_MODULO[id]; if (s) setScreen(s as Screen); }} initialTab="curso" /></div>}
         {screen === 'capacitaciones' && <div className="animate-slide-in h-full"><Capacitaciones /></div>}
-        {screen === 'sim-diot' && <div className="animate-slide-in h-full"><ContalinkFrame src="/sims/diot.html" title="DIOT Contalink" onCompletado={({ mode, score }) => { reportarSim({ taskType: 'reporte_practica', title: `DIOT Contalink — ${mode}`, score, passed: score >= 70 }); addToast(`DIOT ${mode} registrado (${score}/100)`, 'success'); }} /></div>}
-        {screen === 'sim-conciliacion' && <div className="animate-slide-in h-full"><ConciliacionSim /></div>}
-        {screen === 'sim-auditoria' && <div className="animate-slide-in h-full"><AuditoriaSim /></div>}
-        {screen === 'sim-nomina' && <div className="animate-slide-in h-full"><NominaSim /></div>}
+        {screen === 'sim-diot' && <div className="animate-slide-in h-full"><ContalinkShell modulo={MODULO_POR_SCREEN[screen]} onCambiar={(m) => setScreen(SCREEN_POR_MODULO[m] as Screen)} onDiotCompletado={({ mode, score }) => { reportarSim({ taskType: 'reporte_practica', title: `DIOT Contalink — ${mode}`, score, passed: score >= 70 }); addToast(`DIOT ${mode} registrado (${score}/100)`, 'success'); }} /></div>}
+        {screen === 'sim-conciliacion' && <div className="animate-slide-in h-full"><ContalinkShell modulo={MODULO_POR_SCREEN[screen]} onCambiar={(m) => setScreen(SCREEN_POR_MODULO[m] as Screen)} /></div>}
+        {screen === 'sim-auditoria' && <div className="animate-slide-in h-full"><ContalinkShell modulo={MODULO_POR_SCREEN[screen]} onCambiar={(m) => setScreen(SCREEN_POR_MODULO[m] as Screen)} /></div>}
+        {screen === 'sim-nomina' && <div className="animate-slide-in h-full"><ContalinkShell modulo={MODULO_POR_SCREEN[screen]} onCambiar={(m) => setScreen(SCREEN_POR_MODULO[m] as Screen)} /></div>}
         {screen === 'sql' && <div className="animate-slide-in h-full"><SQLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'warehouse' && <div className="animate-slide-in h-full"><WarehouseSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'monitor' && <div className="animate-slide-in h-full"><MonitorSim theme={theme} onBack={() => setScreen('desktop')} /></div>}

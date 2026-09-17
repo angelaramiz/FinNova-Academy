@@ -108,16 +108,17 @@ export default function NominaSim() {
   }
 
   const num = (v: string, set: (s: string) => void, label: string) => (
-    <label className="block text-xs text-slate-600 dark:text-slate-300">
+    <label className="block text-xs text-slate-600">
       {label}
-      <input value={v} onChange={(e) => set(e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm" />
+      <input value={v} onChange={(e) => set(e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm" />
     </label>
   );
-  const card = 'rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-2';
+  // Sistema claro ContaLink (mas.html): tarjetas blancas, borde #e2e8f0.
+  const card = 'rounded-xl border border-slate-200 bg-white p-3 text-xs space-y-2';
 
   return (
-    <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
-      {/* Hero ContaLink */}
+    <div className="fade-in" style={{ display: 'grid', gap: 12 }}>
+      {/* Hero ContaLink (mas.html: gradiente verde nómina #059669→#10b981) */}
       <div data-tour="nomina-hero" className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
         <div className="flex gap-1.5 flex-wrap mb-1.5">
           {['Módulo de Nómina', 'Anexo 20 RMF 2026', 'CFDI Nómina 4.0'].map((b) => (
@@ -130,17 +131,21 @@ export default function NominaSim() {
 
       <TourSim titulo={TOURS.nomina.titulo} pasos={TOURS.nomina.pasos} storageKey={TOURS.nomina.storageKey} onNavegar={(p) => setPaso(p as Paso)} />
 
-      {/* Stat-cards vivas del motor */}
+      {/* Stat-cards blancas con icono en cuadro de color (mas.html) */}
       <div data-tour="nomina-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
-          { v: String(empleados.length), l: 'Empleados', c: '#1e293b' },
-          { v: `$${nom.bruto.toFixed(0)}`, l: 'Percepción ejemplo', c: '#065f46' },
-          { v: `$${(nom.isr + nom.imss).toFixed(0)}`, l: 'Deducciones (ISR+IMSS)', c: '#991b1b' },
-          { v: `$${nom.neto.toFixed(0)}`, l: 'Neto ejemplo', c: '#6b21a8' },
+          { v: String(empleados.length), l: 'Empleados', c: '#1e293b', bg: '#eff6ff', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', ic: '#1e40af' },
+          { v: `$${nom.bruto.toFixed(0)}`, l: 'Percepción ejemplo', c: '#065f46', bg: '#f0fdf4', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', ic: '#10b981' },
+          { v: `$${(nom.isr + nom.imss).toFixed(0)}`, l: 'Deducciones (ISR+IMSS)', c: '#991b1b', bg: '#fef2f2', icon: 'M13 10V3L4 14h7v7l9-11h-7z', ic: '#ef4444' },
+          { v: `$${nom.neto.toFixed(0)}`, l: 'Neto ejemplo', c: '#6b21a8', bg: '#faf5ff', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', ic: '#8b5cf6' },
         ].map((s) => (
-          <div key={s.l} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5">
-            <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
-            <div className="text-[10px] text-slate-500">{s.l}</div>
+          <div key={s.l} className="stat-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+              <div><div className="stat-value" style={{ color: s.c }}>{s.v}</div><div className="stat-label">{s.l}</div></div>
+              <div style={{ width: 40, height: 40, background: s.bg, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={s.ic} strokeWidth="2"><path d={s.icon} /></svg>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -149,9 +154,9 @@ export default function NominaSim() {
       <div data-tour="nomina-fases" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {FASES.map((f) => (
           <button key={f.id} onClick={() => setPaso(f.pasos[0])}
-            className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
-            style={{ borderColor: faseActiva.id === f.id ? f.color : undefined, background: faseActiva.id === f.id ? `${f.color}12` : undefined }}>
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-100" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
+            className={`text-left p-2.5 rounded-xl border-2 transition bg-white ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
+            style={{ borderColor: faseActiva.id === f.id ? f.color : '#e2e8f0', background: faseActiva.id === f.id ? `${f.color}12` : 'white' }}>
+            <div className="text-xs font-bold text-slate-800" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
             <div className="text-[10px] text-slate-500 mt-0.5" style={{ paddingLeft: 10 }}>{f.detalle}</div>
             <div className="flex gap-1 mt-1.5" style={{ paddingLeft: 10 }}>
               {f.pasos.map((p) => (
@@ -162,7 +167,7 @@ export default function NominaSim() {
         ))}
       </div>
 
-      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
+      <div className="text-sm font-semibold text-slate-700">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
 
       {paso === 'empresa' && (
         <div className={card}>
@@ -201,12 +206,27 @@ export default function NominaSim() {
           <div><b>1. XML:</b> muñeco + → actualiza catálogo (CURP, RFC, contrato, régimen).</div>
           <div><b>2. Manual:</b> todos los campos del empleado.</div>
           <div><b>3. Masiva:</b> Excel con rojos obligatorios (empleados o asimilados).</div>
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-            <div className="font-bold text-slate-700 dark:text-slate-200">➕ Agregar empleado (PF: RFC 13 · CURP 18 · NSS 11 dígitos)</div>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="data-table">
+              <thead><tr><th>Empleado</th><th style={{ textAlign: 'center' }}>Periodicidad</th><th>RFC</th><th style={{ textAlign: 'right' }}>Salario diario</th></tr></thead>
+              <tbody>
+                {empleados.map((e) => (
+                  <tr key={e.nombre}>
+                    <td style={{ fontSize: 12 }}>{e.nombre}</td>
+                    <td style={{ textAlign: 'center' }}><span className="status-badge status-info">{e.periodicidad}</span></td>
+                    <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{e.rfc || '—'}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{e.diario > 0 ? `$${e.diario.toFixed(2)}` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="pt-2 border-t border-slate-200 space-y-2">
+            <div className="font-bold text-slate-700">➕ Agregar empleado (PF: RFC 13 · CURP 18 · NSS 11 dígitos)</div>
             <div className="grid grid-cols-2 gap-2">
               {num(nuevo.nombre, (v) => setNuevo({ ...nuevo, nombre: v }), 'Nombre completo')}
-              <label className="block text-xs text-slate-600 dark:text-slate-300">Periodicidad
-                <select value={nuevo.periodicidad} onChange={(e) => setNuevo({ ...nuevo, periodicidad: e.target.value })} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm">
+              <label className="block text-xs text-slate-600">Periodicidad
+                <select value={nuevo.periodicidad} onChange={(e) => setNuevo({ ...nuevo, periodicidad: e.target.value })} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-sm">
                   <option value="semanal">Semanal</option>
                   <option value="quincenal">Quincenal</option>
                 </select>
@@ -217,7 +237,7 @@ export default function NominaSim() {
               {num(nuevo.diario, (v) => setNuevo({ ...nuevo, diario: v }), 'Salario diario')}
             </div>
             {errAlta.length > 0 && errAlta.map((e, i) => <div key={i} className="text-red-600">• {e}</div>)}
-            <button onClick={agregarEmpleado} className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold">Agregar empleado</button>
+            <button onClick={agregarEmpleado} className="btn btn-success">Agregar empleado</button>
             <div className="text-slate-500">Plantilla actual: {empleados.map((e) => e.nombre).join(', ')}</div>
           </div>
         </div>
@@ -228,7 +248,7 @@ export default function NominaSim() {
           {num(ficha.diario, (v) => setFicha({ ...ficha, diario: v }), 'Salario diario (318.19 / 18 / mínimo)')}
           {num(ficha.vacaciones, (v) => setFicha({ ...ficha, vacaciones: v }), 'Días vacaciones (22)')}
           <div>PTU: <input type="checkbox" checked={ficha.ptu} onChange={(e) => setFicha({ ...ficha, ptu: e.target.checked })} /> checkbox</div>
-          <div className="text-amber-700 dark:text-amber-300">⚠️ Actualizar + Refrescar obligatorio tras cambiar el diario (recalcula cotización con prima vacacional).</div>
+          <div className="text-amber-700">⚠️ Actualizar + Refrescar obligatorio tras cambiar el diario (recalcula cotización con prima vacacional).</div>
           <div>Semanal: {nom.bruto.toFixed(2)} · ISR {nom.isr} · IMSS {nom.imss.toFixed(2)} · Neto {nom.neto.toFixed(2)}</div>
           <div className="text-slate-500">IMSS 5% fijo = simplificación didáctica (la LSS real cotiza por ramos de seguro). ISR siempre por tarifa progresiva, nunca % fijo.</div>
         </div>
@@ -281,7 +301,7 @@ export default function NominaSim() {
 
       {paso === 'cuentas' && (
         <div className={card}>
-          {errCuentas.length === 0 ? <div className="text-green-600">✓ Todas con cuenta.</div> : errCuentas.map((e, i) => <div key={i} className="text-amber-700 dark:text-amber-300">⚠️ {e}</div>)}
+          {errCuentas.length === 0 ? <div className="text-green-600">✓ Todas con cuenta.</div> : errCuentas.map((e, i) => <div key={i} className="text-amber-700">⚠️ {e}</div>)}
           <div className="text-slate-500">Toda percepción/deducción lleva cuenta contable.</div>
           <div className="text-[10px] text-slate-500">SAT Anexo 24 → Sueldos: {etiquetaAgrupador('501-01')} · ISR retenido: {etiquetaAgrupador('211-01')}</div>
         </div>
@@ -291,8 +311,8 @@ export default function NominaSim() {
         <div data-tour="nomina-timbrado" className={card}>
           <div>Palomita: todos o uno por uno. En efectivo → contra caja con fecha del XML.</div>
           <div>Modalidad CFDIs = pago automático.</div>
-          <button onClick={() => { const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }); setResTimbrado(r.mensaje); if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true }); }} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Timbrar 3/3</button>
-          {resTimbrado && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">✅ {resTimbrado}</div>}
+          <button onClick={() => { const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }); setResTimbrado(r.mensaje); if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true }); }} className="btn btn-primary">Timbrar 3/3</button>
+          {resTimbrado && <div className="p-2 rounded bg-slate-50">✅ {resTimbrado}</div>}
         </div>
       )}
 
@@ -302,8 +322,8 @@ export default function NominaSim() {
       </div>
 
       <div className="flex justify-between">
-        <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">← Atrás</button>
-        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Siguiente →</button>}
+        <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="btn btn-secondary">← Atrás</button>
+        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="btn btn-primary">Siguiente →</button>}
       </div>
     </div>
   );
