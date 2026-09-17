@@ -1,5 +1,7 @@
 // TASK-D3 — AuditoriaSim: flujo de auditoria cobrado/pagado de la directora +
 // Pedro (VTT auditoria). 12 pantallas con goldens internos. Cero LLM.
+// Diseno ContaLink (mas.html): hero morado, stat-cards vivas de goldens,
+// 4 fases, teoria DIOT=hoja=reporte. Numeros SIEMPRE goldens del video.
 import { useMemo, useState } from 'react';
 import {
   GOLDENS,
@@ -32,6 +34,14 @@ const TITULOS: Record<Paso, string> = {
   certificado: 'Cierre',
 };
 
+// Fases visuales ContaLink que agrupan los 12 pasos del video.
+const FASES: { id: string; titulo: string; detalle: string; color: string; pasos: Paso[] }[] = [
+  { id: 'revision', titulo: '1. Revisión', detalle: 'Cobrado, pagado y deducible', color: '#3b82f6', pasos: ['portada', 'selector', 'cobrado', 'deducible'] },
+  { id: 'hoja', titulo: '2. Hoja', detalle: 'DIOT, hoja e IVA/ISR', color: '#10b981', pasos: ['diot', 'hoja', 'ivaisr'] },
+  { id: 'sat', titulo: '3. SAT', detalle: 'Cuadre, portal y póliza', color: '#f59e0b', pasos: ['cuadre', 'portal', 'poliza'] },
+  { id: 'cierre', titulo: '4. Cierre', detalle: 'Casos y certificado', color: '#7c3aed', pasos: ['casos', 'certificado'] },
+];
+
 export default function AuditoriaSim() {
   const [paso, setPaso] = useState<Paso>('portada');
   const [modulo, setModulo] = useState<Modulo>('M2');
@@ -58,34 +68,74 @@ export default function AuditoriaSim() {
   const errCuadre = useMemo(() => cuadrar({ diot: GOLDENS.diotBase16, hoja: GOLDENS.diotBase16, reporte: GOLDENS.diotBase16 }), []);
 
   const idx = PASOS.indexOf(paso);
+  const faseDe = (p: Paso) => FASES.find((f) => f.pasos.includes(p))!;
+  const faseActiva = faseDe(paso);
   const num = (v: string, set: (s: string) => void, label: string) => (
     <label className="block text-xs text-slate-600 dark:text-slate-300">
       {label}
       <input value={v} onChange={(e) => set(e.target.value)} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm" />
     </label>
   );
+  const card = 'rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1';
   const lista = (errs: string[], okMsg: string) =>
-    errs.length === 0 ? <div className="text-xs text-green-600">✓ {okMsg}</div> : errs.map((e, i) => <div key={i} className="text-xs text-red-600">• {e}</div>);
+    errs.length === 0 ? <div className="text-green-600">✓ {okMsg}</div> : errs.map((e, i) => <div key={i} className="text-red-600">• {e}</div>);
 
   return (
-    <div className="p-4 space-y-3">
-      <h2 className="text-lg font-bold text-slate-800 dark:text-white">Auditoría cobrado / pagado</h2>
-      <div className="flex gap-0.5">
-        {PASOS.map((p, i) => (
-          <button key={p} onClick={() => setPaso(p)} className={`flex-1 h-1.5 rounded-full ${i <= idx ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`} aria-label={TITULOS[p]} />
+    <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
+      {/* Hero ContaLink */}
+      <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)' }}>
+        <div className="flex gap-1.5 flex-wrap mb-1.5">
+          {['Auditoría Contable', 'Cobrado / Pagado', 'Anexo 24'].map((b) => (
+            <span key={b} className="px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.2)' }}>{b}</span>
+          ))}
+        </div>
+        <h2 className="text-lg font-bold">Auditoría cobrado / pagado</h2>
+        <p className="text-xs opacity-90">DIOT = hoja = reporte · modalidad {modulo}{mod.bloqueado ? ' (DIOT bloqueado)' : ' con DIOT habilitado'}</p>
+      </div>
+
+      {/* Stat-cards vivas de goldens */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { v: String(GOLDENS.diotBase16), l: 'Base DIOT 16%', c: '#1e293b' },
+          { v: String(GOLDENS.ivaACargo), l: 'IVA a cargo', c: '#991b1b' },
+          { v: `${sat.isr} / ${sat.retIsr}`, l: 'ISR / Ret. ISR', c: '#065f46' },
+          { v: String(poliza.porPagar || GOLDENS.neto), l: 'Neto por pagar', c: '#6b21a8' },
+        ].map((s) => (
+          <div key={s.l} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5">
+            <div className="text-lg font-bold" style={{ color: s.c }}>{s.v}</div>
+            <div className="text-[10px] text-slate-500">{s.l}</div>
+          </div>
         ))}
       </div>
-      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]}</div>
+
+      {/* Fases ContaLink */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {FASES.map((f) => (
+          <button key={f.id} onClick={() => setPaso(f.pasos[0])}
+            className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
+            style={{ borderColor: faseActiva.id === f.id ? f.color : undefined, background: faseActiva.id === f.id ? `${f.color}12` : undefined }}>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-100" style={{ borderLeft: `4px solid ${f.color}`, paddingLeft: 6 }}>{f.titulo}</div>
+            <div className="text-[10px] text-slate-500 mt-0.5" style={{ paddingLeft: 10 }}>{f.detalle}</div>
+            <div className="flex gap-1 mt-1.5" style={{ paddingLeft: 10 }}>
+              {f.pasos.map((p) => (
+                <span key={p} title={TITULOS[p]} className="h-1.5 flex-1 rounded-full" style={{ background: PASOS.indexOf(p) <= idx ? f.color : undefined }} />
+              ))}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">{TITULOS[paso]} <span className="text-[10px] font-normal text-slate-500">· paso {idx + 1}/{PASOS.length}</span></div>
 
       {paso === 'portada' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           <div>Audita lo cobrado y pagado antes de llenar el SAT: DIOT = hoja = reporte.</div>
           <div className="text-slate-500">3 vías: Detalle de Cobros por factura · grid PUE/PPD/canceladas/sin complemento · Tesorería → Conciliación. Conciliar = cobrar/pagar.</div>
         </div>
       )}
 
       {paso === 'selector' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-2">
+        <div className={`${card} space-y-2`}>
           <div className="flex gap-1">
             {(['M1', 'M2', 'M3'] as Modulo[]).map((m) => (
               <button key={m} onClick={() => setModulo(m)} className={`px-3 py-1.5 rounded border ${m === modulo ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-300 dark:border-slate-600'}`}>{m}</button>
@@ -97,7 +147,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'cobrado' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           <div>Filtros: pagadas / no pagadas + PUE / PPD / canceladas / sin complemento.</div>
           <div>Cheque <b>Documentos no contabilizados</b> antes de cerrar.</div>
           <div className="text-slate-500">Tesorería → Conciliación es la tercera vía: lo conciliado es lo cobrado/pagado.</div>
@@ -105,7 +155,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'deducible' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           <div>7 PUE de compras: 3 al 0% (caso Héctor Daniel RESICO) + 1 viático 8%.</div>
           <div>Reasigna cuenta si no deduce; bloqueo si ya hay póliza.</div>
           <div className="text-slate-500">No deducibles del SAT: {GOLDENS.noDeducibles}.</div>
@@ -113,7 +163,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'diot' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           <div className="text-2xl font-bold">Base 16% = {GOLDENS.diotBase16}</div>
           <div className="text-slate-500">Informativas incluidas. De aquí sale la DIOT del periodo.</div>
         </div>
@@ -133,7 +183,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'ivaisr' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           <div>CFDIs vs cobrado/pagado. IVA a cargo: <b>{GOLDENS.ivaACargo}</b>.</div>
           <div>Links azules = drill-down a cada documento.</div>
           <div>Retenciones en cuenta <b>113</b> (IVA retenido cobrado + ISR retenido).</div>
@@ -142,7 +192,7 @@ export default function AuditoriaSim() {
       )}
 
       {paso === 'cuadre' && (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 text-xs space-y-1">
+        <div className={card}>
           {lista(errCuadre, `DIOT = hoja = reporte (${GOLDENS.diotBase16}). Trasladado ${GOLDENS.ivaTrasladado}; 464 = 464 → 0.`)}
         </div>
       )}
@@ -186,7 +236,7 @@ export default function AuditoriaSim() {
             <option value="">Elige salida…</option>
             {opcionesCasoABC(caso).map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
-          <button onClick={() => setResCaso(resolverCasoABC(caso, accion).mensaje)} disabled={!accion} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs disabled:opacity-40">Resolver</button>
+          <button onClick={() => setResCaso(resolverCasoABC(caso, accion).mensaje)} disabled={!accion} className="px-3 py-1.5 text-white rounded-lg text-xs disabled:opacity-40" style={{ background: '#7c3aed' }}>Resolver</button>
           {resCaso && <div className="p-2 rounded bg-slate-50 dark:bg-slate-900">{resCaso}</div>}
         </div>
       )}
@@ -199,9 +249,14 @@ export default function AuditoriaSim() {
         </div>
       )}
 
+      {/* Teoría: el cuadre manda */}
+      <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#faf5ff', border: '1px solid #7c3aed', color: '#5b21b6' }}>
+        <b>📚 Audita lo cobrado y pagado, no solo el CFDI.</b> DIOT = hoja = reporte ({GOLDENS.diotBase16}). Retenciones en cuenta 113. M1 es solo CFDIs: sin DIOT habilitado no hay auditoría.
+      </div>
+
       <div className="flex justify-between">
         <button onClick={() => setPaso(PASOS[Math.max(0, idx - 1)])} className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-xs">← Atrás</button>
-        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Siguiente →</button>}
+        {idx < PASOS.length - 1 && <button onClick={() => setPaso(PASOS[idx + 1])} className="px-3 py-1.5 text-white rounded-lg text-xs" style={{ background: '#7c3aed' }}>Siguiente →</button>}
       </div>
     </div>
   );
