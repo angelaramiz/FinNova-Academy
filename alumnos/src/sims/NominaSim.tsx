@@ -226,6 +226,7 @@ export default function NominaSim() {
           <div>PTU: <input type="checkbox" checked={ficha.ptu} onChange={(e) => setFicha({ ...ficha, ptu: e.target.checked })} /> checkbox</div>
           <div className="text-amber-700 dark:text-amber-300">⚠️ Actualizar + Refrescar obligatorio tras cambiar el diario (recalcula cotización con prima vacacional).</div>
           <div>Semanal: {nom.bruto.toFixed(2)} · ISR {nom.isr} · IMSS {nom.imss.toFixed(2)} · Neto {nom.neto.toFixed(2)}</div>
+          <div className="text-slate-500">IMSS 5% fijo = simplificación didáctica (la LSS real cotiza por ramos de seguro). ISR siempre por tarifa progresiva, nunca % fijo.</div>
         </div>
       )}
 
@@ -293,7 +294,7 @@ export default function NominaSim() {
 
       {/* Teoría importada de mas.html */}
       <div className="rounded-xl p-3 text-xs leading-relaxed" style={{ background: '#ecfdf5', border: '1px solid #10b981', color: '#065f46' }}>
-        <b>📚 ¿Qué es el Módulo de Nómina?</b> Gestiona empleados, calcula percepciones y deducciones (ISR Art. 96 LISR, IMSS Art. 13 LSS), emite recibos timbrados (CFDI Nómina 4.0). Empleados PF: RFC 13 · CURP 18 · NSS 11 dígitos. Conceptos Anexo 20: percepciones 001-099, deducciones 019-051.
+        <b>📚 ¿Qué es el Módulo de Nómina?</b> Gestiona empleados, calcula percepciones y deducciones (ISR Art. 96 LISR por tarifa progresiva, cuotas obrero-patronales LSS), emite recibos timbrados (CFDI Nómina 4.0). Empleados PF: RFC 13 · CURP 18 · NSS 11 dígitos. Conceptos Anexo 20: percepciones 001-099, deducciones 019-051.
       </div>
 
       <div className="flex justify-between">

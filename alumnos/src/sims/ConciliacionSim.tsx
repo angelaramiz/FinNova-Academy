@@ -231,7 +231,9 @@ export default function ConciliacionSim() {
           {num(cierre.fechaPoliza, (v) => setCierre({ ...cierre, fechaPoliza: v }), 'Fecha póliza (= fecha movimiento)')}
           {num(cierre.fechaMovimiento, (v) => setCierre({ ...cierre, fechaMovimiento: v }), 'Fecha movimiento')}
           {num(cierre.contrapartida, (v) => setCierre({ ...cierre, contrapartida: v }), 'Contrapartida (≠ cuenta del banco)')}
-          {etiquetaAgrupador(cierre.contrapartida) && <div className="text-[10px] text-slate-500">SAT Anexo 24 → {etiquetaAgrupador(cierre.contrapartida)}</div>}
+          {cierre.contrapartida.startsWith('899')
+            ? <div className="text-[10px] text-slate-500">Cuenta puente interna (transitoria, queda en ceros el mismo día — no se declara en Anexo 24)</div>
+            : etiquetaAgrupador(cierre.contrapartida) && <div className="text-[10px] text-slate-500">SAT Anexo 24 → {etiquetaAgrupador(cierre.contrapartida)}</div>}
           {errCierre.length === 0 ? <><div className="text-green-600">✓ Cierre válido: bloquea edición, genera folios. Casilla revaluación para USD.</div><button onClick={() => reportarSim({ taskType: 'conciliacion_practica', title: 'Conciliación — cierre del periodo', score: 100, passed: true })} className="px-3 py-1.5 text-white rounded-lg" style={{ background: '#1e40af' }}>Registrar cierre</button></> : errCierre.map((e, i) => <div key={i} className="text-red-600">• {e}</div>)}
         </div>
       )}
