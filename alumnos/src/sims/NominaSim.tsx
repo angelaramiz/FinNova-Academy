@@ -17,6 +17,8 @@ import {
 } from './nominaEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
+import TourSim from './TourSim';
+import { TOURS } from './toursContalink';
 
 type Paso = 'empresa' | 'confnomina' | 'periodos' | 'alta' | 'ficha' | 'percepciones' | 'fijas' | 'asimilados' | 'extraordinaria' | 'ordinaria' | 'incidencias' | 'cuentas' | 'timbrado';
 const PASOS: Paso[] = ['empresa', 'confnomina', 'periodos', 'alta', 'ficha', 'percepciones', 'fijas', 'asimilados', 'extraordinaria', 'ordinaria', 'incidencias', 'cuentas', 'timbrado'];
@@ -116,7 +118,7 @@ export default function NominaSim() {
   return (
     <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
       {/* Hero ContaLink */}
-      <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+      <div data-tour="nomina-hero" className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
         <div className="flex gap-1.5 flex-wrap mb-1.5">
           {['Módulo de Nómina', 'Anexo 20 RMF 2026', 'CFDI Nómina 4.0'].map((b) => (
             <span key={b} className="px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.2)' }}>{b}</span>
@@ -126,8 +128,10 @@ export default function NominaSim() {
         <p className="text-xs opacity-90">ISR por tarifa progresiva (Art. 96 LISR) — nunca % fijo · Art. 99 LISR</p>
       </div>
 
+      <TourSim titulo={TOURS.nomina.titulo} pasos={TOURS.nomina.pasos} storageKey={TOURS.nomina.storageKey} onNavegar={(p) => setPaso(p as Paso)} />
+
       {/* Stat-cards vivas del motor */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="nomina-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { v: String(empleados.length), l: 'Empleados', c: '#1e293b' },
           { v: `$${nom.bruto.toFixed(0)}`, l: 'Percepción ejemplo', c: '#065f46' },
@@ -142,7 +146,7 @@ export default function NominaSim() {
       </div>
 
       {/* Fases ContaLink */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="nomina-fases" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {FASES.map((f) => (
           <button key={f.id} onClick={() => setPaso(f.pasos[0])}
             className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
@@ -193,7 +197,7 @@ export default function NominaSim() {
       )}
 
       {paso === 'alta' && (
-        <div className={card}>
+        <div data-tour="nomina-alta" className={card}>
           <div><b>1. XML:</b> muñeco + → actualiza catálogo (CURP, RFC, contrato, régimen).</div>
           <div><b>2. Manual:</b> todos los campos del empleado.</div>
           <div><b>3. Masiva:</b> Excel con rojos obligatorios (empleados o asimilados).</div>
@@ -220,7 +224,7 @@ export default function NominaSim() {
       )}
 
       {paso === 'ficha' && (
-        <div className={card}>
+        <div data-tour="nomina-ficha" className={card}>
           {num(ficha.diario, (v) => setFicha({ ...ficha, diario: v }), 'Salario diario (318.19 / 18 / mínimo)')}
           {num(ficha.vacaciones, (v) => setFicha({ ...ficha, vacaciones: v }), 'Días vacaciones (22)')}
           <div>PTU: <input type="checkbox" checked={ficha.ptu} onChange={(e) => setFicha({ ...ficha, ptu: e.target.checked })} /> checkbox</div>
@@ -284,7 +288,7 @@ export default function NominaSim() {
       )}
 
       {paso === 'timbrado' && (
-        <div className={card}>
+        <div data-tour="nomina-timbrado" className={card}>
           <div>Palomita: todos o uno por uno. En efectivo → contra caja con fecha del XML.</div>
           <div>Modalidad CFDIs = pago automático.</div>
           <button onClick={() => { const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }); setResTimbrado(r.mensaje); if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true }); }} className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs">Timbrar 3/3</button>

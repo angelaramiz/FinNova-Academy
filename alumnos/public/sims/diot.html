@@ -1324,7 +1324,8 @@ function completePilot() {
   document.getElementById('completionModal').classList.remove('hidden');
   document.getElementById('completionModal').classList.add('flex');
   
-  mostrarFolio();
+  // El piloto es observación: no genera acuse (solo Práctica/Examen presentan).
+  document.getElementById('compFolio').textContent = '—';
   localStorage.setItem('diot_piloto', 'true');
   updateMenuBadges();
 }

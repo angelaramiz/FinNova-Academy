@@ -14,6 +14,8 @@ import {
 } from './conciliacionEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
+import TourSim from './TourSim';
+import { TOURS } from './toursContalink';
 
 type Paso = 'alta' | 'convertidor' | 'carga' | 'manual' | 'auto' | 'casos' | 'cierre';
 const PASOS: Paso[] = ['alta', 'convertidor', 'carga', 'manual', 'auto', 'casos', 'cierre'];
@@ -103,7 +105,7 @@ export default function ConciliacionSim() {
   return (
     <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900 min-h-full">
       {/* Hero ContaLink */}
-      <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
+      <div data-tour="conciliacion-hero" className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}>
         <div className="flex gap-1.5 flex-wrap mb-1.5">
           {['Conciliación Bancaria', 'BBVA débito', 'Cuenta puente 899'].map((b) => (
             <span key={b} className="px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.2)' }}>{b}</span>
@@ -113,8 +115,10 @@ export default function ConciliacionSim() {
         <p className="text-xs opacity-90">Configuración, carga, conciliación y cierre · periodo {periodo.ini} → {periodo.fin}</p>
       </div>
 
+      <TourSim titulo={TOURS.conciliacion.titulo} pasos={TOURS.conciliacion.pasos} storageKey={TOURS.conciliacion.storageKey} onNavegar={(p) => setPaso(p as Paso)} />
+
       {/* Stat-cards vivas de la carátula */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="conciliacion-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { v: `$${Number(caratula.inicial).toLocaleString()}`, l: 'Saldo inicial', c: '#1e293b' },
           { v: `$${Number(caratula.depositos).toLocaleString()}`, l: 'Depósitos (azul)', c: '#065f46' },
@@ -129,7 +133,7 @@ export default function ConciliacionSim() {
       </div>
 
       {/* Fases ContaLink */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div data-tour="conciliacion-fases" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {FASES.map((f) => (
           <button key={f.id} onClick={() => setPaso(f.pasos[0])}
             className={`text-left p-2.5 rounded-xl border-2 transition ${faseActiva.id === f.id ? '' : 'opacity-70 hover:opacity-100'}`}
@@ -172,7 +176,7 @@ export default function ConciliacionSim() {
       )}
 
       {paso === 'carga' && (
-        <div className={card}>
+        <div data-tour="conciliacion-carga" className={card}>
           <div>Banco: <b>BBVA débito</b> (si lo subes en otro banco y concilias, hay que borrar y repetir).</div>
           {num(periodo.ini, (v) => setPeriodo({ ...periodo, ini: v }), 'Periodo inicio (13-may-2025 si hay corte distinto)')}
           {num(periodo.fin, (v) => setPeriodo({ ...periodo, fin: v }), 'Periodo fin (13-jun-2025)')}
@@ -184,7 +188,7 @@ export default function ConciliacionSim() {
       )}
 
       {paso === 'manual' && (
-        <div className={card}>
+        <div data-tour="conciliacion-manual" className={card}>
           <div className="flex gap-1 flex-wrap">
             {MOVS_DEMO.map((m) => (
               <button key={m.id} onClick={() => setSelMov(m.id)} className={`px-2 py-1 rounded border ${m.id === selMov ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-300 dark:border-slate-600'}`}>
@@ -206,7 +210,7 @@ export default function ConciliacionSim() {
       )}
 
       {paso === 'casos' && (
-        <div className={card}>
+        <div data-tour="conciliacion-casos" className={card}>
           <div className="flex flex-wrap gap-1">
             {CASOS.map((c) => (
               <button key={c.id} onClick={() => { setCasoId(c.id); setResultado(null); }} className={`px-2 py-1 rounded border ${c.id === casoId ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-300 dark:border-slate-600'}`}>
@@ -227,7 +231,7 @@ export default function ConciliacionSim() {
       )}
 
       {paso === 'cierre' && (
-        <div className={card}>
+        <div data-tour="conciliacion-cierre" className={card}>
           {num(cierre.fechaPoliza, (v) => setCierre({ ...cierre, fechaPoliza: v }), 'Fecha póliza (= fecha movimiento)')}
           {num(cierre.fechaMovimiento, (v) => setCierre({ ...cierre, fechaMovimiento: v }), 'Fecha movimiento')}
           {num(cierre.contrapartida, (v) => setCierre({ ...cierre, contrapartida: v }), 'Contrapartida (≠ cuenta del banco)')}
