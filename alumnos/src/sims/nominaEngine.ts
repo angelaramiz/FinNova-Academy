@@ -38,6 +38,8 @@ export function calcularNomina(d: DatosNomina): ResultadoNomina {
   const bruto = Math.round(d.diario * d.dias * 100) / 100;
   if (d.esMinimo) return { bruto, isr: 0, imss: 0, neto: bruto };
   const isr = d.causaISR ? calcularISR(bruto) : 0;
+  // Simplificación didáctica declarada: cuota obrera fija 5% del bruto.
+  // La LSS real calcula por ramos de seguro (no es una tasa única).
   const imss = Math.round(bruto * 0.05 * 100) / 100;
   return { bruto, isr, imss, neto: Math.round((bruto - isr - imss) * 100) / 100 };
 }
