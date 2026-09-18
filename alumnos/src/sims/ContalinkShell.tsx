@@ -4,6 +4,7 @@
 // decorativo), topbar breadcrumb + usuario "Angel Aramiz · Practicante".
 // El contenido monta el Sim correspondiente; DIOT monta el iframe existente
 // (ContalinkFrame src="/sims/diot.html"). Tema CLARO siempre.
+import { useState } from 'react';
 import ConciliacionSim from './ConciliacionSim';
 import AuditoriaSim from './AuditoriaSim';
 import NominaSim from './NominaSim';
@@ -32,6 +33,15 @@ const NAV_MODULOS: { id: ModuloContalink; label: string; icon: string }[] = [
 ];
 
 export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: Props) {
+  const [colapsado, setColapsado] = useState<boolean>(() => {
+    try { return localStorage.getItem('contalink_sidebar') === '0'; } catch { return false; }
+  });
+  function alternar() {
+    setColapsado((c) => {
+      try { localStorage.setItem('contalink_sidebar', c ? '1' : '0'); } catch { /* sin storage */ }
+      return !c;
+    });
+  }
   return (
     <div className="clk-shell">
       <style>{`
@@ -40,7 +50,14 @@ export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: 
         .clk-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1e40af; font-size: 16px; }
         .clk-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #1e40af, #3b82f6); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
         .clk-body { flex: 1; display: flex; overflow: hidden; min-height: 0; }
-        .clk-sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; padding: 16px 0; flex-shrink: 0; }
+        .clk-sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; padding: 16px 0; flex-shrink: 0; transition: width 0.2s ease; }
+        .clk-sidebar.collapsed { width: 60px; }
+        .clk-sidebar.collapsed .clk-nav-section { display: none; }
+        .clk-sidebar.collapsed .clk-nav-item { justify-content: center; padding: 10px 0; }
+        .clk-sidebar.collapsed .clk-nav-item span { display: none; }
+        .clk-sidebar.collapsed .clk-search { display: none; }
+        .clk-toggle { background: white; border: 1px solid #e2e8f0; border-radius: 6px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #475569; flex-shrink: 0; }
+        .clk-toggle:hover { background: #f1f5f9; color: #1e40af; }
         .clk-nav-section { padding: 8px 16px; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; }
         .clk-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; background: none; border-top: none; border-right: none; border-bottom: none; width: 100%; text-align: left; }
         .clk-nav-item:hover { background: #f1f5f9; color: #1e40af; }
@@ -114,9 +131,9 @@ export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: 
         </div>
       </div>
       <div className="clk-body">
-        <div className="clk-sidebar">
+        <div className={`clk-sidebar ${colapsado ? 'collapsed' : ''}`}>
           <div className="clk-nav-section">Principal</div>
-          <button className="clk-nav-item disabled" title="Próximamente" disabled>
+          <button className="clk-nav-item disabled" title="Dashboard (próximamente)" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
             <span>Dashboard</span>
           </button>
@@ -125,6 +142,7 @@ export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: 
             <button
               key={item.id}
               className={`clk-nav-item ${modulo === item.id ? 'active' : ''}`}
+              title={item.label}
               onClick={() => { if (modulo !== item.id) onCambiar(item.id); }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={item.icon} /></svg>
@@ -132,7 +150,7 @@ export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: 
             </button>
           ))}
           <div className="clk-nav-section">Fiscal</div>
-          <button className="clk-nav-item disabled" title="Declaraciones automáticas (próximamente)" disabled>
+          <button className="clk-nav-item disabled" title="Declaraciones Automáticas (próximamente)" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             <span>Declaraciones Automáticas</span>
           </button>
@@ -140,7 +158,12 @@ export default function ContalinkShell({ modulo, onCambiar, onDiotCompletado }: 
         </div>
         <div className="clk-main">
           <div className="clk-topbar">
-            <div className="clk-breadcrumb">Contabilidad / <span>{ETIQUETAS[modulo]}</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button className="clk-toggle" onClick={alternar} title={colapsado ? 'Expandir menú' : 'Retraer menú'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </button>
+              <div className="clk-breadcrumb">Contabilidad / <span>{ETIQUETAS[modulo]}</span></div>
+            </div>
             <div className="clk-user">
               <div className="clk-avatar">AA</div>
               <div>
