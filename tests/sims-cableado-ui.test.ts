@@ -41,4 +41,14 @@ describe('P1/P2/P3 cableado UI', () => {
     expect(NOM).toContain("from './nominaEngine'");
     expect(CON).toContain("from './conciliacionEngine'");
   });
+  it('sidebar retráctil: estado persistido + clase collapsed + botón toggle', () => {
+    const SHELL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkShell.tsx'), 'utf8');
+    expect(SHELL).toContain('contalink_sidebar');
+    expect(SHELL).toContain('colapsado');
+    expect(SHELL).toContain('clk-toggle');
+    expect(SHELL).toContain('.clk-sidebar.collapsed');
+    expect(SHELL).toContain('width: 60px');
+    expect(SHELL).toContain('Retraer menú');
+    expect(SHELL).toContain('Expandir menú');
+  });
 });
