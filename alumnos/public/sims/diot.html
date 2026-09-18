@@ -542,6 +542,35 @@ body { font-family: 'Inter', sans-serif; }
   </div>
 </div>
 
+<!-- P2: Vista previa del acuse antes de presentar (pedagogía: ver el producto final) -->
+<div id="previewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+    <div class="bg-gradient-to-br from-blue-700 to-indigo-800 p-6 text-white">
+      <div class="text-xs uppercase tracking-wider">Vista previa · revisa antes de enviar</div>
+      <h2 class="text-xl font-bold">Acuse de recepción DIOT (SIMULADO)</h2>
+    </div>
+    <div class="p-6 space-y-3 text-sm text-slate-700">
+      <div class="grid grid-cols-2 gap-2">
+        <div>Periodo: <b>Enero 2026</b></div>
+        <div>Tipo: <b>Normal (primera del periodo)</b></div>
+        <div>Operaciones: <b id="prevOps">—</b></div>
+        <div>Ejercicio: <b>2026</b></div>
+        <div>Base total: <b id="prevBase">—</b></div>
+        <div>IVA total: <b id="prevIva">—</b></div>
+      </div>
+      <div class="rounded-lg p-3 font-mono text-xs break-all" style="background:#f8fafc;border:1px solid #e2e8f0">
+        <div>Folio que obtendrás: <b id="prevFolio">—</b></div>
+        <div>Sello digital (simulado): <span id="prevSello">—</span></div>
+      </div>
+      <div class="text-xs text-slate-500">Esto es lo que el SAT te devolverá al presentar: verifica periodo y totales antes de confirmar. El sello y el folio son simulados y deterministas (mismo escenario = mismos datos).</div>
+      <div class="flex gap-2">
+        <button onclick="confirmarPresentacion()" class="flex-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">Confirmar presentación</button>
+        <button onclick="cerrarPreview()" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium">Revisar de nuevo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============ SCENARIO ENGINE ============
 const EMPRESAS = [
@@ -586,6 +615,8 @@ let __rng = mulberry32(20260708);
 function resetScenarioSeed(clave) { let h = 20260708; const s = String(clave); for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0; __rng = mulberry32(h); }
 // Folio de acuse determinista (mismo escenario = mismo folio, sin azar).
 function folioAcuse(fase, ops) { let h = 7; const s = fase + '|' + ops.map(o => o.id + ':' + o.monto + ':' + o.iva).join(','); for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) >>> 0; return 'ACU-2026-' + String((h % 9000) + 1000); }
+// Sello digital simulado determinista (32 hex; NUNCA random).
+function selloAcuse(fase, ops) { let h1 = 7, h2 = 13; const s = 'sello|' + fase + '|' + ops.map(o => o.id + ':' + o.monto + ':' + o.iva).join(','); for (let i = 0; i < s.length; i++) { h1 = (Math.imul(h1, 31) + s.charCodeAt(i)) >>> 0; h2 = (Math.imul(h2, 37) + s.charCodeAt(i)) >>> 0; } const hex = h => (h >>> 0).toString(16).padStart(8, '0').toUpperCase(); return hex(h1) + hex(h2) + hex(h1 ^ h2) + hex((h2 ^ 0x9E3779B9) >>> 0); }
 // SEED-DETERMINISTA-FIN
 
 function generarRFCValido() {
@@ -1666,12 +1697,39 @@ document.addEventListener('click', (e) => {
           showFeedback(`⏱️ Tiempo restante: ${minutes}:${pad2(seconds)}`, 'info');
         }
       } else {
-        if (state.mode === 'practica') completePractice();
-        else completeExam(false);
+        if (state.mode === 'practica') abrirPreview('practica');
+        else abrirPreview('examen');
       }
     }
   }
 });
+
+// P2: vista previa del acuse antes de presentar (el practicante ve el producto final).
+let pendingModo = null;
+function abrirPreview(modo) {
+  pendingModo = modo;
+  const ops = state.scenario.operaciones;
+  const base = ops.reduce((s, o) => s + Math.abs(o.monto), 0);
+  const iva = ops.reduce((s, o) => s + o.iva, 0);
+  document.getElementById('prevOps').textContent = String(ops.length);
+  document.getElementById('prevBase').textContent = '$' + base.toFixed(2);
+  document.getElementById('prevIva').textContent = '$' + iva.toFixed(2);
+  document.getElementById('prevFolio').textContent = folioAcuse(state.mode, ops);
+  document.getElementById('prevSello').textContent = selloAcuse(state.mode, ops);
+  const m = document.getElementById('previewModal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function cerrarPreview() {
+  const m = document.getElementById('previewModal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+function confirmarPresentacion() {
+  cerrarPreview();
+  if (pendingModo === 'practica') completePractice();
+  else completeExam(false);
+}
 
 function completePractice() {
   clearInterval(state.timerInterval);

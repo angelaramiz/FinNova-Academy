@@ -13,6 +13,8 @@ import {
   aplicarIncidencias,
   validarCuentas,
   timbrar,
+  vistaPreviaCFDI,
+  type VistaPreviaCFDI,
   type Empleado,
 } from './nominaEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
@@ -71,6 +73,8 @@ export default function NominaSim() {
   const [ficha, setFicha] = useState({ diario: '318.19', vacaciones: '22', ptu: true });
   const [finiquito, setFiniquito] = useState({ fechaTermino: '2026-07-15', exento: '5000', gravable: '12000' });
   const [resTimbrado, setResTimbrado] = useState<string | null>(null);
+  const [preview, setPreview] = useState<VistaPreviaCFDI | null>(null);
+  const [errPreview, setErrPreview] = useState<string | null>(null);
   const [empleados, setEmpleados] = useState<EmpleadoFiscal[]>(EMPLEADOS_SEED);
   const [nuevo, setNuevo] = useState({ nombre: '', periodicidad: 'semanal', rfc: '', curp: '', nss: '', diario: '' });
   const [errAlta, setErrAlta] = useState<string[]>([]);
@@ -83,17 +87,39 @@ export default function NominaSim() {
   const inc = useMemo(() => aplicarIncidencias('20–26 jul', { vacaciones: 3, he: 2, festivo: 1 }), []);
   const errCuentas = useMemo(() => validarCuentas([{ concepto: 'Sueldos', cuenta: '501-01' }, { concepto: 'ISR retenido', cuenta: '211-01' }, { concepto: 'Finiquito', cuenta: '' }]), []);
 
+  function confirmarTimbrado() {
+    const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' });
+    setResTimbrado(r.mensaje);
+    setPreview(null);
+    if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true });
+  }
+
+  function abrirPreview() {
+    const receptor = empleados.find((e) => e.rfc.trim().length === 13);
+    if (!receptor) {
+      setErrPreview('Sin receptor válido: agrega un empleado con RFC de 13 caracteres en el paso Alta. 📚 El CFDI necesita un receptor con RFC válido o el SAT lo rechaza antes de timbrar.');
+      return;
+    }
+    setErrPreview(null);
+    setPreview(vistaPreviaCFDI({
+      razon: emp.razon, regimen: emp.regimen, cp: emp.cp,
+      empleadoNombre: receptor.nombre, empleadoRfc: receptor.rfc, empleadoCurp: receptor.curp, empleadoNss: receptor.nss,
+      diario: Number(ficha.diario), dias: 7, bruto: nom.bruto, isr: nom.isr, imss: nom.imss, neto: nom.neto,
+      fecha: '2026-07-26',
+    }));
+  }
+
   const idx = PASOS.indexOf(paso);
   const faseDe = (p: Paso) => FASES.find((f) => f.pasos.includes(p))!;
   const faseActiva = faseDe(paso);
 
   function agregarEmpleado() {
     const errs: string[] = [];
-    if (!nuevo.nombre.trim()) errs.push('nombre requerido');
-    if (nuevo.rfc.trim().length !== 13) errs.push('RFC debe tener 13 caracteres (PF)');
-    if (nuevo.curp.trim().length !== 18) errs.push('CURP debe tener 18 caracteres');
-    if (!/^\d{11}$/.test(nuevo.nss.trim())) errs.push('NSS debe tener 11 dígitos');
-    if (!(Number(nuevo.diario) > 0)) errs.push('salario diario debe ser mayor a 0');
+    if (!nuevo.nombre.trim()) errs.push('nombre requerido 📚 El nombre debe coincidir con CURP y constancia del trabajador: es la llave para identificarlo ante IMSS e Infonavit.');
+    if (nuevo.rfc.trim().length !== 13) errs.push('RFC debe tener 13 caracteres (PF) 📚 Persona física: 4 letras + 6 de fecha (AAMMDD) + 3 de homoclave. Con 12 sería persona moral y el timbrado lo rechaza.');
+    if (nuevo.curp.trim().length !== 18) errs.push('CURP debe tener 18 caracteres 📚 4 letras + 6 de fecha + 6 de nacimiento + 2 verificadores: el IMSS la usa para afiliar al trabajador.');
+    if (!/^\d{11}$/.test(nuevo.nss.trim())) errs.push('NSS debe tener 11 dígitos 📚 El Número de Seguridad Social de 11 dígitos es la cuenta del trabajador ante el IMSS: sin NSS válido no hay alta.');
+    if (!(Number(nuevo.diario) > 0)) errs.push('salario diario debe ser mayor a 0 📚 El salario diario base × días del periodo es el bruto del que sale todo (ISR, IMSS, neto): en cero, nada se calcula.');
     setErrAlta(errs);
     if (errs.length > 0) return;
     setEmpleados([...empleados, {
@@ -311,8 +337,58 @@ export default function NominaSim() {
         <div data-tour="nomina-timbrado" className={card}>
           <div>Palomita: todos o uno por uno. En efectivo → contra caja con fecha del XML.</div>
           <div>Modalidad CFDIs = pago automático.</div>
-          <button onClick={() => { const r = timbrar({ seleccionados: 3, total: 3, contraCaja: true, fechaXML: '2026-07-26' }); setResTimbrado(r.mensaje); if (r.ok) reportarSim({ taskType: 'nomina_practica', title: 'Nómina Contalink — timbrado 3/3', score: 100, passed: true }); }} className="btn btn-primary">Timbrar 3/3</button>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={abrirPreview} className="btn btn-secondary">👁 Vista previa del CFDI</button>
+            <button onClick={confirmarTimbrado} className="btn btn-primary">Timbrar 3/3</button>
+          </div>
+          {errPreview && <div className="text-red-600">• {errPreview}</div>}
           {resTimbrado && <div className="p-2 rounded bg-slate-50">✅ {resTimbrado}</div>}
+        </div>
+      )}
+
+      {/* P2: Vista previa del CFDI de Nómina 4.0 antes de timbrar */}
+      {preview && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setPreview(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 12, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 16, fontSize: 12, color: '#0f172a' }}>
+            <div className="font-bold text-sm">🧾 CFDI de Nómina 4.0 · Vista previa (SIMULADO)</div>
+            <div className="text-slate-500">Revisa el documento final antes de timbrar: esto es lo que recibirá el SAT.</div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="rounded-lg border border-slate-200 p-2">
+                <div className="font-bold">Emisor</div>
+                <div>{preview.emisor.razon}</div>
+                <div className="font-mono text-[11px]">Régimen {preview.emisor.regimen} · CP {preview.emisor.cp}</div>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-2">
+                <div className="font-bold">Receptor</div>
+                <div>{preview.receptor.nombre}</div>
+                <div className="font-mono text-[11px]">{preview.receptor.rfc}</div>
+                <div className="font-mono text-[11px]">CURP {preview.receptor.curp || '—'} · NSS {preview.receptor.nss || '—'}</div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-2 mt-2">
+              <div className="font-bold">Concepto · {preview.concepto.clave} {preview.concepto.descripcion}</div>
+              <div style={{ textAlign: 'right', fontFamily: 'monospace' }}>${preview.concepto.importe.toFixed(2)}</div>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-2 mt-2">
+              <div className="font-bold">Complemento de nómina · {preview.complementoNomina.dias} días</div>
+              <div>Percepciones: <b className="font-mono">${preview.complementoNomina.percepciones.toFixed(2)}</b></div>
+              <div>Deducción ISR (Art. 96 LISR): <b className="font-mono">${preview.complementoNomina.deduccionISR.toFixed(2)}</b></div>
+              <div>Deducción IMSS: <b className="font-mono">${preview.complementoNomina.deduccionIMSS.toFixed(2)}</b></div>
+              <div>Neto a pagar: <b className="font-mono">${preview.complementoNomina.neto.toFixed(2)}</b></div>
+            </div>
+            <div className="rounded-lg p-2 mt-2 font-mono text-[10px] break-all" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <div className="font-sans font-bold text-xs">Cadena original (simulada)</div>
+              {preview.cadenaOriginal}
+              <div className="font-sans font-bold text-xs mt-1">Sello digital (simulado)</div>
+              {preview.selloSimulado}
+              <div className="font-sans font-bold text-xs mt-1">UUID (simulado)</div>
+              {preview.uuidSimulado}
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button onClick={confirmarTimbrado} className="btn btn-primary">✅ Confirmar timbrado</button>
+              <button onClick={() => setPreview(null)} className="btn btn-secondary">Cerrar</button>
+            </div>
+          </div>
         </div>
       )}
 
