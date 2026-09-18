@@ -42,13 +42,16 @@ function buildSandbox() {
     sliceBlock(SRC, 'function generarRFCInvalido'),
     sliceBlock(SRC, 'function calcularIVA'),
     sliceBlock(SRC, 'function generarScenarioDIOT'),
-    'return { generarScenarioDIOT, folioAcuse, calcularIVA };',
+    'const pad2b = n => n.toString().padStart(2, "0");',
+    sliceBlock(SRC, 'function selloAcuse'),
+    'return { generarScenarioDIOT, folioAcuse, calcularIVA, selloAcuse };',
   ];
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   return new Function(parts.join('\n'))() as {
     generarScenarioDIOT: (fase: string, nivel?: number) => any;
     folioAcuse: (fase: string, ops: any[]) => string;
     calcularIVA: (monto: number, tasa: string) => number;
+    selloAcuse: (fase: string, ops: any[]) => string;
   };
 }
 
@@ -118,5 +121,23 @@ describe('diot unificado (prod HTML)', () => {
     expect(f1).toMatch(/^ACU-2026-\d{4}$/);
     expect(SRC).toContain('id="compFolio"');
     expect(SRC).toContain('mostrarFolio()');
+  });
+
+  it('P2: presentar pasa por vista previa del acuse (folio + sello simulado)', () => {
+    expect(SRC).toContain('id="previewModal"');
+    expect(SRC).toContain('id="prevFolio"');
+    expect(SRC).toContain('id="prevSello"');
+    expect(SRC).toContain('Confirmar presentación');
+    expect(SRC).toContain('function abrirPreview');
+    expect(SRC).toContain('function confirmarPresentacion');
+    expect(SRC).toContain("abrirPreview('practica')");
+    expect(SRC).toContain("abrirPreview('examen')");
+    const sb = buildSandbox();
+    const sc = sb.generarScenarioDIOT('practica', 1);
+    const s1 = sb.selloAcuse('practica', sc.operaciones);
+    const s2 = sb.selloAcuse('practica', sc.operaciones);
+    expect(s1).toBe(s2);
+    expect(s1).toMatch(/^[0-9A-F]{32}$/);
+    expect(sb.selloAcuse('examen', sc.operaciones)).not.toBe(s1);
   });
 });

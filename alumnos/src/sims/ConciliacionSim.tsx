@@ -11,6 +11,9 @@ import {
   aplicarCaso,
   validarCierre,
   CASOS,
+  CASO_REAL_FILAS,
+  resolverCasoReal,
+  type AccionFila,
 } from './conciliacionEngine';
 import { etiquetaAgrupador } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
@@ -33,7 +36,7 @@ const TITULOS: Record<Paso, string> = {
 const FASES: { id: string; titulo: string; detalle: string; color: string; pasos: Paso[] }[] = [
   { id: 'config', titulo: '1. Configuración', detalle: 'Alta de banco y caja', color: '#3b82f6', pasos: ['alta'] },
   { id: 'carga', titulo: '2. Carga', detalle: 'PDF → Excel → estado de cuenta', color: '#10b981', pasos: ['convertidor', 'carga'] },
-  { id: 'concilia', titulo: '3. Conciliación', detalle: 'Manual, auto y 8 casos', color: '#f59e0b', pasos: ['manual', 'auto', 'casos'] },
+  { id: 'concilia', titulo: '3. Conciliación', detalle: 'Manual, auto, 8 casos + Caso Real', color: '#f59e0b', pasos: ['manual', 'auto', 'casos'] },
   { id: 'cierre', titulo: '4. Cierre', detalle: 'Póliza y bloqueo del periodo', color: '#7c3aed', pasos: ['cierre'] },
 ];
 
@@ -58,6 +61,8 @@ export default function ConciliacionSim() {
   const [casoId, setCasoId] = useState('parcial');
   const [payload, setPayload] = useState('');
   const [resultado, setResultado] = useState<string | null>(null);
+  const [marcajes, setMarcajes] = useState<Record<string, AccionFila | ''>>({});
+  const [resReal, setResReal] = useState<string[] | null>(null);
   const [cierre, setCierre] = useState({ fechaPoliza: '2025-06-10', fechaMovimiento: '2025-06-10', contrapartida: '899-04', cuentaBanco: '102-01-001' });
 
   const errBanco = useMemo(
@@ -89,6 +94,19 @@ export default function ConciliacionSim() {
       (r.aplicado !== undefined ? ` · aplicado ${r.aplicado.toFixed(2)}` : '') +
       (r.conciliados !== undefined ? ` · ${r.conciliados} auto, ${r.pendientes} pendientes` : ''),
     );
+  }
+
+  function resolverReal() {
+    const lista = Object.entries(marcajes)
+      .filter(([, a]) => a !== '')
+      .map(([id, accion]) => ({ id, accion: accion as AccionFila }));
+    if (lista.length === 0) {
+      setResReal(['Marca al menos una fila: elige Corregir, En tránsito o Eliminar por cada movimiento sospechoso.']);
+      return;
+    }
+    const r = resolverCasoReal(lista);
+    if (r.ok) reportarSim({ taskType: 'conciliacion_practica', title: 'Conciliación — Caso Real (datos sucios)', score: 100, passed: true });
+    setResReal([`Detectados ${r.detectados}/${r.total} · score ${r.score}${r.falsosPositivos > 0 ? ` · ${r.falsosPositivos} falso(s) positivo(s)` : ''}`, ...r.detalle]);
   }
 
   const idx = PASOS.indexOf(paso);
@@ -240,6 +258,36 @@ export default function ConciliacionSim() {
           </label>
           <button onClick={resolverCaso} className="btn btn-primary">Conciliar</button>
           {resultado && <div className="p-2 rounded bg-slate-50">{resultado}</div>}
+
+          {/* P3: Modo Caso Real — datos sucios como en la vida real */}
+          <div className="pt-2 border-t border-slate-200 space-y-2">
+            <div className="font-bold text-slate-700">🔍 Modo Caso Real: 6 movimientos con suciedad típica (descripciones mal capturadas, RFC con dígito cambiado, centavo de diferencia, cheque en tránsito). Detecta y decide: Corregir, En tránsito o Eliminar.</div>
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="data-table">
+                <thead><tr><th>Movimiento</th><th>RFC</th><th>UUID</th><th style={{ textAlign: 'right' }}>Monto</th><th style={{ textAlign: 'center' }}>Tu decisión</th></tr></thead>
+                <tbody>
+                  {CASO_REAL_FILAS.map((f) => (
+                    <tr key={f.id}>
+                      <td style={{ fontSize: 12 }}>{f.descripcion}<div className="font-mono text-[10px] text-slate-500">ref {f.folioRef}</div></td>
+                      <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{f.rfc}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{f.uuid ?? <span className="status-badge status-pending">sin UUID</span>}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>${f.monto.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <select value={marcajes[f.id] ?? ''} onChange={(e) => setMarcajes({ ...marcajes, [f.id]: e.target.value as AccionFila | '' })} className="px-1 py-1 rounded-lg border border-slate-300 bg-white text-xs">
+                          <option value="">—</option>
+                          <option value="corregir">Corregir</option>
+                          <option value="transito">En tránsito</option>
+                          <option value="eliminar">Eliminar</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button onClick={resolverReal} className="btn btn-primary">Resolver Caso Real</button>
+            {resReal && resReal.map((d, i) => <div key={i} className={`p-2 rounded ${i === 0 ? 'bg-blue-50 font-semibold' : 'bg-slate-50'}`}>{d}</div>)}
+          </div>
         </div>
       )}
 

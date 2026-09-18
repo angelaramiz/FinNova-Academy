@@ -207,7 +207,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'RFC inválido',
-        pista: `El RFC "${mal}" no tiene formato correcto: 3 letras + 6 de fecha + 3 homoclave (13 caracteres).`,
+        pista: `El RFC "${mal}" no tiene formato correcto: 3 letras + 6 de fecha + 3 homoclave (13 caracteres). 📚 Persona moral: 3 letras + 6 fecha + 3 homoclave; persona física llevaría 4 letras.`,
         valorIncorrecto: mal, valorCorrecto: op.rfc,
       };
       op.rfc = mal;
@@ -217,7 +217,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'Monto negativo',
-        pista: `El monto aparece negativo. En DIOT todos los montos van positivos.`,
+        pista: `El monto aparece negativo. En DIOT todos los montos van positivos. 📚 Las devoluciones se informan como tipo de operación (nota de crédito), nunca con signo negativo.`,
         valorIncorrecto: op.monto * -1, valorCorrecto: op.monto,
       };
       op.monto = op.monto * -1;
@@ -227,7 +227,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'IVA incorrecto',
-        pista: `El IVA no coincide con tasa ${op.tasa}%: deberia ser $${calcularIVA(op.monto, op.tasa)}.`,
+        pista: `El IVA no coincide con tasa ${op.tasa}%: deberia ser $${calcularIVA(op.monto, op.tasa)}. 📚 IVA = monto × tasa, al centavo: recalcúlalo desde la factura.`,
         valorIncorrecto: op.iva * 2, valorCorrecto: op.iva,
       };
       op.iva = op.iva * 2;
@@ -238,7 +238,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'Tipo de operación incorrecto',
-        pista: `Esta operacion es "${TIPOS_OP[op.tipo]}" pero esta marcada como "${TIPOS_OP[mal]}".`,
+        pista: `Esta operacion es "${TIPOS_OP[op.tipo]}" pero esta marcada como "${TIPOS_OP[mal]}". 📚 El tipo (1 Bienes, 2 Servicios, 3 Arrendamiento...) se lee de la factura, no se adivina.`,
         valorIncorrecto: mal, valorCorrecto: op.tipo,
       };
       op.tipo = mal;
@@ -249,7 +249,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'Tasa de IVA incorrecta',
-        pista: `La tasa ${mal}% no corresponde: deberia ser ${op.tasa}%.`,
+        pista: `La tasa ${mal}% no corresponde: deberia ser ${op.tasa}%. 📚 La tasa sale del comprobante: 16% general, 8% frontera, 0% o exento según la operación.`,
         valorIncorrecto: mal, valorCorrecto: op.tasa,
       };
       op.tasa = mal;
@@ -261,7 +261,7 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
       const err: ErrorInyectado = {
         operacionId: op.id, campo,
         error: 'Nacionalidad incorrecta',
-        pista: `Este proveedor es ${op.nacionalidad} pero aparece como ${mal}.`,
+        pista: `Este proveedor es ${op.nacionalidad} pero aparece como ${mal}. 📚 El tipo 5 (Extranjeros) exige contraparte extranjera: nacionalidad y tipo de operación van amarrados.`,
         valorIncorrecto: mal, valorCorrecto: op.nacionalidad,
       };
       op.nacionalidad = mal as OperacionDIOT['nacionalidad'];
@@ -273,10 +273,10 @@ function injectarError(op: OperacionDIOT, campo: (typeof CAMPOS_ERROR)[number], 
 // ---- Validacion (reglas SAT del video) ----
 export function validarOperacion(op: OperacionDIOT): string[] {
   const errores: string[] = [];
-  if (!RFC_VALIDO.test(op.rfc)) errores.push(`RFC "${op.rfc}" invalido: 13 caracteres (3 letras + 6 fecha + 3 homoclave)`);
-  if (!(op.monto > 0)) errores.push('Monto debe ser positivo en DIOT');
+  if (!RFC_VALIDO.test(op.rfc)) errores.push(`RFC "${op.rfc}" inválido: 13 caracteres (3 letras + 6 fecha + 3 homoclave) 📚 Persona moral: 3 letras + 6 de fecha + 3 de homoclave; persona física llevaría 4 letras. El SAT rechaza la DIOT con un solo RFC mal formado.`);
+  if (!(op.monto > 0)) errores.push('Monto debe ser positivo en DIOT 📚 La DIOT informa importes; las devoluciones van como tipo de operación (nota de crédito), nunca con signo negativo.');
   const ivaEsperado = calcularIVA(op.monto, op.tasa);
-  if (Math.abs(op.iva - ivaEsperado) > 0.015) errores.push(`IVA $${op.iva} no coincide con tasa ${op.tasa}% (esperado $${ivaEsperado})`);
+  if (Math.abs(op.iva - ivaEsperado) > 0.015) errores.push(`IVA $${op.iva} no coincide con tasa ${op.tasa}% (esperado $${ivaEsperado}) 📚 El IVA se recalcula como monto × tasa: si no da al centavo, la tasa está mal capturada o el monto trae error.`);
   return errores;
 }
 

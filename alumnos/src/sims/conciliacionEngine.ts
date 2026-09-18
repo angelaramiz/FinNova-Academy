@@ -11,13 +11,13 @@ export interface AltaBanco {
 
 export function validarAltaBanco(b: AltaBanco): string[] {
   const errores: string[] = [];
-  if (!b.nombre.trim()) errores.push('nombre del banco requerido');
-  if (!b.cuenta.trim()) errores.push('cuenta contable requerida (ej. 102-01-001)');
-  if (!(b.saldoInicial >= 0)) errores.push('saldo inicial debe ser numero >= 0');
+  if (!b.nombre.trim()) errores.push('nombre del banco requerido 📚 Cada cuenta bancaria se da de alta por separado: concilias banco por banco, nunca todo revuelto.');
+  if (!b.cuenta.trim()) errores.push('cuenta contable requerida (ej. 102-01-001) 📚 La cuenta del Anexo 24 es el puente entre el banco y tu contabilidad: sin ella no hay póliza que registrar.');
+  if (!(b.saldoInicial >= 0)) errores.push('saldo inicial debe ser numero >= 0 📚 El saldo inicial es el punto de partida del periodo: si arranca mal, todo el conciliado hereda el error.');
   if (b.clabe && ![10, 16, 18].includes(b.clabe.length)) {
-    errores.push('CLABE debe ser de 10, 16 o 18 digitos (o vacia)');
+    errores.push('CLABE debe ser de 10, 16 o 18 digitos (o vacia) 📚 La CLABE identifica la cuenta para transferencias: un dígito mal capturado manda el traspaso a otro lado.');
   }
-  if (b.moneda !== 'MN' && b.moneda !== 'USD') errores.push('moneda MN o USD (no editable tras conciliar)');
+  if (b.moneda !== 'MN' && b.moneda !== 'USD') errores.push('moneda MN o USD (no editable tras conciliar) 📚 La moneda se fija al alta porque cambia la valuación: en USD el tipo de cambio mueve el saldo en cada cierre.');
   return errores;
 }
 
@@ -31,7 +31,7 @@ export interface Caratula {
 export function validarCaratula(c: Caratula): string[] {
   const esperado = Math.round((c.inicial + c.depositos - c.retiros) * 100) / 100;
   if (Math.abs(esperado - c.final) > 0.015) {
-    return [`carátula no cuadra: inicial + depositos - retiros = ${esperado}, final ${c.final}`];
+    return [`carátula no cuadra: inicial + depositos - retiros = ${esperado}, final ${c.final} 📚 La carátula prueba que el Excel es copia fiel del PDF: debe dar al centavo o la carga nació corrupta.`];
   }
   return [];
 }
@@ -197,10 +197,100 @@ export interface DatosCierre {
 export function validarCierre(d: DatosCierre): string[] {
   const errores: string[] = [];
   if (d.fechaPoliza !== d.fechaMovimiento) {
-    errores.push('fecha de la poliza = fecha del movimiento bancario');
+    errores.push('fecha de la poliza = fecha del movimiento bancario 📚 La póliza se registra el día que el banco movió el dinero: fecharla otro día descuadra el periodo y arrastra el DIOT.');
   }
   if (d.contrapartida === d.cuentaBanco) {
-    errores.push('la contrapartida no puede ser la misma cuenta del banco (descuadra)');
+    errores.push('la contrapartida no puede ser la misma cuenta del banco (descuadra) 📚 Cargar y abonar la misma cuenta se cancela a cero y esconde el movimiento: la contrapartida explica de dónde vino o a dónde fue el dinero.');
   }
   return errores;
+}
+
+// ---- P3: Modo Caso Real — datos sucios como en la vida real ----
+// Escenario FIJO y determinista (no es de los 8 casos del webinar: va aparte
+// para no romper su canon). 4 filas sucias + 2 limpias. Eliminar partidas
+// siempre es error grave. Cero LLM.
+export type AccionFila = 'corregir' | 'transito' | 'eliminar';
+
+export interface FilaSucia {
+  id: string;
+  descripcion: string;
+  monto: number;
+  rfc: string;
+  uuid: string | null;
+  folioRef: string;
+  limpia: boolean;
+  // dato real contra el que se detecta la suciedad (no se muestra al alumno)
+  datoReal: string;
+  accionCorrecta: AccionFila;
+  leccion: string;
+}
+
+export const CASO_REAL_FILAS: FilaSucia[] = [
+  {
+    id: 'r1', descripcion: 'PGO FOLIO 88211', monto: 1219.6, rfc: 'LNO080515TYU', uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    folioRef: '88211', limpia: false, datoReal: 'folio 8821 (la factura real termina en 8821, no 88211)', accionCorrecta: 'corregir',
+    leccion: 'La descripción del banco trae un dígito de más: el folio real es 8821. 📚 El banco captura a mano y se equivoca: concilia contra la factura, no contra lo que dice el concepto.',
+  },
+  {
+    id: 'r2', descripcion: 'PAGO PROVEEDOR TREX', monto: 4000, rfc: 'TREX990101AB1', uuid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+    folioRef: '51010', limpia: false, datoReal: 'RFC TREX990101AB2 (el dígito verificador real es 2)', accionCorrecta: 'corregir',
+    leccion: 'El RFC trae un dígito cambiado (AB1 vs AB2). 📚 Un RFC que no existe invalida la deducción: verifícalo contra la constancia del proveedor antes de conciliar.',
+  },
+  {
+    id: 'r3', descripcion: 'FACEBOOK ADS', monto: 789.01, rfc: 'FBA150320XY9', uuid: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
+    folioRef: 'FB-45', limpia: false, datoReal: 'factura por 789.00 (un centavo de diferencia)', accionCorrecta: 'corregir',
+    leccion: 'El banco trae 789.01 pero la factura es 789.00. 📚 El centavo va a cuenta de gastos (como en el caso USD del webinar): nunca descuadres la factura por redondeo del banco.',
+  },
+  {
+    id: 'r4', descripcion: 'CHEQUE 4471 PROVEEDOR', monto: 12500, rfc: 'LNO080515TYU', uuid: null,
+    folioRef: '4471', limpia: false, datoReal: 'cheque expedido no cobrado por el banco (partida en tránsito)', accionCorrecta: 'transito',
+    leccion: 'r4: cheque expedido que el banco aún no cobra: márcalo en tránsito, NO lo elimines. 📚 Las partidas en tránsito explican la diferencia entre tu saldo y el del banco; eliminarlas es un error contable grave porque esconde dinero.',
+  },
+  {
+    id: 'r5', descripcion: 'PAGO FOLIO 8821', monto: 1219.6, rfc: 'LNO080515TYU', uuid: 'd4e5f6a7-b8c9-0123-defa-234567890123',
+    folioRef: '8821', limpia: true, datoReal: 'fila limpia', accionCorrecta: 'corregir',
+    leccion: 'r5 está limpia: folio, RFC, monto y UUID correctos. 📚 No toda fila necesita acción: marcar de más también es error, igual que en una auditoría real.',
+  },
+  {
+    id: 'r6', descripcion: 'TRASPASO SANTANDER', monto: 20000, rfc: 'LNO080515TYU', uuid: 'e5f6a7b8-c9d0-1234-efab-345678901234',
+    folioRef: 'TR-77', limpia: true, datoReal: 'fila limpia', accionCorrecta: 'corregir',
+    leccion: 'r6 está limpia: traspaso documentado con folio interno. 📚 Los traspasos con su folio interno se concilian directo; solo van por puente 899 cuando cruzan bancos.',
+  },
+];
+
+export interface ResultadoCasoReal {
+  ok: boolean;
+  score: number;
+  detectados: number;
+  total: number;
+  falsosPositivos: number;
+  detalle: string[];
+}
+
+export function resolverCasoReal(marcajes: { id: string; accion: AccionFila }[]): ResultadoCasoReal {
+  const detalle: string[] = [];
+  let detectados = 0;
+  let falsosPositivos = 0;
+  const total = CASO_REAL_FILAS.filter((f) => !f.limpia).length;
+  for (const m of marcajes) {
+    const fila = CASO_REAL_FILAS.find((f) => f.id === m.id);
+    if (!fila) continue;
+    if (m.accion === 'eliminar') {
+      detalle.push(`❌ ${fila.id}: eliminar la partida es un error grave aunque esté sucia. 📚 Nada se elimina en conciliación: se corrige o se marca en tránsito; eliminar esconde dinero y en auditoría es hallazgo.`);
+      continue;
+    }
+    if (fila.limpia) {
+      falsosPositivos++;
+      detalle.push(`⚠️ ${fila.id}: ${fila.leccion}`);
+      continue;
+    }
+    if (m.accion === fila.accionCorrecta) {
+      detectados++;
+      detalle.push(`✅ ${fila.id}: ${fila.leccion}`);
+    } else {
+      detalle.push(`❌ ${fila.id}: esa acción no resuelve (dato real: ${fila.datoReal}). ${fila.leccion}`);
+    }
+  }
+  const score = Math.max(0, Math.round((detectados / total) * 100) - falsosPositivos * 10);
+  return { ok: detectados === total && falsosPositivos === 0, score, detectados, total, falsosPositivos, detalle };
 }
