@@ -140,4 +140,10 @@ describe('diot unificado (prod HTML)', () => {
     expect(s1).toMatch(/^[0-9A-F]{32}$/);
     expect(sb.selloAcuse('examen', sc.operaciones)).not.toBe(s1);
   });
+
+  it('transición de modo no se bloquea: selectMode cierra el modal de finalización', () => {
+    const fn = SRC.slice(SRC.indexOf('function selectMode'), SRC.indexOf('function showStartModal'));
+    expect(fn).toContain("completionModal').classList.add('hidden')");
+    expect(fn).toContain("previewModal').classList.add('hidden')");
+  });
 });
