@@ -171,7 +171,7 @@ describe('diot unificado (prod HTML)', () => {
     expect(SRC).not.toContain('(13 caracteres)');
   });
 
-  it('C2/C5/M1/M5: preview y folio filtran eliminadas; cert exige 4/4; tope 100; repetir = selectMode', () => {
+  it('C2/C5/M1/M5: preview y folio filtran eliminadas; cert exige 4/4; tope 100; repetir reabre el modo', () => {
     const prev = SRC.slice(SRC.indexOf('function abrirPreview'), SRC.indexOf('function cerrarPreview'));
     expect(prev).toContain('eliminaciones');
     const folio = SRC.slice(SRC.indexOf('function mostrarFolio'), SRC.indexOf('function completePilot'));
@@ -179,9 +179,14 @@ describe('diot unificado (prod HTML)', () => {
     expect(SRC).toContain('errorsFound === errorsTotal');
     expect(SRC).toContain('Math.min(100, Math.max(0, precision');
     const go = SRC.slice(SRC.indexOf('function goToNextMode'), SRC.indexOf('// ============ PUENTE'));
-    expect(go).not.toContain('location.reload()');
     expect(go).toContain("selectMode('practica')");
     expect(go).toContain("selectMode('examen')");
+    // M5: Repetir reabre el modo actual vía repetirModo (nunca location.reload()).
+    expect(SRC).not.toContain('location.reload()');
+    expect(SRC).toContain('onclick="repetirModo()"');
+    expect(SRC).toContain('function repetirModo()');
+    const rep = SRC.slice(SRC.indexOf('function repetirModo()'), SRC.indexOf('// ============ PUENTE'));
+    expect(rep).toContain('selectMode(state.mode)');
   });
 
   it('B3 conductual: tasa deja IVA descuadrado; nacionalidad deja País en conflicto', () => {

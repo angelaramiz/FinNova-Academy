@@ -532,7 +532,7 @@ body { font-family: 'Inter', sans-serif; }
       </div>
       
       <div class="flex gap-2">
-        <button onclick="location.reload()" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">
+        <button onclick="repetirModo()" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">
           Repetir
         </button>
         <button id="nextModeBtn" onclick="goToNextMode()" class="flex-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium flex items-center justify-center gap-2">
@@ -1863,6 +1863,11 @@ function updateMenuBadges() {
 function goToNextMode() {
   if (state.mode === 'piloto') selectMode('practica');
   else selectMode('examen');
+}
+
+// M5: Repetir reabre el modo actual (antes recargaba la página y mandaba todo al piloto).
+function repetirModo() {
+  selectMode(state.mode);
 }
 
 // ============ PUENTE SIMULADOR (catálogo Anexo 24 desde la app) ============
