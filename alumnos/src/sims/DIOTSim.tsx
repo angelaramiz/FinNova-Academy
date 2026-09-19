@@ -36,7 +36,7 @@ const TEORIA: Record<Exclude<Paso, 'modo'>, { titulo: string; cuerpo: string; re
   },
   campos: {
     titulo: 'Campos Clave',
-    cuerpo: 'RFC 13 caracteres, tipo 1-5 (1 Bienes, 2 Servicios, 3 Arrendamiento, 4 Fideicomisos, 5 Extranjeros), tasa y desglose acreditables.',
+    cuerpo: 'RFC 12 caracteres en persona moral (3 letras + 6 fecha + 3 homoclave; 13 en PF), tipo 1-5 (1 Bienes, 2 Servicios, 3 Arrendamiento, 4 Fideicomisos, 5 Extranjeros), tasa y desglose acreditables.',
     ref: 'Anexo 1-A RMF',
   },
   descarga: {

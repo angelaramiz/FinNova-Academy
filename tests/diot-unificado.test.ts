@@ -146,4 +146,58 @@ describe('diot unificado (prod HTML)', () => {
     expect(fn).toContain("completionModal').classList.add('hidden')");
     expect(fn).toContain("previewModal').classList.add('hidden')");
   });
+
+  it('hallazgos practicante: presentar por modo, sin flags de tutorial', () => {
+    expect(SRC).not.toContain('state.practiceMode.active || state.examMode.active');
+    const sp = SRC.slice(SRC.indexOf('function startPractice'), SRC.indexOf('function showPracticeStep'));
+    expect(sp).toContain("pilotOverlay').classList.add('active')");
+    expect(SRC).toContain('clearInterval(state.timerInterval)');
+  });
+
+  it('B3 detectable: tabla con Tasa y País; el error de tasa no recalcula el IVA', () => {
+    expect(SRC).toContain('>Tasa<');
+    expect(SRC).toContain('>País<');
+    expect(SRC).toContain("op.tasa === 'exento' ? 'exento'");
+    expect(SRC).toContain('op.pais');
+    const tasa = sliceBlock(SRC, "case 'tasa'");
+    expect(tasa).not.toContain('calcularIVA');
+  });
+
+  it('C1: PM = 12 caracteres (no 13) en pista, piloto, teoría y práctica', () => {
+    expect(SRC).toContain('12 caracteres');
+    expect(SRC).not.toContain('Debe tener 13 caracteres');
+    expect(SRC).not.toContain('3 + 6 + 3 = 13');
+    expect(SRC).not.toContain('(<13 caracteres');
+    expect(SRC).not.toContain('(13 caracteres)');
+  });
+
+  it('C2/C5/M1/M5: preview y folio filtran eliminadas; cert exige 4/4; tope 100; repetir = selectMode', () => {
+    const prev = SRC.slice(SRC.indexOf('function abrirPreview'), SRC.indexOf('function cerrarPreview'));
+    expect(prev).toContain('eliminaciones');
+    const folio = SRC.slice(SRC.indexOf('function mostrarFolio'), SRC.indexOf('function completePilot'));
+    expect(folio).toContain('eliminaciones');
+    expect(SRC).toContain('errorsFound === errorsTotal');
+    expect(SRC).toContain('Math.min(100, Math.max(0, precision');
+    const go = SRC.slice(SRC.indexOf('function goToNextMode'), SRC.indexOf('// ============ PUENTE'));
+    expect(go).not.toContain('location.reload()');
+    expect(go).toContain("selectMode('practica')");
+    expect(go).toContain("selectMode('examen')");
+  });
+
+  it('B3 conductual: tasa deja IVA descuadrado; nacionalidad deja País en conflicto', () => {
+    const sb = buildSandbox();
+    const escenarios = [1, 2, 3].flatMap((n) => [sb.generarScenarioDIOT('practica', n), sb.generarScenarioDIOT('examen', n)]);
+    const tasa = escenarios.flatMap((sc: any) => sc.operaciones.filter((op: any) =>
+      sc.erroresInyectados.some((e: any) => e.operacionId === op.id && e.campo === 'tasa')));
+    const nac = escenarios.flatMap((sc: any) => sc.operaciones.filter((op: any) =>
+      sc.erroresInyectados.some((e: any) => e.operacionId === op.id && e.campo === 'nacionalidad')));
+    for (const op of tasa) {
+      // El IVA ya no se recalcula a la tasa mala: monto × tasa ≠ IVA (visible en tabla).
+      expect(Math.abs(op.iva - sb.calcularIVA(Math.abs(op.monto), op.tasa))).toBeGreaterThan(0.015);
+    }
+    for (const op of nac) {
+      // MX debe ser Nacional y viceversa: el conflicto se ve en la columna País.
+      expect(op.nacionalidad === 'Nacional').not.toBe(op.pais === 'MX');
+    }
+  });
 });
