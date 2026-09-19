@@ -397,13 +397,15 @@ body { font-family: 'Inter', sans-serif; }
             <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Datos generados automáticamente. Revisa antes de enviar.</p>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-xs sm:text-sm min-w-[700px]">
+            <table class="w-full text-xs sm:text-sm min-w-[860px]">
               <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Fecha</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">RFC</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Nombre</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Tipo</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">Tasa</th>
+                  <th class="px-3 sm:px-4 py-2 sm:py-3 text-left font-semibold text-slate-600 dark:text-slate-400">País</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-right font-semibold text-slate-600 dark:text-slate-400">Monto</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-right font-semibold text-slate-600 dark:text-slate-400">IVA</th>
                   <th class="px-3 sm:px-4 py-2 sm:py-3 text-center font-semibold text-slate-600 dark:text-slate-400">Acción</th>
@@ -412,7 +414,7 @@ body { font-family: 'Inter', sans-serif; }
               <tbody id="operationsBody"></tbody>
               <tfoot class="bg-slate-50 dark:bg-slate-900/50 border-t-2 border-slate-300 dark:border-slate-600">
                 <tr>
-                  <td colspan="5" class="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">TOTALES</td>
+                  <td colspan="6" class="px-3 sm:px-4 py-2 sm:py-3 font-semibold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">TOTALES</td>
                   <td id="totalMonto" class="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-xs sm:text-sm text-slate-800 dark:text-white">$892,130.50</td>
                   <td id="totalIva" class="px-3 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-slate-800 dark:text-white text-xs sm:text-sm">$142,740.88</td>
                   <td></td>
@@ -530,7 +532,7 @@ body { font-family: 'Inter', sans-serif; }
       </div>
       
       <div class="flex gap-2">
-        <button onclick="location.reload()" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">
+        <button onclick="repetirModo()" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium">
           Repetir
         </button>
         <button id="nextModeBtn" onclick="goToNextMode()" class="flex-1 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium flex items-center justify-center gap-2">
@@ -695,7 +697,7 @@ function generarScenarioDIOT(fase, nivel = 1) {
           erroresInyectados.push({
             operacionId: op.id, campo: 'rfc',
             error: 'RFC inválido',
-            pista: `El RFC "${rfcMal}" no tiene el formato correcto. Debe tener 13 caracteres: 3 letras + 6 fecha + 3 homoclave.`,
+            pista: `El RFC "${rfcMal}" no tiene el formato correcto. Persona moral: 12 caracteres (3 letras + 6 fecha + 3 homoclave); persona física: 13 (4 letras + 6 fecha + 3 homoclave). 📚 Todas las empresas de este escenario son SA/SC (personas morales): si aplicas la regla de 13, marcarías buenas a todas.`,
             valorIncorrecto: rfcMal, valorCorrecto: op.rfc
           });
           op.rfc = rfcMal;
@@ -737,11 +739,12 @@ function generarScenarioDIOT(fase, nivel = 1) {
           erroresInyectados.push({
             operacionId: op.id, campo: 'tasa',
             error: 'Tasa de IVA incorrecta',
-            pista: `La tasa ${tasaMal}% no corresponde a esta operación. Debería ser ${op.tasa}%.`,
+            pista: `La tasa ${tasaMal}% no corresponde a esta operación. Debería ser ${op.tasa}%. 📚 Recalcula: IVA = monto × tasa; si no da al centavo con la tasa mostrada, la tasa es el error.`,
             valorIncorrecto: tasaMal, valorCorrecto: op.tasa
           });
           op.tasa = tasaMal;
-          op.iva = calcularIVA(Math.abs(op.monto), tasaMal);
+          // B3: el IVA NO se recalcula a la tasa mala: queda el original para
+          // que el alumno detecte el descuadre (monto × tasa ≠ IVA).
           break;
         }
         case 'nacionalidad': {
@@ -749,7 +752,7 @@ function generarScenarioDIOT(fase, nivel = 1) {
           erroresInyectados.push({
             operacionId: op.id, campo: 'nacionalidad',
             error: 'Nacionalidad incorrecta',
-            pista: `Este proveedor es ${op.nacionalidad} pero aparece como ${nacMal}.`,
+            pista: `Este proveedor es ${op.nacionalidad} pero aparece como ${nacMal}. 📚 Revisa la columna País: el país y la nacionalidad deben decir lo mismo (MX = Nacional).`,
             valorIncorrecto: nacMal, valorCorrecto: op.nacionalidad
           });
           op.nacionalidad = nacMal;
@@ -823,7 +826,7 @@ const PILOT_STEPS = [
   {
     selector: '#operationsBody', position: 'left',
     titulo: '🔍 Campos Clave',
-    descripcion: 'Observa: Fecha de pago, RFC (13 caracteres), Nombre, Tipo de operación (1-5), Monto base e IVA. Cada campo tiene reglas específicas del SAT.',
+    descripcion: 'Observa: Fecha de pago, RFC (12 caracteres en personas morales como estas SA/SC), Nombre, Tipo de operación (1-5), Tasa, País, Monto base e IVA. Cada campo tiene reglas específicas del SAT.',
     teoria: 'Tipos de operación DIOT:\n• Tipo 1: Adquisición de bienes\n• Tipo 2: Adquisición de servicios\n• Tipo 3: Arrendamiento\n• Tipo 4: Fideicomisos\n• Tipo 5: Pagos a extranjeros',
     referencia: 'Anexo 1-A RMF · Catálogo de tipos de operación',
     accion: () => {
@@ -861,8 +864,8 @@ const PILOT_STEPS = [
   {
     selector: '#spot-table', position: 'top',
     titulo: '✅ Revisión Final',
-    descripcion: 'Antes de enviar, ContaLink valida: RFCs válidos (13 caracteres), montos positivos, IVA correcto según tasa, campos obligatorios. Si hay errores, los marca en rojo.',
-    teoria: 'Validaciones automáticas:\n• RFC: 3 letras + 6 fecha + 3 homoclave\n• Monto: positivo, máximo 2 decimales\n• IVA: debe coincidir con tasa × monto\n• Nacionalidad: Nacional o Extranjero',
+    descripcion: 'Antes de enviar, ContaLink valida: RFCs válidos (12 caracteres en personas morales), montos positivos, IVA correcto según tasa, campos obligatorios. Si hay errores, los marca en rojo.',
+    teoria: 'Validaciones automáticas:\n• RFC PM: 3 letras + 6 fecha + 3 homoclave = 12 (PF: 4 + 6 + 3 = 13)\n• Monto: positivo, máximo 2 decimales\n• IVA: debe coincidir con tasa × monto\n• Nacionalidad: Nacional o Extranjero',
     referencia: 'Validación SAT · Catálogo de errores E01-E22',
     accion: () => {
       document.querySelectorAll('#operationsBody tr').forEach((r, i) => {
@@ -893,8 +896,8 @@ const PRACTICE_STEPS = [
   {
     selector: '#spot-table', position: 'top',
     titulo: ' Busca los Errores',
-    descripcion: 'Revisa: RFCs inválidos (<13 caracteres o formato incorrecto), montos negativos, IVA que no coincida con la tasa, tipos de operación incorrectos.',
-    teoria: 'Pistas:\n• RFC válido: 3 letras + 6 números + 3 alfanuméricos = 13 caracteres\n• Monto: siempre positivo en DIOT\n• IVA: debe ser monto × tasa (16%, 8%, 0% o exento)\n• Tipo: debe corresponder a la operación real',
+    descripcion: 'Revisa: RFCs inválidos (formato incorrecto, no 12 caracteres en persona moral), montos negativos, IVA que no coincida con la tasa, tipos de operación incorrectos.',
+    teoria: 'Pistas:\n• RFC válido PM: 3 letras + 6 fecha + 3 homoclave = 12 caracteres (PF = 13)\n• Monto: siempre positivo en DIOT\n• IVA: debe ser monto × tasa (16%, 8%, 0% o exento)\n• Tipo: debe corresponder a la operación real',
     referencia: 'Validación SAT · Errores comunes E01-E22',
     accion: null, accionLabel: 'Analizando tabla'
   },
@@ -938,6 +941,8 @@ function populateOperations(operaciones, showDelete = false) {
       <td class="px-3 sm:px-4 py-2 sm:py-3 font-mono text-[10px] sm:text-xs text-slate-700 dark:text-slate-300">${op.rfc}</td>
       <td class="px-3 sm:px-4 py-2 sm:py-3 text-slate-800 dark:text-slate-200 max-w-[150px] sm:max-w-none truncate">${op.nombre}</td>
       <td class="px-3 sm:px-4 py-2 sm:py-3"><span class="badge ${TIPOS_OP[op.tipo].color} text-[10px] sm:text-xs px-2 py-0.5 rounded">${TIPOS_OP[op.tipo].label}</span></td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 font-mono text-[10px] sm:text-xs text-slate-700 dark:text-slate-300">${op.tasa === 'exento' ? 'exento' : op.tasa + '%'}</td>
+      <td class="px-3 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-700 dark:text-slate-300">${op.pais} (${op.nacionalidad === 'Nacional' ? 'Nac' : 'Ext'})</td>
       <td class="px-3 sm:px-4 py-2 sm:py-3 text-right font-mono text-[10px] sm:text-xs ${op.monto < 0 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-800 dark:text-slate-200'}">$${Math.abs(op.monto).toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
       <td class="px-3 sm:px-4 py-2 sm:py-3 text-right font-mono text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">$${op.iva.toLocaleString('es-MX',{minimumFractionDigits:2})}</td>
       <td class="px-3 sm:px-4 py-2 sm:py-3 text-center">
@@ -1007,6 +1012,9 @@ function toggleDarkMode() {
 
 // ============ MODE SELECTION ============
 function selectMode(mode) {
+  // C3: limpia el timer anterior al cambiar de modo (evita fuga de intervalos
+  // y pistas automáticas dentro del examen "sin pistas").
+  if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
   if (mode === 'examen') {
     const pilotoOk = localStorage.getItem('diot_piloto') === 'true';
     const practicaOk = localStorage.getItem('diot_practica') === 'true';
@@ -1108,6 +1116,7 @@ function showStartModal(mode) {
     totales: state.scenario.cantErrores,
     hints: 0,
     eliminaciones: [],
+    fallos: 0,
     lastAction: Date.now(),
   };
   
@@ -1330,6 +1339,8 @@ function nextPilotStep() {
 function skipPilot() {
   if (confirm('¿Seguro que quieres saltar el tutorial? Perderás el contexto educativo.')) {
     endPilot();
+    // M2: saltar no guarda avance; el alumno debe saber cómo retomarlo.
+    showFeedback('Tutorial saltado: entra a Modo Piloto desde el menú lateral para retomarlo. El avance de piloto no quedó guardado.', 'info');
   }
 }
 
@@ -1337,8 +1348,10 @@ function skipPilot() {
 // Solo visible al presentar (práctica/examen); el piloto lo oculta.
 function mostrarFolio() {
   if (!state.scenario) return;
+  // C2: el folio corresponde a lo que queda en pantalla (sin eliminadas).
+  const ops = state.scenario.operaciones.filter(o => !state.practice.eliminaciones.includes(o.id));
   document.getElementById('folioRow').style.display = '';
-  document.getElementById('compFolio').textContent = folioAcuse(state.mode, state.scenario.operaciones);
+  document.getElementById('compFolio').textContent = folioAcuse(state.mode, ops);
 }
 
 function completePilot() {
@@ -1386,7 +1399,9 @@ function startPractice() {
   state.practiceMode.step = 0;
   state.startTime = Date.now();
   state.practice.lastAction = Date.now();
-  
+  // B2: sin activar el overlay, el tooltip queda invisible (opacity:0) e
+  // incliquable (pointer-events:none) y el tutorial nunca arranca.
+  document.getElementById('pilotOverlay').classList.add('active');
   setTimeout(() => showPracticeStep(0), 400);
 }
 
@@ -1522,30 +1537,16 @@ function endPracticeTutorial() {
 }
 
 // ============ EXAM MODE ============
+// C4: el cronómetro arranca al terminar la intro (endExamIntro), no mientras
+// el alumno lee las instrucciones con la tabla bloqueada.
 function startExam() {
   state.examMode.active = true;
   state.startTime = Date.now();
   state.exam.timeRemaining = state.exam.timeLimit;
   state.practice.lastAction = Date.now();
-  
+
   document.getElementById('pilotOverlay').classList.add('active');
   setTimeout(() => showExamStep(0), 400);
-  
-  state.timerInterval = setInterval(() => {
-    state.exam.timeRemaining--;
-    const minutes = Math.floor(state.exam.timeRemaining / 60);
-    const seconds = state.exam.timeRemaining % 60;
-    document.getElementById('timerValue').textContent = `${pad2(minutes)}:${pad2(seconds)}`;
-    
-    if (state.exam.timeRemaining < 60) {
-      document.getElementById('timerDisplay').classList.add('timer-warning');
-    }
-    
-    if (state.exam.timeRemaining <= 0) {
-      clearInterval(state.timerInterval);
-      completeExam(true);
-    }
-  }, 1000);
 }
 
 function showExamStep(index) {
@@ -1635,8 +1636,27 @@ function endExamIntro() {
   document.getElementById('pilotSpotlight').style.width = '0';
   document.getElementById('pilotSpotlight').style.height = '0';
   document.querySelectorAll('.pilot-highlight').forEach(el => el.classList.remove('pilot-highlight'));
-  
+
   showFeedback('Examen iniciado. Tienes 5 minutos. ¡Buena suerte!', 'info');
+
+  // C4: el tiempo corre desde que el alumno cierra la intro, no antes.
+  state.startTime = Date.now();
+  state.exam.timeRemaining = state.exam.timeLimit;
+  state.timerInterval = setInterval(() => {
+    state.exam.timeRemaining--;
+    const minutes = Math.floor(state.exam.timeRemaining / 60);
+    const seconds = state.exam.timeRemaining % 60;
+    document.getElementById('timerValue').textContent = `${pad2(minutes)}:${pad2(seconds)}`;
+
+    if (state.exam.timeRemaining < 60) {
+      document.getElementById('timerDisplay').classList.add('timer-warning');
+    }
+
+    if (state.exam.timeRemaining <= 0) {
+      clearInterval(state.timerInterval);
+      completeExam(true);
+    }
+  }, 1000);
 }
 
 // ============ PRACTICE/EXAM ACTIONS ============
@@ -1681,7 +1701,10 @@ function eliminarOperacion(opId) {
       row.classList.add('error-row');
       setTimeout(() => row.classList.remove('error-row'), 800);
     }
-    
+
+    // M4: eliminar una operación correcta penaliza (antes salía gratis).
+    state.practice.fallos = (state.practice.fallos || 0) + 1;
+
     if (state.mode === 'practica') {
       showFeedback('❌ Esta operación era correcta. No deberías haberla eliminado.', 'error');
     }
@@ -1690,7 +1713,10 @@ function eliminarOperacion(opId) {
 
 document.addEventListener('click', (e) => {
   if (e.target.closest('#btn-presentar') || e.target.closest('#btn-presentar *')) {
-    if ((state.mode === 'practica' || state.mode === 'examen') && (state.practiceMode.active || state.examMode.active)) {
+    // B1: presentar depende del MODO, no de los flags de tutorial. Exigir
+    // practiceMode/examMode.active dejaba muerto el botón en examen (la intro
+    // lo apaga) y en práctica tras cerrar su tutorial.
+    if (state.mode === 'practica' || state.mode === 'examen') {
       e.preventDefault();
       e.stopPropagation();
       
@@ -1715,7 +1741,9 @@ document.addEventListener('click', (e) => {
 let pendingModo = null;
 function abrirPreview(modo) {
   pendingModo = modo;
-  const ops = state.scenario.operaciones;
+  // C2: la previa muestra lo que queda en pantalla (sin las eliminadas),
+  // igual que updateStats; antes mostraba 8 ops con datos sucios.
+  const ops = state.scenario.operaciones.filter(o => !state.practice.eliminaciones.includes(o.id));
   const base = ops.reduce((s, o) => s + Math.abs(o.monto), 0);
   const iva = ops.reduce((s, o) => s + o.iva, 0);
   document.getElementById('prevOps').textContent = String(ops.length);
@@ -1749,7 +1777,9 @@ function completePractice() {
   const precision = 100;
   const timeBonus = elapsed < 120 ? 20 : elapsed < 180 ? 10 : 0;
   const hintPenalty = state.practice.hints * 5;
-  const score = Math.max(0, precision + timeBonus - hintPenalty);
+  // M4: -5 por cada eliminación incorrecta. M1: tope en 100 (sin "120/100").
+  const intentoPenalty = (state.practice.fallos || 0) * 5;
+  const score = Math.min(100, Math.max(0, precision + timeBonus - hintPenalty - intentoPenalty));
   
   document.getElementById('compSteps').textContent = `${state.practice.encontrados}/${state.practice.totales}`;
   document.getElementById('compTime').textContent = `${minutes}:${pad2(seconds)}`;
@@ -1797,8 +1827,9 @@ function completeExam(timeUp = false) {
   }
   
   document.getElementById('nextModeText').textContent = 'Repetir';
-  
-  if (score >= 90) {
+
+  // C5: certificado solo con los 4 errores encontrados y 90+ (antes 3/4 + bonus = 90 también certificaba).
+  if (score >= 90 && errorsFound === errorsTotal) {
     document.getElementById('certificateSection').classList.remove('hidden');
     document.getElementById('completionHeader').className = 'bg-gradient-to-br from-amber-500 to-yellow-600 p-6 text-white';
   } else {
@@ -1831,8 +1862,12 @@ function updateMenuBadges() {
 
 function goToNextMode() {
   if (state.mode === 'piloto') selectMode('practica');
-  else if (state.mode === 'practica') selectMode('examen');
-  else location.reload();
+  else selectMode('examen');
+}
+
+// M5: Repetir reabre el modo actual (antes recargaba la página y mandaba todo al piloto).
+function repetirModo() {
+  selectMode(state.mode);
 }
 
 // ============ PUENTE SIMULADOR (catálogo Anexo 24 desde la app) ============
