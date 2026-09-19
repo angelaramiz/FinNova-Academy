@@ -1017,6 +1017,13 @@ function selectMode(mode) {
   }
   
   state.mode = mode;
+  // Cierra cualquier modal previo: sin esto, el modal de finalización queda
+  // abierto encima del modal de inicio y bloquea la transición de modo.
+  document.getElementById('completionModal').classList.add('hidden');
+  document.getElementById('completionModal').classList.remove('flex');
+  document.getElementById('previewModal').classList.add('hidden');
+  document.getElementById('previewModal').classList.remove('flex');
+  pendingModo = null;
   document.getElementById('menuPiloto').classList.toggle('active', mode === 'piloto');
   document.getElementById('menuPractica').classList.toggle('active', mode === 'practica');
   document.getElementById('menuExamen').classList.toggle('active', mode === 'examen');
