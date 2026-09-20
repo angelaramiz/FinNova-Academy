@@ -49,6 +49,8 @@ import PromptSim from './PromptSim';
 // P1-3: sims pesados fuera del initial (lazy + Suspense en cada uso).
 const PowerBISim = lazy(() => import('./PowerBISim'));
 const ForecastSim = lazy(() => import('./ForecastSim'));
+// EXP finanzas (rama experimental): demo de interés compuesto.
+const FinanzasDemo = lazy(() => import('./FinanzasDemo'));
 const AgentSim = lazy(() => import('./AgentSim'));
 import Capacitaciones from './Capacitaciones';
 // TASK-O3: ventana OS + personalización persistida.
@@ -97,7 +99,7 @@ interface CareerPathState {
 
 interface DesktopShellProps { theme: Theme; tasks: TaskInfo[]; onClose: () => void; onTaskComplete?: () => void; specialty?: string; onSpecialtyChange?: (specialty: string) => void; osMode?: boolean; fondo?: string; onFondoChange?: (f: string) => void; screenInicial?: string; }
 type Screen = 'desktop' | 'workflow' | 'banking' | 'emailInbox' | 'calendar' | 'calculadora' | 'archivo' | 'spreadsheet' | 'accounting' | 'dashboard' | 'progress' | 'pipeline' | 'sql' | 'warehouse' | 'monitor' | 'dbt' | 'catalog' | 'notebook' | 'airflow' | 'cloud' | 'git' | 'bi' | 'capstone' | 'api' | 'dataops' | 'learning' | 'stats' | 'ml' | 'routes' | 'cv' | 'interview' | 'chronicle' | 'vacancies' | 'careercenter' | 'practicas' | 'practicasTracker' | 'practicasCurso' | 'powerbi' | 'forecast' | 'automation' | 'agent' | 'prompt' |
-'capacitaciones' | 'sim-diot' | 'sim-conciliacion' | 'sim-auditoria' | 'sim-nomina';
+'capacitaciones' | 'sim-diot' | 'sim-conciliacion' | 'sim-auditoria' | 'sim-nomina' | 'finanzas';
 
 export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, specialty: specialtyProp, onSpecialtyChange, osMode = false, fondo, onFondoChange, screenInicial }: DesktopShellProps) {
   const specialty = (specialtyProp as 'accounting' | 'data_engineering' | 'practicas') || 'accounting';
@@ -142,7 +144,7 @@ export default function DesktopShell({ theme, tasks, onClose, onTaskComplete, sp
     vacancies: 'Vacantes', careercenter: 'Empleo', practicas: 'Módulos',
     practicasTracker: 'Tracker', practicasCurso: 'Curso', powerbi: 'Power BI',
     forecast: 'Pronóstico', automation: 'Automatización', agent: 'Agente',
-    prompt: 'Prompts', capacitaciones: 'Capacitaciones', 'sim-diot': 'DIOT',
+    prompt: 'Prompts', capacitaciones: 'Capacitaciones', 'sim-diot': 'DIOT', finanzas: 'Finanzas (exp)',
     'sim-conciliacion': 'Conciliación', 'sim-auditoria': 'Auditoría', 'sim-nomina': 'Nómina',
   };
 
@@ -415,6 +417,7 @@ const accountingApps = [
   { label: 'Crónica', icon: '📖', action: () => setScreen('chronicle'), dataApp: 'cronica' },
   { label: 'Vacantes', icon: '🎯', action: () => setScreen('vacancies'), dataApp: 'vacantes' },
   { label: 'Carrera', icon: '💼', action: () => setScreen('careercenter'), dataApp: 'carrera' },
+  { label: 'Finanzas (exp)', icon: '💹', action: () => setScreen('finanzas'), dataApp: 'finanzas' },
 ];
 
 const analystApps = [
@@ -496,6 +499,7 @@ const scienceApps = [
     { label: 'Tareas', icon: '📋', count: tasks.length, action: () => setScreen('desktop'), dataApp: 'tareas' },
     { label: 'Correo', icon: '📧', count: tasks.length, action: () => setScreen('emailInbox'), dataApp: 'correo' },
     { label: 'Contable', icon: '📊', action: () => setScreen('accounting'), dataApp: 'contable' },
+    { label: 'Finanzas (exp)', icon: '💹', action: () => setScreen('finanzas'), dataApp: 'finanzas' },
   ];
 
 const appIcons = isPracticas
@@ -699,6 +703,7 @@ const appIcons = isPracticas
         {screen === 'ml' && <div className="animate-slide-in h-full"><MLSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'powerbi' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><PowerBISim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
         {screen === 'forecast' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><ForecastSim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
+        {screen === 'finanzas' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><FinanzasDemo theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
         {screen === 'automation' && <div className="animate-slide-in h-full"><AutomationSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
         {screen === 'agent' && <div className="animate-slide-in h-full"><Suspense fallback={<SimFallback />}><AgentSim theme={theme} onBack={() => setScreen('desktop')} /></Suspense></div>}
         {screen === 'prompt' && <div className="animate-slide-in h-full"><PromptSim theme={theme} onBack={() => setScreen('desktop')} /></div>}
