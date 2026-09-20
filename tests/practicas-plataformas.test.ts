@@ -20,12 +20,12 @@ describe('plataformas de practicas', () => {
   it('contabilidad y contalink tienen módulos', () => {
     const por = (p: string) => PRACTICAS_MODULES.filter((m) => m.plataforma === p);
     expect(por('contabilidad').length).toBeGreaterThan(0);
-    expect(por('contalink').length).toBe(4);
+    expect(por('contalink').length).toBe(5);
   });
 
-  it('los 4 Contalink son los del webinar/video', () => {
+  it('los 5 Contalink son webinar/video + pólizas (Anexo 24)', () => {
     const ids = PRACTICAS_MODULES.filter((m) => m.plataforma === 'contalink').map((m) => m.id).sort();
-    expect(ids).toEqual(['mod-auditoria', 'mod-conciliacion', 'mod-nomina-web', 'mod-reporte']);
+    expect(ids).toEqual(['mod-auditoria', 'mod-conciliacion', 'mod-nomina-web', 'mod-polizas', 'mod-reporte']);
   });
 
   it('audit no reporta fallos de plataforma', () => {
