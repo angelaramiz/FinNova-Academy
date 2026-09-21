@@ -217,18 +217,133 @@ export const CUENTA_INTERNA_A_AGRUPADOR: Record<string, string> = {
   '207': '207.01',
   '208': '208.01',
   '209': '209.01',
+  '209-01': '209.01',
   '213': '213.01',
   '216': '216.10',
 };
 
 /** Resuelve una cuenta interna del Sim a su entrada del agrupador. null si no hay mapeo. */
 export function agrupadorDeCuentaInterna(cuenta: string): AgrupadorEntry | null {
-  const cod = CUENTA_INTERNA_A_AGRUPADOR[(cuenta || '').trim()];
-  return cod ? agrupadorDe(cod) : null;
+  const key = (cuenta || '').trim();
+  const cod = CUENTA_INTERNA_A_AGRUPADOR[key]
+    ?? CUENTA_INTERNA_A_AGRUPADOR[key.replace(/[-_\s]+/g, '.')]
+    ?? null;
+  if (cod) return agrupadorDe(cod);
+  // La cuenta ya es un agrupador directo (ej. 601.45).
+  return agrupadorDe(key.replace(/[-_\s]+/g, '.'));
 }
 
 /** Etiqueta corta "código · nombre" para mostrar en el Sim. '' si no existe. */
 export function etiquetaAgrupador(cuenta: string): string {
   const e = agrupadorDeCuentaInterna(cuenta);
   return e ? `${e.codigo} · ${e.nombre}` : '';
+}
+
+// ─── Búsqueda por nombre (espejo del motor: misma normalización + ranking) ──
+// El practicante sabe nombres ("bancos", "renta"), no códigos. Lógica idéntica
+// a buscarCuentas del backend pero sobre el catálogo DOF completo del front.
+const STOPWORDS_Q = new Set(['de', 'la', 'las', 'los', 'el', 'del', 'al', 'y', 'o', 'a', 'en', 'por', 'para', 'con', 'sin', 'una', 'unos', 'unas', 'su', 'sus']);
+
+export function normalizarBusqueda(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9ñ.\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t && !STOPWORDS_Q.has(t))
+    .map(t => t.replace(/z/g, 's').replace(/v/g, 'b').replace(/ll/g, 'y').replace(/c([ei])/g, 's$1'))
+    .join(' ');
+}
+
+export interface SinonimoFront { patron: RegExp; agrupador: string; peso: number; }
+
+export const SINONIMOS_FRONT: SinonimoFront[] = [
+  { patron: /bancos?|transferencia|spei|hsbc|bbva|rito|banamex|banorte|santander/i, agrupador: '102.01', peso: 60 },
+  { patron: /renta|arrendamiento|alquiler|local|bodega|residencias?/i, agrupador: '601.45', peso: 60 },
+  { patron: /renta|arrendamiento|alquiler|local|bodega/i, agrupador: '601.46', peso: 55 },
+  { patron: /isr retenido|retencion(es)? (de )?isr|retuve|diez por ciento/i, agrupador: '216.03', peso: 60 },
+  { patron: /honorarios/i, agrupador: '601.34', peso: 55 },
+  { patron: /iva que me cobraron|iva acreditable|iva a favor|iva por acreditar/i, agrupador: '118.01', peso: 60 },
+  { patron: /iva pendiente|iva por pagar|iva no pagado/i, agrupador: '119.01', peso: 60 },
+  { patron: /iva que cobre|iva trasladado|iva por trasladar/i, agrupador: '207.01', peso: 60 },
+  { patron: /iva cobrado/i, agrupador: '208.01', peso: 60 },
+  { patron: /iva no cobrado/i, agrupador: '209.01', peso: 60 },
+  { patron: /proveedor(es)?|lo que debo|por pagar/i, agrupador: '201.01', peso: 60 },
+  { patron: /cliente(s)?|lo que me deben|por cobrar/i, agrupador: '105.01', peso: 60 },
+  { patron: /flete(s)?|acarreo(s)?|transporte (de )?carga/i, agrupador: '601.72', peso: 60 },
+  { patron: /gasolina|diesel|combustible|gas lp|litros de gas/i, agrupador: '601.48', peso: 60 },
+  { patron: /comida|propina|sin factura|no deducible(s)?|sin requisitos/i, agrupador: '601.83', peso: 60 },
+  { patron: /comision(es)?( bancaria(s)?)?|spei fee/i, agrupador: '701.10', peso: 60 },
+  { patron: /ventas?|ingreso(s)?|facture|facturado/i, agrupador: '401.01', peso: 60 },
+  { patron: /sueldos?|nomina|salario(s)?|raya/i, agrupador: '603.01', peso: 60 },
+  { patron: /sueldos? por pagar|salarios por pagar/i, agrupador: '210.01', peso: 60 },
+  { patron: /cheque(s)?|cheque en transito/i, agrupador: '102.01', peso: 55 },
+  { patron: /dolares?|usd|tipo de cambio|extranjero/i, agrupador: '102.02', peso: 60 },
+  { patron: /papeleria|articulos de oficina|oficina/i, agrupador: '601.55', peso: 60 },
+  { patron: /mantenimiento|conservacion|filtro|cartucho|reparacion/i, agrupador: '601.56', peso: 60 },
+  { patron: /viaticos?|viaje(s)?|hospedaje|hotel/i, agrupador: '601.49', peso: 60 },
+  { patron: /capital|aportacion|ampliacion de capital/i, agrupador: '301.01', peso: 60 },
+];
+
+export interface ResultadoBusquedaFront {
+  agrupador: string;
+  nombre: string;
+  cuentaInternaSugerida: string;
+  score: number;
+  avisoColision?: string;
+  naturaleza: 'D' | 'H';
+}
+
+const COLISIONES_FRONT: Record<string, string> = {
+  '601.83': '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.',
+};
+
+function internaPreferenteFront(agrupador: string): string {
+  const inv = Object.entries(CUENTA_INTERNA_A_AGRUPADOR).find(([, v]) => v === agrupador);
+  if (inv) return inv[0];
+  return agrupador.replace(/\./g, '-');
+}
+
+function naturalezaDeFront(agrupador: string): 'D' | 'H' {
+  return '234'.includes(agrupador.charAt(0)) ? 'H' : 'D';
+}
+
+export function buscarCuentasFront(query: string, limite = 8): ResultadoBusquedaFront[] {
+  const q = normalizarBusqueda(query);
+  if (!q) return [];
+  const tokens = q.split(' ').filter(Boolean);
+  const codigoLimpio = query.trim().replace(/[-_\s]+/g, '.');
+  const scored = new Map<string, number>();
+  const push = (agr: string, s: number) => scored.set(agr, Math.max(scored.get(agr) ?? 0, s));
+  for (const c of CATALOGO_AGRUPADOR) {
+    if (c.nivel !== 2) continue;
+    if (c.codigo === codigoLimpio) push(c.codigo, 100);
+    else if (codigoLimpio && c.codigo.startsWith(codigoLimpio) && codigoLimpio.length >= 2) push(c.codigo, 85);
+  }
+  for (const c of CATALOGO_AGRUPADOR) {
+    if (c.nivel !== 2) continue;
+    const nombre = normalizarBusqueda(c.nombre);
+    for (const t of tokens) {
+      if (t.length < 3) continue;
+      if (nombre.split(' ').includes(t)) push(c.codigo, 70);
+      else if (nombre.includes(t)) push(c.codigo, 40);
+    }
+  }
+  for (const s of SINONIMOS_FRONT) {
+    if (s.patron.test(query) || s.patron.test(q)) push(s.agrupador, Math.min(s.peso + 20, 84));
+  }
+  return [...scored.entries()]
+    .map(([agr, score]): ResultadoBusquedaFront | null => {
+      const c = agrupadorDe(agr);
+      if (!c) return null;
+      return {
+        agrupador: agr, nombre: c.nombre,
+        cuentaInternaSugerida: internaPreferenteFront(agr), score,
+        avisoColision: COLISIONES_FRONT[agr], naturaleza: naturalezaDeFront(agr),
+      };
+    })
+    .filter((r): r is ResultadoBusquedaFront => r !== null)
+    .sort((a, b) => b.score - a.score || a.agrupador.localeCompare(b.agrupador))
+    .slice(0, limite);
 }
