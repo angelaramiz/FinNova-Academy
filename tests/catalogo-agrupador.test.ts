@@ -36,6 +36,17 @@ describe('catalogo agrupador SAT', () => {
     expect(agrupadorDeCuentaInterna('XXX') ).toBeNull();
   });
 
+  it('cuentas internas del curso de pólizas resuelven (hallazgo web)', () => {
+    expect(agrupadorDeCuentaInterna('601-83')?.codigo).toBe('601.45');
+    expect(agrupadorDeCuentaInterna('216-03')?.codigo).toBe('216.03');
+    expect(agrupadorDeCuentaInterna('102-01-002')?.codigo).toBe('102.01');
+    expect(agrupadorDeCuentaInterna('119-01')?.codigo).toBe('119.01');
+    expect(agrupadorDeCuentaInterna('118-01')?.codigo).toBe('118.01');
+    expect(agrupadorDeCuentaInterna('201-01')?.codigo).toBe('201.01');
+    expect(agrupadorDeCuentaInterna('208-01')?.codigo).toBe('208.01');
+    expect(etiquetaAgrupador('601-83')).toContain('601.45');
+  });
+
   it('etiqueta corta para el Sim', () => {
     expect(etiquetaAgrupador('102-01-001')).toBe('102.01 · Bancos nacionales');
     expect(etiquetaAgrupador('XXX')).toBe('');
