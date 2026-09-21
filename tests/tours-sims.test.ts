@@ -10,14 +10,15 @@ const SIM_DE: Record<string, string> = {
   nomina: 'NominaSim.tsx',
   conciliacion: 'ConciliacionSim.tsx',
   auditoria: 'AuditoriaSim.tsx',
+  poliza: 'PolizaSim.tsx',
 };
 
 describe('tours Contalink', () => {
-  it('3 pilotos con 6 pasos cada uno y storageKeys únicos', () => {
+  it('4 pilotos con 6 pasos cada uno y storageKeys únicos', () => {
     const ids = Object.keys(TOURS).sort();
-    expect(ids).toEqual(['auditoria', 'conciliacion', 'nomina']);
+    expect(ids).toEqual(['auditoria', 'conciliacion', 'nomina', 'poliza']);
     const keys = Object.values(TOURS).map((t) => t.storageKey);
-    expect(new Set(keys).size).toBe(3);
+    expect(new Set(keys).size).toBe(4);
     for (const t of Object.values(TOURS)) {
       expect(t.titulo).toMatch(/Piloto/);
       expect(t.pasos).toHaveLength(6);
@@ -50,6 +51,7 @@ describe('tours Contalink', () => {
       nomina: 'TOURS.nomina',
       conciliacion: 'TOURS.conciliacion',
       auditoria: 'TOURS.auditoria',
+      poliza: 'TOURS.poliza',
     };
     for (const [id, uso] of Object.entries(usos)) {
       const src = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', SIM_DE[id]), 'utf8');

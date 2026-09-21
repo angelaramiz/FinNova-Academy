@@ -157,8 +157,59 @@ export const TOUR_AUDITORIA: PasoTour[] = [
   },
 ];
 
+export const TOUR_POLIZA: PasoTour[] = [
+  {
+    selector: '[data-tour="poliza-hero"]',
+    titulo: 'Póliza de la factura',
+    descripcion: 'Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER antes de guardar.',
+    teoria: 'La póliza es el documento del Anexo 24 sección C: fecha, concepto, UUID, RFC del tercero, monto total, moneda y líneas con debe/haber.',
+    referencia: 'Anexo 24 RMF 2026 · Pólizas del periodo',
+  },
+  {
+    selector: '[data-tour="poliza-doc"]',
+    titulo: 'Documento fuente',
+    descripcion: 'El CFDI manda: UUID, subtotal, IVA y retenciones. El caso MARCELO F trae 70900 + ISR 7090 = total 63810.',
+    teoria: 'PUE pagado = egreso; PPD = solo provisión. Antes de contabilizar se valida que el CFDI cuadre solo.',
+    referencia: 'CFDI MARCELO F · UUID 1317D7E0',
+    paso: 'documento',
+  },
+  {
+    selector: '[data-tour="poliza-concilia"]',
+    titulo: 'Cotejo bancario',
+    descripcion: 'El total del CFDI debe aparecer igual en el estado de cuenta. Sin pago confirmado no se toca 102.01.',
+    teoria: 'Cotejo registro-contra-estado-de-cuenta: si el monto no salió del banco, la operación queda en provisión (201.01).',
+    referencia: 'EDO DE CUENTA RITO FINANCIERA',
+    paso: 'conciliacion',
+  },
+  {
+    selector: '[data-tour="poliza-editor"]',
+    titulo: 'Editor multilínea',
+    descripcion: 'Cuenta interna o agrupador por línea, Eliminar y Agregar asiento. Guardar se bloquea hasta que cuadre.',
+    teoria: 'Tu cuenta 601-83 viaja al SAT como agrupador 601.45. El IVA PPD va a 119.01 pendiente, no a 118.01.',
+    referencia: 'Póliza Contalink · Agregar asiento',
+    paso: 'poliza',
+  },
+  {
+    selector: '[data-tour="poliza-balanza"]',
+    titulo: 'Balanza por agrupador',
+    descripcion: 'Cada póliza guardada alimenta su agrupador: saldo final = debe − haber en deudoras y al revés en acreedoras.',
+    teoria: 'Es la sección B de la balanza electrónica: saldo inicial + movimientos = saldo final por cuenta.',
+    referencia: 'Anexo 24 · Balanza de comprobación',
+    paso: 'balanza',
+  },
+  {
+    selector: '[data-tour="poliza-guardar"]',
+    titulo: 'Guardar con folio',
+    descripcion: 'Guardar se bloquea hasta que DEBE = HABER. Al guardar sale el folio, se registra tu avance y la balanza se alimenta.',
+    teoria: 'Sin cuadre no hay póliza: el gate DEBE = HABER es la partida doble. El folio + UUID amarran la póliza a su CFDI.',
+    referencia: 'Partida doble · Folio + UUID',
+    paso: 'poliza',
+  },
+];
+
 export const TOURS: Record<string, { pasos: PasoTour[]; storageKey: string; titulo: string }> = {
   nomina: { pasos: TOUR_NOMINA, storageKey: 'tour-sim-nomina', titulo: 'Piloto de Nómina' },
   conciliacion: { pasos: TOUR_CONCILIACION, storageKey: 'tour-sim-conciliacion', titulo: 'Piloto de Conciliación' },
   auditoria: { pasos: TOUR_AUDITORIA, storageKey: 'tour-sim-auditoria', titulo: 'Piloto de Auditoría' },
+  poliza: { pasos: TOUR_POLIZA, storageKey: 'tour-sim-poliza', titulo: 'Piloto de Pólizas' },
 };

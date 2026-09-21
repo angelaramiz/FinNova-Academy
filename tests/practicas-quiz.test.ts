@@ -11,9 +11,10 @@ const GOLDENS: Record<string, string[]> = {
   'mod-auditoria': ['M1', '194.67', '4606'],
   'mod-nomina-web': ['progresiva', '15%', 'asimilada', '9629'],
   'mod-reporte': ['pago', 'Complementaria', '1-2h'],
+  'mod-polizas': ['63,810', '119.01', '601.45'],
 };
 
-describe('quiz Contalink x4: goldens cubiertos', () => {
+describe('quiz Contalink x5: goldens cubiertos', () => {
   for (const [id, goldens] of Object.entries(GOLDENS)) {
     it(`${id} pregunta sus goldens`, () => {
       const mod = getPracticasModule(id)!;
@@ -40,7 +41,7 @@ describe('quiz Contalink x4: goldens cubiertos', () => {
   });
 });
 
-describe('quiz Contalink x4: evaluacion operativa', () => {
+describe('quiz Contalink x5: evaluacion operativa', () => {
   it('aciertos perfectos aprueban y fallos reprueban con feedback', () => {
     for (const id of Object.keys(GOLDENS)) {
       const mod = getPracticasModule(id)!;

@@ -7,10 +7,12 @@ import { join } from 'path';
 // SSR mezcla dos copias de React en este monorepo.)
 import NominaSim from '../alumnos/src/sims/NominaSim';
 import ConciliacionSim from '../alumnos/src/sims/ConciliacionSim';
+import PolizaSim from '../alumnos/src/sims/PolizaSim';
 
 const NOM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'NominaSim.tsx'), 'utf8');
 const CON = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ConciliacionSim.tsx'), 'utf8');
 const DIO = readFileSync(join(__dirname, '..', 'alumnos', 'public', 'sims', 'diot.html'), 'utf8');
+const POL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PolizaSim.tsx'), 'utf8');
 
 describe('P1/P2/P3 cableado UI', () => {
   it('P2 nómina: preview invoca vistaPreviaCFDI y confirma timbrado real', () => {
@@ -50,5 +52,30 @@ describe('P1/P2/P3 cableado UI', () => {
     expect(SHELL).toContain('width: 60px');
     expect(SHELL).toContain('Retraer menú');
     expect(SHELL).toContain('Expandir menú');
+  });
+  it('pólizas: editor multilínea estilo captura Contalink + cuadre + guardar', () => {
+    expect(typeof PolizaSim).toBe('function');
+    for (const s of ['Agregar asiento', 'Eliminar', 'Guardar', 'Cancelar', 'Descargar XML', 'Descargar PDF', 'Notas Adicionales', 'CUENTA CONTABLE', 'DEBE', 'HABER']) {
+      expect(POL).toContain(s);
+    }
+    expect(POL).toContain('/api/sim/polizas/generar');
+    expect(POL).toContain('/api/sim/polizas/guardar');
+    expect(POL).toContain("taskType: 'poliza_practica'");
+    expect(POL).toContain('reportarSim(');
+    expect(POL).toContain('1317D7E0-38AC-489F-9082-E75019D8975E');
+  });
+  it('pólizas: tour + shell + ruteo al 5º submódulo', () => {
+    const TOUR = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'toursContalink.ts'), 'utf8');
+    const SHELL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkShell.tsx'), 'utf8');
+    const MAPA = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'simsContalink.ts'), 'utf8');
+    for (const ancla of ['poliza-hero', 'poliza-doc', 'poliza-concilia', 'poliza-editor', 'poliza-balanza', 'poliza-guardar']) {
+      expect(POL).toContain(`data-tour="${ancla}"`);
+      expect(TOUR).toContain(ancla);
+    }
+    expect(TOUR).toContain('TOUR_POLIZA');
+    expect(SHELL).toContain("modulo === 'poliza'");
+    expect(SHELL).toContain('PolizaSim');
+    expect(MAPA).toContain("'mod-polizas': 'sim-poliza'");
+    expect(MAPA).toContain('poliza_practica');
   });
 });

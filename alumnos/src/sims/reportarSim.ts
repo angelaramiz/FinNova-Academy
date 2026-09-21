@@ -5,7 +5,7 @@
 import { apiFetch } from '../lib/api';
 
 export interface ResultadoSim {
-  taskType: 'nomina_practica' | 'conciliacion_practica' | 'auditoria_practica' | 'reporte_practica';
+  taskType: 'nomina_practica' | 'conciliacion_practica' | 'auditoria_practica' | 'reporte_practica' | 'poliza_practica';
   title: string;
   score: number;
   passed: boolean;

@@ -303,6 +303,7 @@ describe('R-13 — Prácticas Profesionales (ruta guiada de contabilidad)', () =
       'mod-auditoria': { taskType: 'auditoria_practica', skill: 'fiscal' },
       'mod-nomina-web': { taskType: 'nomina_practica', skill: 'nomina' },
       'mod-reporte': { taskType: 'reporte_practica', skill: 'fiscal' },
+      'mod-polizas': { taskType: 'poliza_practica', skill: 'polizas' },
     };
 
     it('cada módulo referencia la tarea correcta según su objetivo (no hay desalineación tema↔actividad)', () => {
