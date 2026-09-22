@@ -151,6 +151,61 @@ describe('etapa 5b: balanza por agrupador (sección B)', () => {
   });
 });
 
+describe('rediseño: desambiguación, validaciones y PPD-ingresos', () => {
+  it('arrendamiento con RFC PM (12) → 601.46, no 601.45', () => {
+    const pm: CfdiRow = {
+      rfc: 'AAA010101AA1', emisor: 'ARRENDADORA PM', fecha: '06-01-2025',
+      uuid: 'D4E5F6A7-B8C9-4D0E-1F2A-B3C4D5E6F7A8', metodo: 'PUE',
+      producto: 'Arrendamiento de bodega enero 2025',
+      moneda: 'MXN', subtotal: 50000, iva16: 8000, iva8: 0, ivaRet: 0, isrRet: 0, total: 58000,
+    };
+    const r = generarPoliza(pm, [{ fecha: '06-01-2025', concepto: 'Renta bodega', totalPagado: 58000, banco: 'RITO FINANCIERA' }]);
+    expect(r.errores).toEqual([]);
+    const cods = r.poliza!.lineas.map(l => l.agrupador);
+    expect(cods).toContain('601.46');
+    expect(cods).not.toContain('601.45');
+    expect(r.poliza!.totalDebe).toBe(58000);
+  });
+
+  it('UUID sin formato bloquea con lección', () => {
+    const r = generarPoliza({ ...CASO_MARCELO, uuid: 'NO-ES-UUID' }, EDO_MARCELO);
+    expect(r.poliza).toBeNull();
+    expect(r.errores[0].codigo).toBe('UUID_INVALIDO');
+  });
+
+  it('RFC sin formato bloquea con lección', () => {
+    const r = generarPoliza({ ...CASO_MARCELO, rfc: 'X' }, EDO_MARCELO);
+    expect(r.poliza).toBeNull();
+    expect(r.errores[0].codigo).toBe('RFC_INVALIDO');
+  });
+
+  it('601.83 con IVA se bloquea (el IVA es parte del gasto)', () => {
+    const cfdi: CfdiRow = {
+      rfc: 'FOFM8406126X3', emisor: 'RESTAURANTE', fecha: '02-01-2025',
+      uuid: 'E5F6A7B8-C9D0-4E1F-2A3B-C4D5E6F7A8B9', metodo: 'PUE',
+      producto: 'Comida sin factura', moneda: 'MXN',
+      subtotal: 5000, iva16: 800, iva8: 0, ivaRet: 0, isrRet: 0, total: 5800,
+    };
+    const c = calcularLineas(cfdi,
+      { agrupador: '601.83', nota: 'No deducible elegido por el alumno' },
+      { confirmado: true, banco: 'RITO FINANCIERA', fechaPago: '02-01-2025' }, {});
+    expect(c.lineas).toEqual([]);
+    expect(c.errores.some(e => e.codigo === 'IVA_NO_DEDUCIBLE')).toBe(true);
+    expect(c.errores[0].porQue).toContain('22 CFF');
+  });
+
+  it('ingreso PPD no cobrado va a 209.01 (no a 208.01)', () => {
+    const ppd: CfdiRow = { ...CASO_VENTAS, metodo: 'PPD', uuid: 'F6A7B8C9-D0E1-4F2A-3B4C-D5E6F7A8B9C0' };
+    const r = generarPoliza(ppd, []);
+    expect(r.errores).toEqual([]);
+    const porAgr = Object.fromEntries(r.poliza!.lineas.map(l => [l.agrupador, l]));
+    expect(porAgr['105.01'].debe).toBe(26680);
+    expect(porAgr['209.01'].haber).toBe(3680);
+    expect(r.poliza!.lineas.some(l => l.agrupador === '208.01')).toBe(false);
+    expect(r.poliza!.lineas.some(l => l.agrupador === '102.01')).toBe(false);
+  });
+});
+
 describe('coherencia R-09 del motor', () => {
   it('toda línea generada tiene agrupador válido y la póliza cuadra', () => {
     for (const [cfdi, edo] of [[CASO_MARCELO, EDO_MARCELO], [CASO_PPD, []], [CASO_VENTAS, EDO_VENTAS], [CASO_CAPITAL, EDO_CAPITAL]] as const) {
@@ -176,8 +231,8 @@ describe('módulo mod-polizas (carpeta Contalink)', () => {
   it('existe con plataforma contalink, prueba y curso del capacitador', () => {
     const m = getPracticasModule('mod-polizas');
     expect(m?.plataforma).toBe('contalink');
-    expect(m?.prueba.preguntas).toHaveLength(3);
-    expect(m?.curso.secciones).toHaveLength(3);
+    expect(m?.prueba.preguntas).toHaveLength(5);
+    expect(m?.curso.secciones).toHaveLength(4);
     expect(m?.curso.npc).toBe('capacitador');
     expect(m?.pasos.some(p => p.taskType === 'poliza_practica')).toBe(true);
   });
@@ -190,12 +245,13 @@ describe('módulo mod-polizas (carpeta Contalink)', () => {
     expect(auditPracticasModules(getSpecialtyWorkflows('accounting'))).toEqual([]);
   });
 
-  it('prueba: 0/1/1 aprueba, 1/0/0 reprueba con explicación', () => {
-    const ok = evaluatePracticaPrueba('mod-polizas', [0, 1, 1]);
+  it('prueba: todo correcto aprueba, todo mal reprueba con explicación', () => {
+    const ok = evaluatePracticaPrueba('mod-polizas', [0, 1, 1, 1, 1]);
     expect(ok.aprobado).toBe(true);
     expect(ok.scorePct).toBe(100);
-    const mal = evaluatePracticaPrueba('mod-polizas', [1, 0, 0]);
+    const mal = evaluatePracticaPrueba('mod-polizas', [1, 0, 0, 0, 0]);
     expect(mal.aprobado).toBe(false);
     expect(mal.resultados[0].explicacion).toContain('63,810');
+    expect(mal.resultados[4].explicacion).toContain('601-83');
   });
 });

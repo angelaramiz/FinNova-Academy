@@ -7,7 +7,7 @@
 // Goldens: MARCELO F 70900/7090/63810, PPD 1000/160/1160, ventas, capital.
 // Diseño ContaLink claro (clk-*). Cero LLM.
 import { useMemo, useState } from 'react';
-import { agrupadorDe, agrupadorDeCuentaInterna, etiquetaAgrupador, CATALOGO_AGRUPADOR } from './catalogoAgrupador';
+import { agrupadorDe, agrupadorDeCuentaInterna, etiquetaAgrupador, buscarCuentasFront } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
 import { apiFetch } from '../lib/api';
 import TourSim from './TourSim';
@@ -38,17 +38,17 @@ const CASOS: Record<string, { nombre: string; cfdi: CfdiForm; edo: EdoForm }> = 
   },
   ppd: {
     nombre: 'Proveedor PPD · Provisión 1000/160/1160',
-    cfdi: { rfc: 'PROV920101ABC', emisor: 'PROVEEDOR PPD', fecha: '05-01-2025', uuid: 'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE', metodo: 'PPD', producto: 'Arrendamiento de bodega enero 2025', moneda: 'MXN', subtotal: '1000', iva16: '160', isrRet: '0', total: '1160' },
+    cfdi: { rfc: 'PROV920101ABC', emisor: 'PROVEEDOR PPD', fecha: '05-01-2025', uuid: 'A1B2C3D4-E5F6-4A7B-8C9D-E0F1A2B3C4D5', metodo: 'PPD', producto: 'Arrendamiento de bodega enero 2025', moneda: 'MXN', subtotal: '1000', iva16: '160', isrRet: '0', total: '1160' },
     edo: { fecha: '', concepto: '', totalPagado: '', banco: '' },
   },
   ventas: {
     nombre: 'Ventas enero · 26680/23000/3680',
-    cfdi: { rfc: 'CLIENTE750101XYZ', emisor: 'EMPRESA (propia)', fecha: '10-01-2025', uuid: 'FFFFFFFF-1111-2222-3333-444444444444', metodo: 'PUE', producto: 'Ventas y/o servicios gravados a la tasa general', moneda: 'MXN', subtotal: '23000', iva16: '3680', isrRet: '0', total: '26680' },
+    cfdi: { rfc: 'TLC750101ABC', emisor: 'EMPRESA (propia)', fecha: '10-01-2025', uuid: 'C3D4E5F6-A7B8-4C9D-0E1F-A2B3C4D5E6F7', metodo: 'PUE', producto: 'Ventas y/o servicios gravados a la tasa general', moneda: 'MXN', subtotal: '23000', iva16: '3680', isrRet: '0', total: '26680' },
     edo: { fecha: '10-01-2025', concepto: 'Cobro ventas enero', totalPagado: '26680', banco: 'RITO FINANCIERA' },
   },
   capital: {
     nombre: 'Aportación · 50000/50000',
-    cfdi: { rfc: 'SOCIO800101AAA', emisor: 'SOCIO APORTANTE', fecha: '15-01-2025', uuid: 'BBBBBBBB-2222-3333-4444-555555555555', metodo: 'PUE', producto: 'Aportación de capital fijo', moneda: 'MXN', subtotal: '50000', iva16: '0', isrRet: '0', total: '50000' },
+    cfdi: { rfc: 'SOC800101AAA', emisor: 'SOCIO APORTANTE', fecha: '15-01-2025', uuid: 'B2C3D4E5-F6A7-4B8C-9D0E-F1A2B3C4D5E6', metodo: 'PUE', producto: 'Aportación de capital fijo', moneda: 'MXN', subtotal: '50000', iva16: '0', isrRet: '0', total: '50000' },
     edo: { fecha: '15-01-2025', concepto: 'Aportación de capital', totalPagado: '50000', banco: 'RITO FINANCIERA' },
   },
 };
@@ -81,7 +81,7 @@ export default function PolizaSim() {
   const [mensajes, setMensajes] = useState<string[]>([]);
   const [folio, setFolio] = useState<string | null>(null);
   const [guardadas, setGuardadas] = useState<{ agrupador: string; debe: number; haber: number }[]>([]);
-  const [busqueda, setBusqueda] = useState('');
+  const [openLinea, setOpenLinea] = useState<number | null>(null);
 
   function cargarCaso(id: string) {
     setCasoId(id);
@@ -100,18 +100,25 @@ export default function PolizaSim() {
     return Math.abs(t - c) <= 0.01;
   }, [edo, cfdi.total]);
 
-  const sugerencias = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
-    if (q.length < 2) return [];
-    return CATALOGO_AGRUPADOR.filter(e => e.codigo.includes(q) || e.nombre.toLowerCase().includes(q)).slice(0, 8);
-  }, [busqueda]);
-
   function resolverLinea(l: Linea): string | null {
-    if (!l.cuenta.trim()) return 'Vacía: escribe la cuenta interna (ej. 601-83) o el agrupador (ej. 601.45).';
+    if (!l.cuenta.trim()) return 'Vacía: escribe el nombre ("bancos", "renta") o el código (601.45). Usa el buscador de la línea.';
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     if (interna) return null;
     if (agrupadorDe(l.cuenta.trim())) return null;
     return `La cuenta ${l.cuenta.trim()} no existe en el Anexo 24: sin código agrupador no va a la balanza electrónica.`;
+  }
+
+  function etiquetaLinea(l: Linea): { texto: string; naturaleza: 'D' | 'H' | null; colision: string | null } {
+    const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
+    const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
+    const codigo = interna ? interna.codigo : directa ? directa.codigo : null;
+    const nombre = interna ? interna.nombre : directa ? directa.nombre : null;
+    if (!codigo) return { texto: '—', naturaleza: null, colision: null };
+    const naturaleza: 'D' | 'H' = '234'.includes(codigo.charAt(0)) ? 'H' : 'D';
+    const colision = codigo === '601.83'
+      ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
+      : null;
+    return { texto: `${codigo} · ${nombre}`, naturaleza, colision };
   }
 
   const totales = useMemo(() => {
@@ -169,8 +176,12 @@ export default function PolizaSim() {
       const agr = interna ? interna.codigo : l.cuenta.trim();
       return { cuentaInterna: l.cuenta.trim(), agrupador: agr, descripcion: (interna ?? agrupadorDe(agr))?.nombre ?? l.cuenta.trim(), debe: num(l.debe) || 0, haber: num(l.haber) || 0 };
     });
+    // El tipo lo manda el documento, no el formulario: PUE conciliado =
+    // EGRESOS, PPD = PROVISIÓN. El servidor lo vuelve a validar (422).
+    const tipo = (pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISION' : 'DIARIO') as 'EGRESOS' | 'PROVISION' | 'DIARIO';
+    const fiscal = { uuid: cfdi.uuid, rfc: cfdi.rfc, metodo: cfdi.metodo, conciliado: pagoConfirmado };
     const poliza = {
-      tipo: (pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISION' : 'DIARIO') as 'EGRESOS' | 'PROVISION' | 'DIARIO',
+      tipo,
       fecha: edo.fecha || cfdi.fecha, concepto: cfdi.producto, uuid: cfdi.uuid, rfcTercero: cfdi.rfc,
       montoTotal: num(cfdi.total) || 0, moneda: cfdi.moneda || 'MXN', metodoPago: '03',
       banco: edo.banco || undefined, lineas: lineasOk,
@@ -178,9 +189,21 @@ export default function PolizaSim() {
     };
     let fol = `LOCAL-${Date.now()}`;
     try {
-      const r = await apiFetch<{ folio: string }>('/api/sim/polizas/guardar', { method: 'POST', body: JSON.stringify({ poliza }) });
+      const r = await apiFetch<{ folio: string; error?: string }>('/api/sim/polizas/guardar', { method: 'POST', body: JSON.stringify({ poliza, fiscal }) });
+      if ((r as { error?: string }).error) {
+        setMensajes([`❌ El servidor rechazó la póliza: ${(r as { error?: string }).error}`]);
+        return;
+      }
       fol = r.folio;
-    } catch { /* best-effort: el folio local + reporte conservan el avance */ }
+    } catch (e: unknown) {
+      const apiErr = e as { details?: { error?: string }; message?: string };
+      const motivo = apiErr?.details?.error || apiErr?.message;
+      if (motivo) {
+        setMensajes([`❌ El servidor rechazó la póliza: ${motivo}`]);
+        return;
+      }
+      setMensajes(['⚠ Sin conexión al servidor: la póliza quedó en tu balanza local, pero el folio es provisional.']);
+    }
     setFolio(fol);
     setGuardadas(g => [...g, ...lineasOk.map(l => ({ agrupador: l.agrupador, debe: l.debe, haber: l.haber }))]);
     const score = 100;
@@ -216,6 +239,17 @@ export default function PolizaSim() {
     a.click();
     URL.revokeObjectURL(a.href);
   }
+
+  const docAvisos = useMemo(() => {
+    const avisos: string[] = [];
+    if (cfdi.uuid && !/^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/.test(cfdi.uuid.trim())) {
+      avisos.push('📚 UUID sin formato de folio fiscal (8-4-4-4-12 hexadecimal): el motor lo rechazará. El UUID amarra tu póliza con su CFDI.');
+    }
+    if (cfdi.rfc && !/^([A-ZÑ&]{4}\d{6}[A-Z0-9]{3}|[A-ZÑ&]{3}\d{6}[A-Z0-9]{3})$/i.test(cfdi.rfc.trim())) {
+      avisos.push('📚 RFC inválido (PF 13 o PM 12): además define la cuenta (601.45 vs 601.46) y la retención del 10%.');
+    }
+    return avisos;
+  }, [cfdi.uuid, cfdi.rfc]);
 
   const campo = 'w-full border border-slate-300 rounded px-2 py-1 text-[12px] bg-white text-slate-800';
 
@@ -270,6 +304,11 @@ export default function PolizaSim() {
             <button className="btn btn-primary" onClick={generarDesdeMotor}>⚙ Generar líneas con el motor</button>
             <button className="btn btn-secondary" onClick={() => setFase('conciliacion')}>Siguiente →</button>
           </div>
+          {docAvisos.length > 0 && (
+            <ul style={{ fontSize: 11, color: '#92400e', marginTop: 8 }}>
+              {docAvisos.map((a, i) => <li key={i}>{a}</li>)}
+            </ul>
+          )}
         </div>
       )}
 
@@ -297,25 +336,36 @@ export default function PolizaSim() {
       {fase === 'poliza' && (
         <div data-tour="poliza-editor" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>PÓLIZA DE LA FACTURA ({pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISIÓN' : 'DIARIO'})</div>
-          <div style={{ fontSize: 11, marginBottom: 8 }}>
-            Buscador Anexo 24:&nbsp;
-            <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className={campo} style={{ width: 260 }} placeholder="ej. 601.45 o arrendamiento" />
-            {sugerencias.length > 0 && (
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, marginTop: 4, background: 'white' }}>
-                {sugerencias.map(s => <div key={s.codigo} style={{ padding: '4px 8px', fontSize: 11 }}>{s.codigo} — {s.nombre}</div>)}
-              </div>
-            )}
+          <div style={{ fontSize: 11, marginBottom: 8, color: '#475569' }}>
+            💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cada línea y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT.
           </div>
           <table className="data-table">
             <thead><tr><th>CUENTA CONTABLE</th><th>Agrupador SAT</th><th style={{ textAlign: 'right' }}>DEBE</th><th style={{ textAlign: 'right' }}>HABER</th><th></th></tr></thead>
             <tbody>
               {lineas.map((l, i) => {
-                const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
-                const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
+                const et = etiquetaLinea(l);
+                const sug = openLinea === l.id && l.cuenta.trim().length >= 1 ? buscarCuentasFront(l.cuenta.trim()) : [];
                 return (
                   <tr key={l.id}>
-                    <td><input value={l.cuenta} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x))} className={campo} placeholder="601-83 o 601.45" /></td>
-                    <td style={{ fontSize: 11, color: '#1e40af' }}>{interna ? etiquetaAgrupador(l.cuenta.trim()) : directa ? `${directa.codigo} — ${directa.nombre}` : '—'}</td>
+                    <td style={{ position: 'relative' }}>
+                      <input value={l.cuenta} onFocus={() => setOpenLinea(l.id)} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
+                      {sug.length > 0 && (
+                        <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
+                          {sug.map(s => (
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
+                              <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '→ DEBE' : '→ HABER'}</span>
+                              <br /><span style={{ color: '#1e40af' }}>↳ registra {s.cuentaInternaSugerida} · [Usar]</span>
+                              {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ fontSize: 11, color: '#1e40af' }}>
+                      {et.texto}
+                      {et.naturaleza && <span style={{ color: '#64748b' }}> {et.naturaleza === 'D' ? '→ DEBE' : '→ HABER'}</span>}
+                      {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
+                    </td>
                     <td><input value={l.debe} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
                     <td><input value={l.haber} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
                     <td><button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>Eliminar</button></td>

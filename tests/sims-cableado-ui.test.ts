@@ -64,6 +64,13 @@ describe('P1/P2/P3 cableado UI', () => {
     expect(POL).toContain('reportarSim(');
     expect(POL).toContain('1317D7E0-38AC-489F-9082-E75019D8975E');
   });
+  it('pólizas: buscador por nombre con inserción y colisión 601.83', () => {
+    expect(POL).toContain('buscarCuentasFront');
+    expect(POL).toContain('[Usar]');
+    expect(POL).toContain('registra');
+    expect(POL).toContain('Si buscas renta deducible');
+    expect(POL).toContain('fiscal');
+  });
   it('pólizas: tour + shell + ruteo al 5º submódulo', () => {
     const TOUR = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'toursContalink.ts'), 'utf8');
     const SHELL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkShell.tsx'), 'utf8');
