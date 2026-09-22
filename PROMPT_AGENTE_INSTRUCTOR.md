@@ -28,7 +28,7 @@ programar.
 CONTEXTO DEL PROYECTO (ya existe, no lo reinventes)
 - Simulador laboral 3D para estudiantes: escritorio virtual con apps; las tareas
   se validan con MOTORES reales en el backend. Todo el español.
-- Repo raíz: https://github.com/angelaramiz/AuraFi-Academy/tree/exp/finanzas-instructor
+- Repo raíz: https://github.com/angelaramiz/FinNova-Academy/tree/exp/finanzas-instructor
   (frontend alumnos/ en React+Vite+Tailwind, tests/ con vitest, docs/).
 - Repo backend (API Express + motores): https://github.com/angelaramiz/Finnova-back/tree/exp/finanzas-instructor
 - Lo que YA existe para finanzas en esta rama (léelo antes de crear nada):
@@ -40,7 +40,7 @@ CONTEXTO DEL PROYECTO (ya existe, no lo reinventes)
   docs/plan-simulador-financiero-instructor.md y docs/rama-exp-finanzas-onboarding.md.
 
 INSTALACIÓN (ejecuta y verifica antes de programar)
-1. git clone -b exp/finanzas-instructor https://github.com/angelaramiz/AuraFi-Academy.git
+1. git clone -b exp/finanzas-instructor https://github.com/angelaramiz/FinNova-Academy.git
 2. git clone -b exp/finanzas-instructor https://github.com/angelaramiz/Finnova-back.git
    (si el backend quedó dentro como submódulo, entra a backend/ y haz
    git checkout exp/finanzas-instructor).
@@ -115,7 +115,7 @@ intentos en un error, te detienes, muestras la evidencia y pides dirección.
 
 | Repo | Rama exp | Link |
 |---|---|---|
-| AuraFi-Academy (front + tests + docs) | `exp/finanzas-instructor` | <https://github.com/angelaramiz/AuraFi-Academy/tree/exp/finanzas-instructor> |
+| AuraFi-Academy (front + tests + docs) | `exp/finanzas-instructor` | <https://github.com/angelaramiz/FinNova-Academy/tree/exp/finanzas-instructor> |
 | Finnova-back (API + motores) | `exp/finanzas-instructor` | <https://github.com/angelaramiz/Finnova-back/tree/exp/finanzas-instructor> |
 
 Guía contrato del agente: `docs/guia-agente-ia-finanzas.md` (lectura obligatoria primero).
