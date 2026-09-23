@@ -139,6 +139,7 @@ export default function PolizaSim() {
   const [pilotoModo, setPilotoModo] = useState<'nadie' | 'auto' | 'yo'>('nadie');
   const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
   const [usadas, setUsadas] = useState<string[]>(leerUsadas);
+  const [pilotoBusy, setPilotoBusy] = useState(false);
   const mapa = casosOp ?? CASOS;
 
   // Catálogo de la base al montar; fallback silencioso a CASOS local.
@@ -179,12 +180,19 @@ export default function PolizaSim() {
   }
 
   // Piloto que SÍ actúa: ejecuta el siguiente paso según la fase.
+  // Con estado Trabajando: el primer clic siempre reacciona (hallazgo tester).
   async function accionPiloto() {
-    if (fase === 'documento') { await generarDesdeMotor(); return; }
-    if (fase === 'poliza' && cuadra) { await guardar(); return; }
-    if (fase === 'detective') { setFase('balanza'); return; }
-    if (fase === 'conciliacion') { setFase('poliza'); return; }
-    setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
+    if (pilotoBusy) return;
+    setPilotoBusy(true);
+    try {
+      if (fase === 'documento') { await generarDesdeMotor(); return; }
+      if (fase === 'poliza' && cuadra) { await guardar(); return; }
+      if (fase === 'detective') { setFase('balanza'); return; }
+      if (fase === 'conciliacion') { setFase('poliza'); return; }
+      setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
+    } finally {
+      setPilotoBusy(false);
+    }
   }
 
   function cargarCaso(id: string, m?: Record<string, CasoOp>) {
@@ -493,6 +501,7 @@ export default function PolizaSim() {
           </div>
           <div style={{ fontSize: 11, marginBottom: 8, color: '#475569' }}>
             💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cada línea y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT.
+            <br />🐖 Ojo kinder: al pagar, el banco va en <b>HABER aunque su casa sea DEBE</b> — así es como sale el dinero. El que manda es el columpio, no la etiqueta.
           </div>
           <table className="data-table">
             <thead><tr><th>CUENTA CONTABLE</th><th>Agrupador SAT</th><th style={{ textAlign: 'right' }}>DEBE</th><th style={{ textAlign: 'right' }}>HABER</th><th></th></tr></thead>
@@ -647,7 +656,7 @@ export default function PolizaSim() {
           <button className={`btn ${pilotoModo === 'yo' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('yo')}>yo lo intento</button>
         </div>
         {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 {PISTA_PILOTO[fase] ?? 'Sigue la pista de tu fase.'}</div>}
-        {pilotoModo === 'auto' && <button className="btn btn-primary" style={{ fontSize: 11, marginTop: 6 }} onClick={accionPiloto}>▶ Haz el siguiente paso por mí</button>}
+        {pilotoModo === 'auto' && <button className="btn btn-primary" style={{ fontSize: 11, marginTop: 6 }} onClick={accionPiloto} disabled={pilotoBusy}>{pilotoBusy ? '⏳ Trabajando... espérame' : '▶ Haz el siguiente paso por mí'}</button>}
         {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Pista: {PISTA_PILOTO[fase] ?? 'revisa la regla de oro antes de Guardar.'}</div>}
       </div>
 

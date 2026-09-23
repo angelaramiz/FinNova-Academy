@@ -91,4 +91,10 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   it('el piloto hazlo-por-mí ejecuta el siguiente paso de verdad', () => {
     expect(POL).toContain('Haz el siguiente paso por mí');
   });
+  it('el piloto avisa mientras trabaja (no más clics muertos)', () => {
+    expect(POL).toContain('Trabajando');
+  });
+  it('el editor explica que al pagar el banco va en HABER aunque su casa sea DEBE', () => {
+    expect(POL).toContain('aunque su casa sea DEBE');
+  });
 });
