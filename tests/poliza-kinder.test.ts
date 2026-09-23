@@ -72,6 +72,18 @@ describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', (
   });
 });
 
+describe('poliza vacía: aviso + guía al Documento (reporte tester)', () => {
+  it('avisa dentro de la póliza vacía por qué está vacía', () => {
+    expect(POL).toContain('aún no generas las líneas');
+  });
+  it('lleva solo al Documento a generar (botón desde la póliza vacía)', () => {
+    expect(POL).toContain('aún no generas las líneas');
+    expect(POL).toContain("setFase('documento')");
+  });
+  it('explica junto al Guardar apagado qué falta', () => {
+    expect(POL).toContain('Te falta generar');
+  });
+});
 describe('tester-estudiante: lo que pidió el reporte', () => {
   it('glosario kinder de 1 línea por palabra rara', () => {
     for (const s of ['Glosario kinder', 'CFDI', 'PUE', 'PPD', 'DEBE', 'HABER', 'ISR', 'Folio', 'Semilla']) {
@@ -96,5 +108,19 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   });
   it('el editor explica que al pagar el banco va en HABER aunque su casa sea DEBE', () => {
     expect(POL).toContain('aunque su casa sea DEBE');
+  });
+});
+
+describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
+  it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
+    expect(POL).toContain('ya contabilizado');
+    expect(POL).toContain('duplicarías el registro');
+  });
+  it('agrega lección kinder de 1 línea (otra factura, una sola vez por UUID)', () => {
+    expect(POL).toContain('cada UUID se contabiliza una sola vez');
+  });
+  it('apiFetch preserva el body { error } del servidor en el ApiError', () => {
+    const API = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'lib', 'api.ts'), 'utf8');
+    expect(API).toContain('errorData.error');
   });
 });

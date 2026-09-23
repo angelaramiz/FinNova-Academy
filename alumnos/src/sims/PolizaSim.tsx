@@ -323,10 +323,16 @@ export default function PolizaSim() {
       }
       fol = r.folio;
     } catch (e: unknown) {
-      const apiErr = e as { details?: { error?: string }; message?: string };
-      const motivo = apiErr?.details?.error || apiErr?.message;
-      if (motivo) {
-        setMensajes([`❌ El servidor rechazó la póliza: ${motivo}`]);
+      const apiErr = e as { details?: unknown; message?: string };
+      const det = apiErr?.details;
+      const motivo = (typeof det === 'string' ? det : (det as { error?: string } | null | undefined)?.error) || apiErr?.message || '';
+      // UUID duplicado (422 amable del servidor): no es error técnico, no se rompió nada.
+      if (/ya contabilizado|duplicarías el registro/i.test(motivo)) {
+        setMensajes([`⚠ ${motivo} 📚 Pide otra factura con el botón de practicar: cada UUID se contabiliza una sola vez.`]);
+        return;
+      }
+      if (motivo && !/^HTTP error! status:/i.test(motivo)) {
+        setMensajes([`⚠ ${motivo} 📚 No rompiste nada: revisa el dato y vuelve a intentar.`]);
         return;
       }
       setMensajes(['⚠ Sin conexión al servidor: la póliza quedó en tu balanza local, pero el folio es provisional.']);
@@ -541,6 +547,15 @@ export default function PolizaSim() {
           <div style={{ marginTop: 8 }}>
             <button className="btn btn-primary" onClick={() => setLineas([...lineas, { id: seqId++, cuenta: '', debe: '', haber: '' }])}>Agregar asiento</button>
           </div>
+          {lineas.length === 0 && (
+            <div style={{ fontSize: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, marginTop: 8 }}>
+              📭 Tu póliza está vacía porque aún no generas las líneas: llegaste directo del Documento sin generar.
+              <br />Vuelve al Documento y presiona "Generar líneas con el motor", o agrega tu primera línea a mano.
+              <div style={{ marginTop: 6 }}>
+                <button className="btn btn-primary" style={{ fontSize: 11 }} onClick={() => setFase('documento')}>📄 Ir al Documento a generar</button>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 24, marginTop: 10, fontSize: 13, fontWeight: 700 }}>
             <span>Total: ${fmt(totales.debe)}</span>
             <span>Total: ${fmt(totales.haber)}</span>
@@ -559,7 +574,8 @@ export default function PolizaSim() {
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-secondary" onClick={() => setFase('conciliacion')}>← Atrás</button>
-            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
+            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta generar líneas: vuelve al Documento y genera' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
+            {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta generar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
