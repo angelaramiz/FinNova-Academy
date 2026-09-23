@@ -507,7 +507,7 @@ export default function PolizaSim() {
                   </tbody>
                 </table>
                 <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 14, marginTop: 8, color: '#059669' }}>
-                  GRAN TOTAL ${fmt(balanza.reduce((s, b) => s + (naturalezaDe(b.agrupador) === 'D' ? b.debe - b.haber : b.haber - b.debe), 0))} — {Math.abs(balanza.reduce((s, b) => s + (naturalezaDe(b.agrupador) === 'D' ? b.debe - b.haber : b.haber - b.debe), 0)) <= 0.01 ? '✅ cero perfecto, todos en casa' : '🕵️ descuadra: pasa al Modo detective'}
+                  GRAN TOTAL ${fmt(balanza.reduce((s, b) => s + b.debe, 0) - balanza.reduce((s, b) => s + b.haber, 0))} — {Math.abs(balanza.reduce((s, b) => s + b.debe, 0) - balanza.reduce((s, b) => s + b.haber, 0)) <= 0.01 ? '✅ cero perfecto, todos en casa' : '🕵️ descuadra: pasa al Modo detective'}
                 </div>
               </>
             )}

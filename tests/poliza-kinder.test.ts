@@ -29,6 +29,10 @@ describe('poliza kinder: regla del cero + balanza por rubros', () => {
   it('enseña la regla del cero kinder (cada cuenta tiene su casa)', () => {
     expect(POL).toContain('Cada cuenta tiene su casa');
   });
+  it('GRAN TOTAL = ΣDEBE − ΣHABER (balanza cuadra por columnas, no por saldos con signo)', () => {
+    expect(POL).toContain('s + b.debe, 0) - balanza.reduce((s, b) => s + b.haber');
+    expect(POL).not.toContain("b.debe - b.haber : b.haber - b.debe), 0))} —");
+  });
 });
 
 describe('poliza kinder: modo detective 3.5 + 601.83', () => {
