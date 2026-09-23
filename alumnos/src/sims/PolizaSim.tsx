@@ -6,7 +6,7 @@
 // en local (catálogo DOF completo) y persiste vía /api/sim/polizas.
 // Goldens: MARCELO F 70900/7090/63810, PPD 1000/160/1160, ventas, capital.
 // Diseño ContaLink claro (clk-*). Cero LLM.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { agrupadorDe, agrupadorDeCuentaInterna, etiquetaAgrupador, buscarCuentasFront } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
 import { apiFetch } from '../lib/api';
@@ -39,7 +39,7 @@ interface CfdiForm {
 
 interface EdoForm { fecha: string; concepto: string; totalPagado: string; banco: string; }
 
-interface Linea { id: number; cuenta: string; debe: string; haber: string; }
+interface Linea { id: number; cuenta: string; debe: string; haber: string; agrupador?: string }
 
 const CASOS: Record<string, { nombre: string; cfdi: CfdiForm; edo: EdoForm }> = {
   marcelo: {
@@ -66,6 +66,27 @@ const CASOS: Record<string, { nombre: string; cfdi: CfdiForm; edo: EdoForm }> = 
 
 const VACIO_CFDI: CfdiForm = { rfc: '', emisor: '', fecha: '', uuid: '', metodo: 'PUE', producto: '', moneda: 'MXN', subtotal: '', iva16: '', isrRet: '', total: '' };
 const VACIO_EDO: EdoForm = { fecha: '', concepto: '', totalPagado: '', banco: '' };
+
+// ─── Semillas de la base (21 filas CFDI↔banco) ──────────────────────
+// GET /api/sim/polizas/casos trae el catálogo; si falla, CASOS local.
+// El UUID es el id: nunca se repite (usadas en localStorage).
+interface CasoApi {
+  id: string; nombre: string;
+  cfdi: { rfc: string; emisor: string; fecha: string; uuid: string; metodo: 'PUE' | 'PPD'; producto: string; moneda: string; subtotal: number; iva16: number; isrRet: number; total: number };
+  edo: { fecha: string; concepto: string; totalPagado: number; banco: string } | null;
+}
+interface CasoOp { nombre: string; cfdi: CfdiForm; edo: EdoForm }
+function casoApiAOp(r: CasoApi): CasoOp {
+  return {
+    nombre: r.nombre,
+    cfdi: { rfc: r.cfdi.rfc, emisor: r.cfdi.emisor, fecha: r.cfdi.fecha, uuid: r.cfdi.uuid, metodo: r.cfdi.metodo, producto: r.cfdi.producto, moneda: r.cfdi.moneda || 'MXN', subtotal: String(r.cfdi.subtotal), iva16: String(r.cfdi.iva16), isrRet: String(r.cfdi.isrRet), total: String(r.cfdi.total) },
+    edo: r.edo ? { fecha: r.edo.fecha, concepto: r.edo.concepto, totalPagado: String(r.edo.totalPagado), banco: r.edo.banco } : { ...VACIO_EDO },
+  };
+}
+function leerUsadas(): string[] {
+  try { const u = JSON.parse(localStorage.getItem('poliza_semillas_usadas') || '[]'); return Array.isArray(u) ? u : []; }
+  catch { return []; }
+}
 
 function num(s: string): number {
   const n = Number(String(s).replace(/[$,\s]/g, ''));
@@ -95,13 +116,55 @@ export default function PolizaSim() {
   const [openLinea, setOpenLinea] = useState<number | null>(null);
   const [declara60183, setDeclara60183] = useState(false);
   const [pilotoModo, setPilotoModo] = useState<'nadie' | 'auto' | 'yo'>('nadie');
+  const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
+  const [usadas, setUsadas] = useState<string[]>(leerUsadas);
+  const mapa = casosOp ?? CASOS;
 
-  function cargarCaso(id: string) {
+  // Catálogo de la base al montar; fallback silencioso a CASOS local.
+  useEffect(() => {
+    let vivo = true;
+    apiFetch<CasoApi[]>('/api/sim/polizas/casos')
+      .then((rows) => {
+        if (!vivo || !Array.isArray(rows) || rows.length === 0) return;
+        const m: Record<string, CasoOp> = {};
+        for (const r of rows) { if (r && r.id) m[r.id] = casoApiAOp(r); }
+        if (Object.keys(m).length > 0) setCasosOp(m);
+      })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+
+  function marcarUsada(id: string) {
+    setUsadas((prev) => {
+      if (prev.includes(id)) return prev;
+      const u = [...prev, id];
+      try { localStorage.setItem('poliza_semillas_usadas', JSON.stringify(u)); } catch {}
+      return u;
+    });
+  }
+
+  async function otraSemilla() {
+    const excl = [...usadas, cfdi.uuid].filter(Boolean).join(',');
+    try {
+      const r = await apiFetch<CasoApi>(`/api/sim/polizas/semilla?exclude=${encodeURIComponent(excl)}`);
+      const m = { ...mapa, [r.id]: casoApiAOp(r) };
+      setCasosOp(m);
+      cargarCaso(r.id, m);
+      marcarUsada(r.id);
+      setMensajes([`🎲 Semilla nueva: ${r.nombre}. UUID sin repetir.`]);
+    } catch {
+      setMensajes(['🎲 Ya operaste los 21 casos. Repasa con el selector o limpia tus usadas para empezar de cero.']);
+    }
+  }
+
+  function cargarCaso(id: string, m?: Record<string, CasoOp>) {
+    const c = (m ?? casosOp ?? CASOS)[id];
+    if (!c) return;
     setCasoId(id);
-    setCfdi({ ...CASOS[id].cfdi });
-    setEdo({ ...CASOS[id].edo });
+    setCfdi({ ...c.cfdi });
+    setEdo({ ...c.edo });
     setLineas([]);
-    setNotas(`${CASOS[id].cfdi.uuid}, ${CASOS[id].cfdi.producto}.`);
+    setNotas(`${c.cfdi.uuid}, ${c.cfdi.producto}.`);
     setMensajes([]);
     setFolio(null);
   }
@@ -122,6 +185,18 @@ export default function PolizaSim() {
   }
 
   function etiquetaLinea(l: Linea): { texto: string; naturaleza: 'D' | 'H' | null; colision: string | null } {
+    // El agrupador calculado por el motor manda; la equivalencia interna
+    // (601-83→601.45) solo aplica cuando el alumno escribe a mano.
+    if (l.agrupador) {
+      const e = agrupadorDe(l.agrupador);
+      const codigo = l.agrupador;
+      const nombre = e?.nombre ?? l.agrupador;
+      const naturaleza: 'D' | 'H' = '234'.includes(codigo.charAt(0)) ? 'H' : 'D';
+      const colision = codigo === '601.83'
+        ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
+        : null;
+      return { texto: `${codigo} · ${nombre}`, naturaleza, colision };
+    }
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
     const codigo = interna ? interna.codigo : directa ? directa.codigo : null;
@@ -171,7 +246,7 @@ export default function PolizaSim() {
     try {
       const r = await apiFetch<{ poliza: { lineas: { cuentaInterna: string; agrupador: string; descripcion: string; debe: number; haber: number }[] } | null; errores: { mensaje: string; porQue: string }[] }>('/api/sim/polizas/generar', { method: 'POST', body: JSON.stringify(body) });
       if (r.poliza) {
-        setLineas(r.poliza.lineas.map(l => ({ id: seqId++, cuenta: l.cuentaInterna, debe: l.debe ? String(l.debe) : '', haber: l.haber ? String(l.haber) : '' })));
+        setLineas(r.poliza.lineas.map(l => ({ id: seqId++, cuenta: l.cuentaInterna, agrupador: l.agrupador, debe: l.debe ? String(l.debe) : '', haber: l.haber ? String(l.haber) : '' })));
         setMensajes([`✅ Motor: póliza generada (${r.poliza.lineas.length} líneas). Revísala antes de guardar.`]);
         setFase('poliza');
       } else {
@@ -186,8 +261,9 @@ export default function PolizaSim() {
     if (!cuadra) return;
     const lineasOk = lineas.map(l => {
       const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
-      const agr = interna ? interna.codigo : l.cuenta.trim();
-      return { cuentaInterna: l.cuenta.trim(), agrupador: agr, descripcion: (interna ?? agrupadorDe(agr))?.nombre ?? l.cuenta.trim(), debe: num(l.debe) || 0, haber: num(l.haber) || 0 };
+      // El agrupador del motor manda; si el alumno editó a mano, equivalencia.
+      const agr = l.agrupador ?? (interna ? interna.codigo : l.cuenta.trim());
+      return { cuentaInterna: l.cuenta.trim(), agrupador: agr, descripcion: agrupadorDe(agr)?.nombre ?? (interna ?? agrupadorDe(agr))?.nombre ?? l.cuenta.trim(), debe: num(l.debe) || 0, haber: num(l.haber) || 0 };
     });
     // El tipo lo manda el documento, no el formulario: PUE conciliado =
     // EGRESOS, PPD = PROVISIÓN. El servidor lo vuelve a validar (422).
@@ -218,6 +294,7 @@ export default function PolizaSim() {
       setMensajes(['⚠ Sin conexión al servidor: la póliza quedó en tu balanza local, pero el folio es provisional.']);
     }
     setFolio(fol);
+    marcarUsada(cfdi.uuid);
     setGuardadas(g => [...g, ...lineasOk.map(l => ({ agrupador: l.agrupador, debe: l.debe, haber: l.haber }))]);
     const score = 100;
     await reportarSim({ taskType: 'poliza_practica', title: `Póliza Contalink — ${cfdi.producto.slice(0, 40)}`, score, passed: true });
@@ -311,9 +388,12 @@ export default function PolizaSim() {
           </div>
           <label style={{ fontSize: 11 }}>Caso del curso&nbsp;
             <select value={casoId} onChange={(e) => cargarCaso(e.target.value)} className={campo} style={{ width: 'auto' }}>
-              {Object.entries(CASOS).map(([id, c]) => <option key={id} value={id}>{c.nombre}</option>)}
+              {Object.entries(mapa).map(([id, c]) => <option key={id} value={id}>{c.nombre}</option>)}
             </select>
           </label>
+          <button className="btn btn-secondary" style={{ marginLeft: 8, fontSize: 11 }} onClick={otraSemilla} title="Pide una semilla nueva de la base (UUID sin repetir)">
+            🎲 Otra semilla{usadas.length > 0 ? ` (${usadas.length} usadas)` : ''}
+          </button>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 8 }}>
             <label style={{ fontSize: 11 }}>RFC<input value={cfdi.rfc} onChange={(e) => setCfdi({ ...cfdi, rfc: e.target.value })} className={campo} /></label>
             <label style={{ fontSize: 11 }}>Emisor<input value={cfdi.emisor} onChange={(e) => setCfdi({ ...cfdi, emisor: e.target.value })} className={campo} /></label>
@@ -384,11 +464,11 @@ export default function PolizaSim() {
                 return (
                   <tr key={l.id}>
                     <td style={{ position: 'relative' }}>
-                      <input value={l.cuenta} onFocus={() => setOpenLinea(l.id)} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
+                      <input value={l.cuenta} onFocus={() => setOpenLinea(l.id)} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value, agrupador: undefined } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
                       {sug.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
                           {sug.map(s => (
-                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: undefined } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
                               <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '→ DEBE' : '→ HABER'}</span>
                               <br /><span style={{ color: '#1e40af' }}>↳ registra {s.cuentaInternaSugerida} · [Usar]</span>
                               {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}

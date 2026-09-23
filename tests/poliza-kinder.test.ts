@@ -56,3 +56,18 @@ describe('poliza kinder: piloto con hazlo por mí / yo lo intento', () => {
     expect(POL).toContain('yo lo intento');
   });
 });
+
+describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', () => {
+  it('carga casos de /api/sim/polizas/casos con fallback local', () => {
+    expect(POL).toContain('/api/sim/polizas/casos');
+    expect(POL).toContain('CASOS.marcelo');
+  });
+  it('botón Otra semilla pide /api/sim/polizas/semilla excluyendo usadas', () => {
+    expect(POL).toContain('/api/sim/polizas/semilla');
+    expect(POL).toContain('Otra semilla');
+    expect(POL).toContain('poliza_semillas_usadas');
+  });
+  it('al guardar usa el agrupador calculado por el motor (no la equivalencia 601-83→601.45)', () => {
+    expect(POL).toContain('l.agrupador ??');
+  });
+});
