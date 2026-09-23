@@ -71,3 +71,24 @@ describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', (
     expect(POL).toContain('l.agrupador ??');
   });
 });
+
+describe('tester-estudiante: lo que pidió el reporte', () => {
+  it('glosario kinder de 1 línea por palabra rara', () => {
+    for (const s of ['Glosario kinder', 'CFDI', 'PUE', 'PPD', 'DEBE', 'HABER', 'ISR', 'Folio', 'Semilla']) {
+      expect(POL).toContain(s);
+    }
+  });
+  it('la pestaña 2 dice explícito qué revisar y cuándo puedes seguir', () => {
+    expect(POL).toContain('puedes seguir');
+  });
+  it('el botón semilla se entiende: practicar con otra factura', () => {
+    expect(POL).toContain('Practicar con otra factura');
+    expect(POL).toContain('Otra semilla');
+  });
+  it('al guardar avisa que el folio vive en la Balanza', () => {
+    expect(POL).toContain('verás en la Balanza');
+  });
+  it('el piloto hazlo-por-mí ejecuta el siguiente paso de verdad', () => {
+    expect(POL).toContain('Haz el siguiente paso por mí');
+  });
+});

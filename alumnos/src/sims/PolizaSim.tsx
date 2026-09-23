@@ -88,6 +88,27 @@ function leerUsadas(): string[] {
   catch { return []; }
 }
 
+// ─── Glosario kinder (lo pidió el tester-estudiante) ───────────────
+const GLOSARIO: [string, string][] = [
+  ['CFDI', 'La factura electrónica: el papel que dice qué se compró (ej. la renta de MARCELO).'],
+  ['PUE', 'Pago en una sola exhibición: el dinero ya salió, va a EGRESOS.'],
+  ['PPD', 'Pago diferido: es promesa (apartar el juguete), va a PROVISIÓN sin tocar el banco.'],
+  ['DEBE', 'Columna izquierda del columpio: ahí viven gastos, activo y lo que entra.'],
+  ['HABER', 'Columna derecha: ahí viven deudas, capital, ingresos y tu pago que sale del banco.'],
+  ['ISR', 'Pedacito que no es tuyo: se aparta para el gobierno (ej. 10% de la renta a persona física).'],
+  ['Folio', 'El ticket que te dan al guardar: con él encuentras tu póliza en la Balanza.'],
+  ['Semilla', 'Una factura distinta para practicar: cada una trae su UUID para no repetir.'],
+];
+
+// Pista del piloto según la fase (modo "yo lo intento").
+const PISTA_PILOTO: Record<string, string> = {
+  documento: 'Toca mi botón y genero las líneas por ti. O presiona "Generar líneas con el motor" tú mismo.',
+  conciliacion: 'Revisa el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco.',
+  poliza: 'Si el columpio está parejo, presiona Guardar (o mi botón y guardo por ti).',
+  detective: 'Responde las 4 preguntas en orden; cada una te lleva donde se revisa.',
+  balanza: 'Ya terminamos: tu folio vive aquí. Pide otra factura para practicar.',
+};
+
 function num(s: string): number {
   const n = Number(String(s).replace(/[$,\s]/g, ''));
   return Number.isFinite(n) ? n : NaN;
@@ -155,6 +176,15 @@ export default function PolizaSim() {
     } catch {
       setMensajes(['🎲 Ya operaste los 21 casos. Repasa con el selector o limpia tus usadas para empezar de cero.']);
     }
+  }
+
+  // Piloto que SÍ actúa: ejecuta el siguiente paso según la fase.
+  async function accionPiloto() {
+    if (fase === 'documento') { await generarDesdeMotor(); return; }
+    if (fase === 'poliza' && cuadra) { await guardar(); return; }
+    if (fase === 'detective') { setFase('balanza'); return; }
+    if (fase === 'conciliacion') { setFase('poliza'); return; }
+    setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
   }
 
   function cargarCaso(id: string, m?: Record<string, CasoOp>) {
@@ -298,7 +328,7 @@ export default function PolizaSim() {
     setGuardadas(g => [...g, ...lineasOk.map(l => ({ agrupador: l.agrupador, debe: l.debe, haber: l.haber }))]);
     const score = 100;
     await reportarSim({ taskType: 'poliza_practica', title: `Póliza Contalink — ${cfdi.producto.slice(0, 40)}`, score, passed: true });
-    setMensajes([`✅ Póliza guardada con folio ${fol}. Avance registrado.`]);
+    setMensajes([`✅ Póliza guardada con folio ${fol}. Lo verás en la Balanza (pestaña 4): tu avance quedó registrado.`]);
     setFase('balanza');
   }
 
@@ -391,9 +421,15 @@ export default function PolizaSim() {
               {Object.entries(mapa).map(([id, c]) => <option key={id} value={id}>{c.nombre}</option>)}
             </select>
           </label>
-          <button className="btn btn-secondary" style={{ marginLeft: 8, fontSize: 11 }} onClick={otraSemilla} title="Pide una semilla nueva de la base (UUID sin repetir)">
-            🎲 Otra semilla{usadas.length > 0 ? ` (${usadas.length} usadas)` : ''}
+          <button className="btn btn-secondary" style={{ marginLeft: 8, fontSize: 11 }} onClick={otraSemilla} title="Otra semilla: factura nueva con UUID sin repetir">
+            🎲 Practicar con otra factura{usadas.length > 0 ? ` (${usadas.length} usadas)` : ''}
           </button>
+          <details style={{ fontSize: 11, marginTop: 8 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 700 }}>📖 Glosario kinder (palabras raras en 1 línea)</summary>
+            <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+              {GLOSARIO.map(([t, d]) => <li key={t}><b>{t}:</b> {d}</li>)}
+            </ul>
+          </details>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 8 }}>
             <label style={{ fontSize: 11 }}>RFC<input value={cfdi.rfc} onChange={(e) => setCfdi({ ...cfdi, rfc: e.target.value })} className={campo} /></label>
             <label style={{ fontSize: 11 }}>Emisor<input value={cfdi.emisor} onChange={(e) => setCfdi({ ...cfdi, emisor: e.target.value })} className={campo} /></label>
@@ -422,6 +458,9 @@ export default function PolizaSim() {
       {fase === 'conciliacion' && (
         <div data-tour="poliza-concilia" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>2. Cotejo contra estado de cuenta</div>
+          <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
+            👉 Revisa aquí el cotejo papel vs banco: si el veredicto es verde ✅ (o azul en PPD) puedes seguir a la póliza; si es rojo 🛑, no toques el banco y pasa al Detective.
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
             <label style={{ fontSize: 11 }}>Fecha pago<input value={edo.fecha} onChange={(e) => setEdo({ ...edo, fecha: e.target.value })} className={campo} placeholder="DD-MM-AAAA" /></label>
             <label style={{ fontSize: 11 }}>Concepto<input value={edo.concepto} onChange={(e) => setEdo({ ...edo, concepto: e.target.value })} className={campo} /></label>
@@ -607,8 +646,9 @@ export default function PolizaSim() {
           <button className={`btn ${pilotoModo === 'auto' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('auto')}>hazlo por mí</button>
           <button className={`btn ${pilotoModo === 'yo' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('yo')}>yo lo intento</button>
         </div>
-        {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 Yo relleno cada campo despacito y te explico por qué. Tú solo mira y luego intenta.</div>}
-        {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Me callo y solo celebro: revisa la regla de oro antes de Guardar.</div>}
+        {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 {PISTA_PILOTO[fase] ?? 'Sigue la pista de tu fase.'}</div>}
+        {pilotoModo === 'auto' && <button className="btn btn-primary" style={{ fontSize: 11, marginTop: 6 }} onClick={accionPiloto}>▶ Haz el siguiente paso por mí</button>}
+        {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Pista: {PISTA_PILOTO[fase] ?? 'revisa la regla de oro antes de Guardar.'}</div>}
       </div>
 
       {mensajes.length > 0 && (
