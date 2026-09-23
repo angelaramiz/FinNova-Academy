@@ -52,3 +52,5 @@ El tester NUNCA programa ni propone código: solo usa y reporta.
 |-------|--------|---------|----------|-------|--------------|------|
 | 23-sep-2026 (1) | Pólizas pre-fixes | 8 | 5 | 6 | 4 | 6 atorones → glosario, tab2, botón factura, folio→balanza, piloto activo |
 | 23-sep-2026 (2) | Pólizas post-fixes | 8 | 8 | 7 | 6 | Recomienda con condición; 3 atorones nuevos → piloto Trabajando, nota banco-HABER, hallazgo global navegación |
+| 23-sep-2026 (3 loop) | Pólizas 5 ciclos | 8 | 9 | 7 | 8 | 5/5 solo (MARCELO+4 semillas); 1 atorón: póliza vacía sin aviso → aviso + guía |
+| 23-sep-2026 (4 loop) | Pólizas 5 ciclos | 8 | 9 | 8 | 7 | 5/5 con folio + vacía superada; 422 duplicado críptico → mensaje amable verificado en vivo |
