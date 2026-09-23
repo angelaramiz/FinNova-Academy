@@ -13,12 +13,23 @@ import { apiFetch } from '../lib/api';
 import TourSim from './TourSim';
 import { TOURS } from './toursContalink';
 
-type Fase = 'documento' | 'conciliacion' | 'poliza' | 'balanza';
+type Fase = 'documento' | 'conciliacion' | 'poliza' | 'detective' | 'balanza';
 const FASES: { id: Fase; titulo: string; detalle: string }[] = [
   { id: 'documento', titulo: '1. Documento', detalle: 'CFDI fuente: UUID, montos, PUE/PPD' },
   { id: 'conciliacion', titulo: '2. Conciliación', detalle: 'Cotejo contra estado de cuenta' },
   { id: 'poliza', titulo: '3. Póliza', detalle: 'Captura multilínea DEBE/HABER' },
+  { id: 'detective', titulo: '🕵️ Detective', detalle: 'Solo si descuadra: investiga en 4 pasos' },
   { id: 'balanza', titulo: '4. Balanza', detalle: 'Guarda y acumula por agrupador' },
+];
+
+// ─── R-kinder: regla del cero + protocolo detective (guion del educador) ──
+const REGLA_CERO = 'Cada cuenta tiene su casa: 1/5/6/7 viven en el DEBE, 2/3/4 viven en el HABER. Si todos están en su casa, la suma final da 0.';
+const REGLA_ORO = 'Sin papel no hay póliza, sin pago no toco el banco, y el columpio siempre queda parejo.';
+const PREGUNTAS_DETECTIVE: { titulo: string; frase: string; destino: Fase }[] = [
+  { titulo: '¿El CFDI cuadra solo?', frase: '¿El papel cuadra solito antes de culpar a la alcancía? Subtotal + IVA debe dar el total.', destino: 'documento' },
+  { titulo: '¿PUE o PPD / banco bien?', frase: '¿Ya salió el dinero o solo me prometieron pagar? PPD sin banco es provisión.', destino: 'conciliacion' },
+  { titulo: '¿601.45 vs 601.46 vs 601.83?', frase: '¿Esta renta es de Don Físico (PF→601.45), de Empresa Moral (PM→601.46) o de papelito sin sello (601.83)?', destino: 'poliza' },
+  { titulo: '¿Olvidaste la retención o el IVA?', frase: '¿Le quitaste su mordida al SAT antes de pagar? Arrendamiento PF retiene 10% ISR.', destino: 'poliza' },
 ];
 
 interface CfdiForm {
@@ -82,6 +93,8 @@ export default function PolizaSim() {
   const [folio, setFolio] = useState<string | null>(null);
   const [guardadas, setGuardadas] = useState<{ agrupador: string; debe: number; haber: number }[]>([]);
   const [openLinea, setOpenLinea] = useState<number | null>(null);
+  const [declara60183, setDeclara60183] = useState(false);
+  const [pilotoModo, setPilotoModo] = useState<'nadie' | 'auto' | 'yo'>('nadie');
 
   function cargarCaso(id: string) {
     setCasoId(id);
@@ -282,6 +295,20 @@ export default function PolizaSim() {
       {fase === 'documento' && (
         <div data-tour="poliza-doc" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>1. Documento fuente (CFDI)</div>
+          {/* R-kinder: papel vs alcancía lado a lado (así concilia un contador real) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, marginBottom: 8 }}>
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, background: '#fff' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>📄 Lo que dice el papel (CFDI)</div>
+              <div style={{ fontSize: 11, color: '#475569' }}>{cfdi.emisor || '—'} · {cfdi.producto || '—'}</div>
+              <div style={{ fontSize: 11 }}>Subtotal ${cfdi.subtotal || '0'} + IVA ${cfdi.iva16 || '0'} − ISR ${cfdi.isrRet || '0'} = <b>${cfdi.total || '0'}</b> ({cfdi.metodo})</div>
+            </div>
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, background: '#fff' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>🐖 Lo que dice la alcancía (banco)</div>
+              {edo.fecha
+                ? <div style={{ fontSize: 11 }}>{edo.banco || '—'} · {edo.fecha} · <b>${edo.totalPagado || '0'}</b></div>
+                : <div style={{ fontSize: 11, color: '#64748b' }}>aún no se paga, es promesa (PPD: va como PROVISIÓN a 201.01, sin tocar el banco)</div>}
+            </div>
+          </div>
           <label style={{ fontSize: 11 }}>Caso del curso&nbsp;
             <select value={casoId} onChange={(e) => cargarCaso(e.target.value)} className={campo} style={{ width: 'auto' }}>
               {Object.entries(CASOS).map(([id, c]) => <option key={id} value={id}>{c.nombre}</option>)}
@@ -336,6 +363,15 @@ export default function PolizaSim() {
       {fase === 'poliza' && (
         <div data-tour="poliza-editor" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>PÓLIZA DE LA FACTURA ({pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISIÓN' : 'DIARIO'})</div>
+          {/* R-kinder: regla de oro + columpio visual DEBE vs HABER */}
+          <div style={{ fontSize: 11, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 6, marginBottom: 8 }}>
+            ⚖️ Regla de oro: {REGLA_ORO}
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <div style={{ flex: 1, background: '#dcfce7', borderRadius: 6, padding: 4, textAlign: 'center' }}>🟢 DEBE ${fmt(totales.debe)}</div>
+              <div style={{ flex: 1, background: '#fee2e2', borderRadius: 6, padding: 4, textAlign: 'center' }}>🔴 HABER ${fmt(totales.haber)}</div>
+            </div>
+            <div style={{ fontSize: 11, marginTop: 4 }}>{totales.dif <= 0.01 ? '✅ El columpio quedó parejo: puedes guardar.' : '⚖️ Se ladeó, quita o agrega aquí hasta que dé igual.'}</div>
+          </div>
           <div style={{ fontSize: 11, marginBottom: 8, color: '#475569' }}>
             💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cada línea y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT.
           </div>
@@ -399,35 +435,101 @@ export default function PolizaSim() {
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
+            {!cuadra && <button className="btn btn-secondary" onClick={() => setFase('detective')}>🕵️ Pasar a Modo detective</button>}
+          </div>
+        </div>
+      )}
+
+      {fase === 'detective' && (
+        <div data-tour="poliza-editor" className="stat-card">
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🕵️ Modo detective (solo si descuadra: investiga en 4 pasos)</div>
+          <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>Si la póliza no da 0, no se guarda. Se investiga en este orden — cada pregunta te lleva donde se revisa.</div>
+          {PREGUNTAS_DETECTIVE.map((p, i) => (
+            <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, marginBottom: 6, background: '#fff' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>{i + 1}. {p.titulo}</div>
+              <div style={{ fontSize: 11, color: '#475569' }}>🐖 {p.frase}</div>
+              <button className="btn btn-secondary" style={{ marginTop: 6, fontSize: 11 }} onClick={() => setFase(p.destino)}>revisar aquí →</button>
+            </div>
+          ))}
+          <div style={{ border: '1px solid #fca5a5', borderRadius: 8, padding: 8, background: '#fef2f2', marginTop: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 12 }}>🏥 601.83 = hospital de gastos enfermos, no basurero para esconder errores</div>
+            <div style={{ fontSize: 11 }}>✅ Legítimo: gasto real pagado pero sin requisitos fiscales → su IVA se vuelve costo, nunca a 118.01.</div>
+            <div style={{ fontSize: 11 }}>⛔ Prohibido: meter la diferencia a 601.83 solo para que cuadre. Si sobra por error de dedo, se corrige el dedo.</div>
+            <label style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
+              <input type="checkbox" checked={declara60183} onChange={(e) => setDeclara60183(e.target.checked)} /> declaro que este gasto no tiene requisitos fiscales
+            </label>
+          </div>
+          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <button className="btn btn-secondary" onClick={() => setFase('poliza')}>← Volver a la póliza</button>
+            <button className="btn btn-primary" onClick={() => setFase('balanza')}>Ver mi balanza →</button>
           </div>
         </div>
       )}
 
       {fase === 'balanza' && (
         <div data-tour="poliza-balanza" className="stat-card">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>4. Balanza por agrupador (Anexo 24 · B){folio ? ` · último folio ${folio}` : ''}</div>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>4. Balanza de comprobación por rubros (Anexo 24 · B){folio ? ` · último folio ${folio}` : ''}</div>
+          <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
+            📚 {REGLA_CERO} Es la sección B de la balanza electrónica: la suma final debe dar 0.
+          </div>
           {balanza.length === 0
             ? <div style={{ fontSize: 12, color: '#64748b' }}>Aún no guardas pólizas en esta sesión. Captura y guarda para ver cómo cada línea alimenta su agrupador.</div>
             : (
-              <table className="data-table">
-                <thead><tr><th>Agrupador</th><th>Cuenta</th><th style={{ textAlign: 'right' }}>Debe</th><th style={{ textAlign: 'right' }}>Haber</th><th style={{ textAlign: 'right' }}>Saldo final</th></tr></thead>
-                <tbody>
-                  {balanza.map(b => (
-                    <tr key={b.agrupador}>
-                      <td style={{ fontFamily: 'monospace' }}>{b.agrupador}</td>
-                      <td>{b.nombre}</td>
-                      <td style={{ textAlign: 'right' }}>${fmt(b.debe)}</td>
-                      <td style={{ textAlign: 'right' }}>${fmt(b.haber)}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>${fmt(b.final)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <>
+                <div style={{ fontWeight: 700, fontSize: 12, margin: '8px 0 4px' }}>Sección Balance (1-Activo · 2-Pasivo · 3-Capital: lo que tengo y debo)</div>
+                <table className="data-table">
+                  <thead><tr><th>Agrupador</th><th>Cuenta</th><th style={{ textAlign: 'right' }}>Debe</th><th style={{ textAlign: 'right' }}>Haber</th><th style={{ textAlign: 'right' }}>Saldo final</th></tr></thead>
+                  <tbody>
+                    {balanza.filter(b => '123'.includes(b.agrupador.charAt(0))).map(b => (
+                      <tr key={b.agrupador}>
+                        <td style={{ fontFamily: 'monospace' }}>{b.agrupador}</td>
+                        <td>{b.nombre}</td>
+                        <td style={{ textAlign: 'right' }}>${fmt(b.debe)}</td>
+                        <td style={{ textAlign: 'right' }}>${fmt(b.haber)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>${fmt(b.final)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ fontWeight: 700, fontSize: 12, margin: '8px 0 4px' }}>Sección Resultados (4-Ingresos · 5/6/7-Costos y Gastos: lo que gané y gasté)</div>
+                <table className="data-table">
+                  <thead><tr><th>Agrupador</th><th>Cuenta</th><th style={{ textAlign: 'right' }}>Debe</th><th style={{ textAlign: 'right' }}>Haber</th><th style={{ textAlign: 'right' }}>Saldo final</th></tr></thead>
+                  <tbody>
+                    {balanza.filter(b => !'123'.includes(b.agrupador.charAt(0))).map(b => (
+                      <tr key={b.agrupador}>
+                        <td style={{ fontFamily: 'monospace' }}>{b.agrupador}</td>
+                        <td>{b.nombre}</td>
+                        <td style={{ textAlign: 'right' }}>${fmt(b.debe)}</td>
+                        <td style={{ textAlign: 'right' }}>${fmt(b.haber)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>${fmt(b.final)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 14, marginTop: 8, color: '#059669' }}>
+                  GRAN TOTAL ${fmt(balanza.reduce((s, b) => s + (naturalezaDe(b.agrupador) === 'D' ? b.debe - b.haber : b.haber - b.debe), 0))} — {Math.abs(balanza.reduce((s, b) => s + (naturalezaDe(b.agrupador) === 'D' ? b.debe - b.haber : b.haber - b.debe), 0)) <= 0.01 ? '✅ cero perfecto, todos en casa' : '🕵️ descuadra: pasa al Modo detective'}
+                </div>
+              </>
             )}
           <div className="reference-box">Saldo final = debe − haber en cuentas deudoras (1/5/6/7) y al revés en acreedoras (2/3/4). Es la sección B de la balanza electrónica.</div>
-          <button className="btn btn-secondary" onClick={() => setFase('documento')}>Nueva póliza +</button>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary" onClick={() => setFase('documento')}>Nueva póliza +</button>
+            <button className="btn btn-secondary" onClick={() => setFase('detective')}>🕵️ Pasar a Modo detective</button>
+          </div>
         </div>
       )}
+
+      {/* R-kinder: piloto cerdito-alcancía con 2 modos */}
+      <div className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }}>
+        <div style={{ fontWeight: 700, fontSize: 12 }}>🐖 Piloto kinder (tu guía)</div>
+        <div style={{ fontSize: 11, color: '#475569' }}>Receta = CFDI · Alcancía = banco · Columpio = póliza · Apartar juguete = PPD · Llevarlo pagado = PUE.</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+          <button className={`btn ${pilotoModo === 'auto' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('auto')}>hazlo por mí</button>
+          <button className={`btn ${pilotoModo === 'yo' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('yo')}>yo lo intento</button>
+        </div>
+        {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 Yo relleno cada campo despacito y te explico por qué. Tú solo mira y luego intenta.</div>}
+        {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Me callo y solo celebro: revisa la regla de oro antes de Guardar.</div>}
+      </div>
 
       {mensajes.length > 0 && (
         <div className="stat-card" style={{ marginTop: 12 }}>
