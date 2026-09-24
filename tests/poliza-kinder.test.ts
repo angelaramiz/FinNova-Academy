@@ -114,6 +114,20 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   });
 });
 
+describe('tab único 1+2: documento y conciliación son una sola pestaña', () => {
+  it('no existe fase conciliacion separada (un solo tab Papel vs alcancía)', () => {
+    expect(POL).not.toContain("'conciliacion'");
+    expect(POL).toContain('1. Papel vs alcancía');
+  });
+  it('la vista única conserva ambas anclas del tour (doc + concilia)', () => {
+    expect(POL).toContain('data-tour="poliza-doc"');
+    expect(POL).toContain('data-tour="poliza-concilia"');
+  });
+  it('el banco de la conciliación varía con la semilla (viene del caso)', () => {
+    expect(POL).toContain('edo: r.edo');
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');

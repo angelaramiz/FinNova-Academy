@@ -13,13 +13,12 @@ import { apiFetch } from '../lib/api';
 import TourSim from './TourSim';
 import { TOURS } from './toursContalink';
 
-type Fase = 'documento' | 'conciliacion' | 'poliza' | 'detective' | 'balanza';
+type Fase = 'documento' | 'poliza' | 'detective' | 'balanza';
 const FASES: { id: Fase; titulo: string; detalle: string }[] = [
-  { id: 'documento', titulo: '1. Documento', detalle: 'CFDI fuente: UUID, montos, PUE/PPD' },
-  { id: 'conciliacion', titulo: '2. Conciliación', detalle: 'Cotejo contra estado de cuenta' },
-  { id: 'poliza', titulo: '3. Póliza', detalle: 'Captura multilínea DEBE/HABER' },
+  { id: 'documento', titulo: '1. Papel vs alcancía', detalle: 'CFDI + banco lado a lado: UUID, montos, PUE/PPD y veredicto' },
+  { id: 'poliza', titulo: '2. Póliza', detalle: 'Captura multilínea DEBE/HABER' },
   { id: 'detective', titulo: '🕵️ Detective', detalle: 'Solo si descuadra: investiga en 4 pasos' },
-  { id: 'balanza', titulo: '4. Balanza', detalle: 'Guarda y acumula por agrupador' },
+  { id: 'balanza', titulo: '3. Balanza', detalle: 'Guarda y acumula por agrupador' },
 ];
 
 // ─── R-kinder: regla del cero + protocolo detective (guion del educador) ──
@@ -27,7 +26,7 @@ const REGLA_CERO = 'Cada cuenta tiene su casa: 1/5/6/7 viven en el DEBE, 2/3/4 v
 const REGLA_ORO = 'Sin papel no hay póliza, sin pago no toco el banco, y el columpio siempre queda parejo.';
 const PREGUNTAS_DETECTIVE: { titulo: string; frase: string; destino: Fase }[] = [
   { titulo: '¿El CFDI cuadra solo?', frase: '¿El papel cuadra solito antes de culpar a la alcancía? Subtotal + IVA debe dar el total.', destino: 'documento' },
-  { titulo: '¿PUE o PPD / banco bien?', frase: '¿Ya salió el dinero o solo me prometieron pagar? PPD sin banco es provisión.', destino: 'conciliacion' },
+  { titulo: '¿PUE o PPD / banco bien?', frase: '¿Ya salió el dinero o solo me prometieron pagar? PPD sin banco es provisión.', destino: 'documento' },
   { titulo: '¿601.45 vs 601.46 vs 601.83?', frase: '¿Esta renta es de Don Físico (PF→601.45), de Empresa Moral (PM→601.46) o de papelito sin sello (601.83)?', destino: 'poliza' },
   { titulo: '¿Olvidaste la retención o el IVA?', frase: '¿Le quitaste su mordida al SAT antes de pagar? Arrendamiento PF retiene 10% ISR.', destino: 'poliza' },
 ];
@@ -102,8 +101,7 @@ const GLOSARIO: [string, string][] = [
 
 // Pista del piloto según la fase (modo "yo lo intento").
 const PISTA_PILOTO: Record<string, string> = {
-  documento: 'Toca mi botón y genero las líneas por ti. O presiona "Generar líneas con el motor" tú mismo.',
-  conciliacion: 'Revisa el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco.',
+  documento: 'Compara papel vs alcancía y revisa el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco. Toca mi botón y genero las líneas por ti.',
   poliza: 'Si el columpio está parejo, presiona Guardar (o mi botón y guardo por ti).',
   detective: 'Responde las 4 preguntas en orden; cada una te lleva donde se revisa.',
   balanza: 'Ya terminamos: tu folio vive aquí. Pide otra factura para practicar.',
@@ -188,7 +186,6 @@ export default function PolizaSim() {
       if (fase === 'documento') { await generarDesdeMotor(); return; }
       if (fase === 'poliza' && cuadra) { await guardar(); return; }
       if (fase === 'detective') { setFase('balanza'); return; }
-      if (fase === 'conciliacion') { setFase('poliza'); return; }
       setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
     } finally {
       setPilotoBusy(false);
@@ -415,7 +412,7 @@ export default function PolizaSim() {
 
       {fase === 'documento' && (
         <div data-tour="poliza-doc" className="stat-card">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>1. Documento fuente (CFDI)</div>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>1. Papel vs alcancía (CFDI + banco)</div>
           {/* R-kinder: papel vs alcancía lado a lado (así concilia un contador real) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, marginBottom: 8 }}>
             <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, background: '#fff' }}>
@@ -459,19 +456,16 @@ export default function PolizaSim() {
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
             <button className="btn btn-primary" onClick={generarDesdeMotor}>⚙ Generar líneas con el motor</button>
-            <button className="btn btn-secondary" onClick={() => setFase('conciliacion')}>Siguiente →</button>
+            <button className="btn btn-secondary" onClick={() => setFase('poliza')}>A la póliza →</button>
           </div>
           {docAvisos.length > 0 && (
             <ul style={{ fontSize: 11, color: '#92400e', marginTop: 8 }}>
               {docAvisos.map((a, i) => <li key={i}>{a}</li>)}
             </ul>
           )}
-        </div>
-      )}
-
-      {fase === 'conciliacion' && (
-        <div data-tour="poliza-concilia" className="stat-card">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>2. Cotejo contra estado de cuenta</div>
+          {/* Conciliación integrada: el banco varía con la semilla (viene del caso) */}
+          <div data-tour="poliza-concilia" className="stat-card" style={{ marginTop: 10 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>2. Cotejo contra estado de cuenta</div>
           <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
             👉 Revisa aquí el cotejo papel vs banco: si el veredicto es verde ✅ (o azul en PPD) puedes seguir a la póliza; si es rojo 🛑, no toques el banco y pasa al Detective.
           </div>
@@ -487,9 +481,9 @@ export default function PolizaSim() {
               : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
             <button className="btn btn-primary" onClick={() => setFase('poliza')}>A la póliza →</button>
           </div>
+        </div>
         </div>
       )}
 
@@ -573,7 +567,7 @@ export default function PolizaSim() {
             <textarea value={notas} onChange={(e) => setNotas(e.target.value)} className={campo} rows={2} style={{ width: '100%' }} />
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setFase('conciliacion')}>← Atrás</button>
+            <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
             <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta generar líneas: vuelve al Documento y genera' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
             {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta generar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
@@ -612,7 +606,7 @@ export default function PolizaSim() {
 
       {fase === 'balanza' && (
         <div data-tour="poliza-balanza" className="stat-card">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>4. Balanza de comprobación por rubros (Anexo 24 · B){folio ? ` · último folio ${folio}` : ''}</div>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>3. Balanza de comprobación por rubros (Anexo 24 · B){folio ? ` · último folio ${folio}` : ''}</div>
           <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
             📚 {REGLA_CERO} Es la sección B de la balanza electrónica: la suma final debe dar 0.
           </div>

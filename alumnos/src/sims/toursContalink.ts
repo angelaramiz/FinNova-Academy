@@ -179,7 +179,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     descripcion: 'El total del CFDI debe aparecer igual en el estado de cuenta. Sin pago confirmado no se toca 102.01.',
     teoria: 'Cotejo registro-contra-estado-de-cuenta: si el monto no salió del banco, la operación queda en provisión (201.01).',
     referencia: 'EDO DE CUENTA RITO FINANCIERA',
-    paso: 'conciliacion',
+    paso: 'documento',
   },
   {
     selector: '[data-tour="poliza-editor"]',
