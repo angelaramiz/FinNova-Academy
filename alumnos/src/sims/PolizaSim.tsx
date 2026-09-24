@@ -199,6 +199,7 @@ export default function PolizaSim() {
     setCfdi({ ...c.cfdi });
     setEdo({ ...c.edo });
     setLineas([]);
+    setFirmaLineas(null);
     setNotas(`${c.cfdi.uuid}, ${c.cfdi.producto}.`);
     setMensajes([]);
     setFolio(null);
@@ -210,6 +211,23 @@ export default function PolizaSim() {
     if (!edo.fecha || !Number.isFinite(t) || !Number.isFinite(c)) return false;
     return Math.abs(t - c) <= 0.01;
   }, [edo, cfdi.total]);
+
+  // ── Progresión real: las líneas llevan la firma del documento ──
+  // Si cambias el paso 1 tras generar, las líneas quedan desactualizadas
+  // (el error se propaga, no se autocorrige) y Guardar se bloquea.
+  const firmaDoc = JSON.stringify([cfdi, edo]);
+  const [firmaLineas, setFirmaLineas] = useState<string | null>(null);
+  const desactualizadas = firmaLineas !== null && lineas.length > 0 && firmaLineas !== firmaDoc;
+
+  // Tour-acción: verifica la tarea de cada paso del piloto (en vivo).
+  function verificarPasoTour(i: number): boolean {
+    if (i === 1) return lineas.length > 0;
+    if (i === 2) return pagoConfirmado || cfdi.metodo === 'PPD';
+    if (i === 3) return cuadra;
+    if (i === 4) return guardadas.length > 0;
+    if (i === 5) return folio !== null;
+    return true;
+  }
 
   function resolverLinea(l: Linea): string | null {
     if (!l.cuenta.trim()) return 'Vacía: escribe el nombre ("bancos", "renta") o el código (601.45). Usa el buscador de la línea.';
@@ -282,6 +300,7 @@ export default function PolizaSim() {
       const r = await apiFetch<{ poliza: { lineas: { cuentaInterna: string; agrupador: string; descripcion: string; debe: number; haber: number }[] } | null; errores: { mensaje: string; porQue: string }[] }>('/api/sim/polizas/generar', { method: 'POST', body: JSON.stringify(body) });
       if (r.poliza) {
         setLineas(r.poliza.lineas.map(l => ({ id: seqId++, cuenta: l.cuentaInterna, agrupador: l.agrupador, debe: l.debe ? String(l.debe) : '', haber: l.haber ? String(l.haber) : '' })));
+        setFirmaLineas(JSON.stringify([cfdi, edo]));
         setMensajes([`✅ Motor: póliza generada (${r.poliza.lineas.length} líneas). Revísala antes de guardar.`]);
         setFase('poliza');
       } else {
@@ -293,7 +312,7 @@ export default function PolizaSim() {
   }
 
   async function guardar() {
-    if (!cuadra) return;
+    if (!cuadra || desactualizadas) return;
     const lineasOk = lineas.map(l => {
       const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
       // El agrupador del motor manda; si el alumno editó a mano, equivalencia.
@@ -386,7 +405,7 @@ export default function PolizaSim() {
 
   return (
     <div className="fade-in" style={{ color: '#1e293b' }}>
-      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} />
+      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} />
 
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
@@ -540,7 +559,13 @@ export default function PolizaSim() {
           </table>
           <div style={{ marginTop: 8 }}>
             <button className="btn btn-primary" onClick={() => setLineas([...lineas, { id: seqId++, cuenta: '', debe: '', haber: '' }])}>Agregar asiento</button>
+            <button className="btn btn-secondary" style={{ marginLeft: 8 }} onClick={generarDesdeMotor} title="Regenera desde el documento actual (si lo cambiaste)">🔄 Regenerar líneas</button>
           </div>
+          {desactualizadas && (
+            <div style={{ fontSize: 11, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: 6, marginTop: 8 }}>
+              ⚠ Cambiaste el documento: estas líneas están desactualizadas (son de la versión anterior) y ya no valen. Lo del paso 1 manda: <button className="btn btn-primary" style={{ fontSize: 11, marginLeft: 6 }} onClick={generarDesdeMotor}>Regenera líneas</button>
+            </div>
+          )}
           {lineas.length === 0 && (
             <div style={{ fontSize: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, marginTop: 8 }}>
               📭 Tu póliza está vacía porque aún no generas las líneas: llegaste directo del Documento sin generar.
@@ -568,7 +593,7 @@ export default function PolizaSim() {
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
-            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta generar líneas: vuelve al Documento y genera' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
+            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra || desactualizadas} onClick={guardar} title={desactualizadas ? 'Líneas desactualizadas: regenera desde el documento' : cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta generar líneas: vuelve al Documento y genera' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
             {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta generar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>

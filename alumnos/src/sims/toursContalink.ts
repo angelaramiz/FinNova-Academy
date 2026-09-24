@@ -9,6 +9,9 @@ export interface PasoTour {
   referencia: string;
   // Paso interno del Sim al que navegar antes de mostrar (tabs condicionales).
   paso?: string;
+  // Tour-acción: lo que el alumno debe HACER en este paso (el Siguiente se
+  // bloquea hasta que el Sim lo verifica vía onVerificar).
+  tarea?: string;
 }
 
 export const TOUR_NOMINA: PasoTour[] = [
@@ -164,6 +167,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     descripcion: 'Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER antes de guardar.',
     teoria: 'La póliza es el documento del Anexo 24 sección C: fecha, concepto, UUID, RFC del tercero, monto total, moneda y líneas con debe/haber.',
     referencia: 'Anexo 24 RMF 2026 · Pólizas del periodo',
+    tarea: 'Mira los totales en $0.00: tu póliza empieza vacía. Sigue al paso 2.',
   },
   {
     selector: '[data-tour="poliza-doc"]',
@@ -172,6 +176,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'PUE pagado = egreso; PPD = solo provisión. Antes de contabilizar se valida que el CFDI cuadre solo.',
     referencia: 'CFDI MARCELO F · UUID 1317D7E0',
     paso: 'documento',
+    tarea: 'Compara papel vs alcancía y presiona «Generar líneas con el motor». Sin líneas no hay póliza.',
   },
   {
     selector: '[data-tour="poliza-concilia"]',
@@ -180,6 +185,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'Cotejo registro-contra-estado-de-cuenta: si el monto no salió del banco, la operación queda en provisión (201.01).',
     referencia: 'EDO DE CUENTA RITO FINANCIERA',
     paso: 'documento',
+    tarea: 'Lee el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco.',
   },
   {
     selector: '[data-tour="poliza-editor"]',
@@ -188,6 +194,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'Tu cuenta 601-83 viaja al SAT como agrupador 601.45. El IVA PPD va a 119.01 pendiente, no a 118.01.',
     referencia: 'Póliza Contalink · Agregar asiento',
     paso: 'poliza',
+    tarea: 'Revisa tus líneas: el columpio DEBE = HABER debe quedar parejo.',
   },
   {
     selector: '[data-tour="poliza-balanza"]',
@@ -196,6 +203,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'Es la sección B de la balanza electrónica: saldo inicial + movimientos = saldo final por cuenta.',
     referencia: 'Anexo 24 · Balanza de comprobación',
     paso: 'balanza',
+    tarea: 'Tu póliza guardada aparece aquí por agrupador, con GRAN TOTAL = 0.',
   },
   {
     selector: '[data-tour="poliza-guardar"]',
@@ -204,6 +212,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'Sin cuadre no hay póliza: el gate DEBE = HABER es la partida doble. El folio + UUID amarran la póliza a su CFDI.',
     referencia: 'Partida doble · Folio + UUID',
     paso: 'poliza',
+    tarea: 'Presiona Guardar en la pestaña 2 y vuelve: verás tu folio.',
   },
 ];
 
