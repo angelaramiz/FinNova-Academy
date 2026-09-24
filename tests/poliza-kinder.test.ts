@@ -109,6 +109,9 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   it('el editor explica que al pagar el banco va en HABER aunque su casa sea DEBE', () => {
     expect(POL).toContain('aunque su casa sea DEBE');
   });
+  it('labels legibles: raíz del Sim fija tinta oscura en cascada (adiós gris fantasma)', () => {
+    expect(POL).toContain('className="fade-in" style={{ color:');
+  });
 });
 
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
