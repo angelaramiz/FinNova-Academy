@@ -40,4 +40,9 @@ describe('tour geometría: cableado en TourSim', () => {
     expect(T).toContain('geometriaSpotlight');
     expect(T).toContain('rootRef');
   });
+  it('el spotlight perfora el overlay (box-shadow gigante, no fondo parejo)', () => {
+    const T = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(T).toContain('9999px');
+    expect(T).not.toContain("background: 'rgba(15,23,42,0.88)'");
+  });
 });
