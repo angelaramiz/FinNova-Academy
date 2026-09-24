@@ -82,9 +82,9 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
           // Fallback if not json
         }
         throw new ApiError(
-          errorData.message || `HTTP error! status: ${response.status}`,
+          errorData.message || errorData.error || `HTTP error! status: ${response.status}`,
           response.status,
-          errorData.details || null
+          errorData.details ?? errorData.error ?? null
         );
       }
 
