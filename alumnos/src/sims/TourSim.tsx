@@ -4,6 +4,7 @@
 // observación, la evaluación vive en cada Sim. Cero LLM.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { PasoTour } from './toursContalink';
+import { geometriaSpotlight } from './tourGeometria';
 
 interface Props {
   titulo: string;
@@ -22,6 +23,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
   const [geom, setGeom] = useState({ l: 0, t: 0, w: 0, h: 0 });
   const [pos, setPos] = useState({ l: 12, t: 12 });
   const tipRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
 
   const paso = pasos[Math.min(idx, pasos.length - 1)];
@@ -31,13 +33,19 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
     if (!el) return false;
     (el as HTMLElement).scrollIntoView({ block: 'center', behavior: 'auto' });
     const r = el.getBoundingClientRect();
-    const pad = 10;
-    setGeom({ l: Math.max(6, r.left - pad), t: Math.max(6, r.top - pad), w: r.width + pad * 2, h: r.height + pad * 2 });
+    // Origen del contenedor raíz: dentro de la ventana del escritorio
+    // (ancestro con transform) el `fixed` es relativo al ancestro.
+    const ro = rootRef.current?.getBoundingClientRect();
+    const g = geometriaSpotlight(r, { left: ro?.left ?? 0, top: ro?.top ?? 0 });
+    setGeom(g);
     const margen = 12;
+    const ro2 = rootRef.current?.getBoundingClientRect();
+    const ox = ro2?.left ?? 0;
+    const oy = ro2?.top ?? 0;
     const ancho = Math.min(420, window.innerWidth - 24);
-    let l = Math.max(margen, Math.min(r.left, window.innerWidth - ancho - margen));
-    let t = r.bottom + margen;
-    if (t + 320 > window.innerHeight - margen) t = Math.max(margen, r.top - 320 - margen);
+    let l = Math.max(margen, Math.min(r.left - ox, window.innerWidth - ancho - margen));
+    let t = r.bottom - oy + margen;
+    if (t + 320 > window.innerHeight - margen) t = Math.max(margen, r.top - oy - 320 - margen);
     setPos({ l, t });
     return true;
   }, [pasos]);
@@ -123,7 +131,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
   }
 
   return (
-    <div className="fixed inset-0 z-50" style={{ background: 'rgba(15,23,42,0.88)' }}>
+    <div ref={rootRef} className="fixed inset-0 z-50" style={{ background: 'rgba(15,23,42,0.88)' }}>
       <div
         className="fixed rounded-xl pointer-events-none transition-all duration-500"
         style={{ left: geom.l, top: geom.t, width: geom.w, height: geom.h, boxShadow: '0 0 0 4px #3b82f6, 0 0 30px rgba(59,130,246,0.5)' }}
