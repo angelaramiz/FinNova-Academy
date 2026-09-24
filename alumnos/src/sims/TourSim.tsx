@@ -131,10 +131,13 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
   }
 
   return (
-    <div ref={rootRef} className="fixed inset-0 z-50" style={{ background: 'rgba(15,23,42,0.88)' }}>
+    <div ref={rootRef} className="fixed inset-0 z-50">
+      {/* Spotlight real: el div enmarca el objetivo con fondo transparente y
+        su box-shadow gigante oscurece TODO lo de afuera (agujero de luz).
+        Sin fondo parejo: el contenido enmarcado queda iluminado. */}
       <div
         className="fixed rounded-xl pointer-events-none transition-all duration-500"
-        style={{ left: geom.l, top: geom.t, width: geom.w, height: geom.h, boxShadow: '0 0 0 4px #3b82f6, 0 0 30px rgba(59,130,246,0.5)' }}
+        style={{ left: geom.l, top: geom.t, width: geom.w, height: geom.h, boxShadow: '0 0 0 4px #3b82f6, 0 0 30px rgba(59,130,246,0.5), 0 0 0 9999px rgba(15,23,42,0.88)' }}
       />
       <div
         ref={tipRef}
