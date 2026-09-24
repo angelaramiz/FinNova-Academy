@@ -388,7 +388,7 @@ export default function PolizaSim() {
   const campo = 'w-full border border-slate-300 rounded px-2 py-1 text-[12px] bg-white text-slate-800';
 
   return (
-    <div className="fade-in">
+    <div className="fade-in" style={{ color: '#1e293b' }}>
       <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} />
 
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
