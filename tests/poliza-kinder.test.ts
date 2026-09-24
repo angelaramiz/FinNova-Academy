@@ -5,6 +5,8 @@ import { join } from 'path';
 // rubros con regla del cero, modo detective 3.5 y piloto kinder. Auditoría en
 // fuente (mismo patrón que sims-cableado-ui: el SSR mezcla dos React).
 const POL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PolizaSim.tsx'), 'utf8');
+const TOUR = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'toursContalink.ts'), 'utf8');
+const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
 
 describe('poliza kinder: fusión papel vs alcancía (1+2)', () => {
   it('rotula las 2 tablas como papel y alcancía, no "movimientos" genérico', () => {
@@ -111,6 +113,46 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   });
   it('labels legibles: raíz del Sim fija tinta oscura en cascada (adiós gris fantasma)', () => {
     expect(POL).toContain('className="fade-in" style={{ color:');
+  });
+});
+
+describe('tab único 1+2: documento y conciliación son una sola pestaña', () => {
+  it('no existe fase conciliacion separada (un solo tab Papel vs alcancía)', () => {
+    expect(POL).not.toContain("'conciliacion'");
+    expect(POL).toContain('1. Papel vs alcancía');
+  });
+  it('la vista única conserva ambas anclas del tour (doc + concilia)', () => {
+    expect(POL).toContain('data-tour="poliza-doc"');
+    expect(POL).toContain('data-tour="poliza-concilia"');
+  });
+  it('el banco de la conciliación varía con la semilla (viene del caso)', () => {
+    expect(POL).toContain('edo: r.edo');
+  });
+});
+
+describe('tour-acción: cada paso pide hacer algo y verifica antes de Siguiente', () => {
+  it('los 6 pasos de pólizas traen tarea accionable', () => {
+    expect(TOUR).toContain('tarea:');
+  });
+  it('TourSim bloquea Siguiente hasta verificar (Ya lo hice)', () => {
+    expect(TSIM).toContain('Ya lo hice');
+    expect(TSIM).toContain('onVerificar');
+  });
+  it('PolizaSim verifica por paso (líneas generadas, folio al guardar)', () => {
+    expect(POL).toContain('onVerificar={verificarPasoTour}');
+  });
+});
+
+describe('progresión real: lo del paso 1 manda en el 2 y 3 (el error se propaga)', () => {
+  it('las líneas llevan la firma del documento que las generó', () => {
+    expect(POL).toContain('firmaLineas');
+  });
+  it('si cambias el documento, las líneas se marcan desactualizadas y Guardar se bloquea', () => {
+    expect(POL).toContain('desactualizadas');
+    expect(POL).toContain('Regenera');
+  });
+  it('el editor también genera (regenerar en sitio, sin volver atrás)', () => {
+    expect(POL).toContain('Regenerar líneas');
   });
 });
 

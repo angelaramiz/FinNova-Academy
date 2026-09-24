@@ -12,14 +12,17 @@ interface Props {
   storageKey: string;
   // Navega el Sim al paso interno antes de medir (tabs condicionales).
   onNavegar?: (paso: string) => void;
+  // Tour-acción: verifica si la tarea del paso i está cumplida (en vivo).
+  onVerificar?: (i: number) => boolean;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
   const [activo, setActivo] = useState(false);
   const [idx, setIdx] = useState(0);
+  const [intento, setIntento] = useState(false);
   const [geom, setGeom] = useState({ l: 0, t: 0, w: 0, h: 0 });
   const [pos, setPos] = useState({ l: 12, t: 12 });
   const tipRef = useRef<HTMLDivElement | null>(null);
@@ -27,6 +30,8 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
   const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
 
   const paso = pasos[Math.min(idx, pasos.length - 1)];
+  // Verificación en vivo: se re-evalúa en cada render del Sim.
+  const cumple = onVerificar ? onVerificar(Math.min(idx, pasos.length - 1)) : true;
 
   const medir = useCallback((i: number) => {
     const el = document.querySelector(pasos[i]?.selector || '');
@@ -59,6 +64,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
     if (i >= pasos.length) { fin(); return; }
     const step = pasos[i];
     setIdx(i);
+    setIntento(false);
     // Navega al tab del paso y mide tras el re-render.
     if (step.paso && onNavegar) onNavegar(step.paso);
     setTimeout(() => {
@@ -172,12 +178,23 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar }: Props)
           <div className="text-xs leading-relaxed" style={{ color: '#78350f' }}>{paso.teoria}</div>
         </div>
         <div className="rounded-lg p-2 mb-3 text-[10px] font-medium" style={{ background: '#eff6ff', borderLeft: '4px solid #1e40af', color: '#1e40af' }}>📖 {paso.referencia}</div>
+        {/* Tour-acción: la tarea se verifica en vivo; Siguiente se bloquea hasta cumplirla */}
+        {paso.tarea && (
+          <div className="rounded-lg p-2 mb-3 text-[11px] font-medium" style={{ background: cumple ? '#ecfdf5' : '#fefce8', borderLeft: `4px solid ${cumple ? '#10b981' : '#f59e0b'}`, color: cumple ? '#065f46' : '#92400e' }}>
+            ✋ Hazlo ahora: {paso.tarea}
+            <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button onClick={() => { if (cumple) irA(idx + 1); else setIntento(true); }} className="px-3 py-1.5 text-xs text-white rounded-lg font-bold" style={{ background: cumple ? '#10b981' : '#f59e0b' }}>✓ Ya lo hice</button>
+              {intento && !cumple && <span>⏳ Aún no: completa la tarea para seguir.</span>}
+              {cumple && <span>✅ Listo, puedes seguir.</span>}
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
           <div className="text-[10px] text-slate-500">{Math.round((idx / pasos.length) * 100)}% completado</div>
           <div className="flex gap-2">
             <button onClick={() => setActivo(false)} className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Saltar</button>
             {idx > 0 && <button onClick={() => irA(idx - 1)} className="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg">← Atrás</button>}
-            <button onClick={() => irA(idx + 1)} className="px-4 py-1.5 text-xs bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium">
+            <button onClick={() => irA(idx + 1)} disabled={!!paso.tarea && !cumple} title={paso.tarea && !cumple ? `Te falta: ${paso.tarea}` : 'Siguiente paso'} className="px-4 py-1.5 text-xs bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-40">
               {idx === pasos.length - 1 ? 'Finalizar ✓' : 'Siguiente →'}
             </button>
           </div>
