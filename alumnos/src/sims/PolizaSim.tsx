@@ -424,27 +424,25 @@ export default function PolizaSim() {
         ))}
       </div>
 
-      <div className="theory-box">
-        <div className="theory-box-title">📚 Puente teórico</div>
+      <details className="theory-box" style={{ padding: '6px 10px' }}>
+        <summary className="theory-box-title" style={{ cursor: 'pointer', fontWeight: 700 }}>📚 Puente teórico (tócalo para ver)</summary>
         <div className="theory-box-text">PUE pagado = egreso directo (gasto + retenciones + bancos). PPD = solo provisión (gasto + <b>119.01 IVA pendiente</b> + proveedores 201.01): el IVA acreditable 118.01 nace hasta el pago. Arrendamiento a PF retiene <b>10% ISR</b> (Art. 116 LISR). Tu cuenta interna (601-83) viaja al SAT como agrupador (601.45).</div>
-      </div>
+      </details>
 
       {fase === 'documento' && (
         <div data-tour="poliza-doc" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>1. Papel vs alcancía (CFDI + banco)</div>
-          {/* R-kinder: papel vs alcancía lado a lado (así concilia un contador real) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8, marginBottom: 8 }}>
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, background: '#fff' }}>
-              <div style={{ fontWeight: 700, fontSize: 12 }}>📄 Lo que dice el papel (CFDI)</div>
-              <div style={{ fontSize: 11, color: '#475569' }}>{cfdi.emisor || '—'} · {cfdi.producto || '—'}</div>
-              <div style={{ fontSize: 11 }}>Subtotal ${cfdi.subtotal || '0'} + IVA ${cfdi.iva16 || '0'} − ISR ${cfdi.isrRet || '0'} = <b>${cfdi.total || '0'}</b> ({cfdi.metodo})</div>
-            </div>
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, background: '#fff' }}>
-              <div style={{ fontWeight: 700, fontSize: 12 }}>🐖 Lo que dice la alcancía (banco)</div>
-              {edo.fecha
-                ? <div style={{ fontSize: 11 }}>{edo.banco || '—'} · {edo.fecha} · <b>${edo.totalPagado || '0'}</b></div>
-                : <div style={{ fontSize: 11, color: '#64748b' }}>aún no se paga, es promesa (PPD: va como PROVISIÓN a 201.01, sin tocar el banco)</div>}
-            </div>
+          {/* Tira única papel vs alcancía (sin tarjetas duplicadas del formulario) */}
+          <div title="Resumen papel vs alcancía" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 8, padding: 6, background: '#fff', fontSize: 11, marginBottom: 8 }}>
+            <span>📄 Lo que dice el papel: <b>{cfdi.emisor || '—'} ${cfdi.total || '0'}</b> ({cfdi.metodo})</span>
+            <span>→</span>
+            <span>🐖 Lo que dice la alcancía: <b>{edo.fecha ? `${edo.banco || '—'} $${edo.totalPagado || '0'}` : 'aún no se paga, es promesa'}</b></span>
+            <span>→</span>
+            {pagoConfirmado
+              ? <span className="status-badge status-ok">✅ coinciden</span>
+              : cfdi.metodo === 'PPD'
+                ? <span className="status-badge status-warning">🔵 provisión sin banco</span>
+                : <span className="status-badge status-error">🛑 no coinciden</span>}
           </div>
           <label style={{ fontSize: 11 }}>Caso del curso&nbsp;
             <select value={casoId} onChange={(e) => cargarCaso(e.target.value)} className={campo} style={{ width: 'auto' }}>
@@ -475,7 +473,6 @@ export default function PolizaSim() {
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
             <button className="btn btn-primary" onClick={generarDesdeMotor}>⚙ Generar líneas con el motor</button>
-            <button className="btn btn-secondary" onClick={() => setFase('poliza')}>A la póliza →</button>
           </div>
           {docAvisos.length > 0 && (
             <ul style={{ fontSize: 11, color: '#92400e', marginTop: 8 }}>

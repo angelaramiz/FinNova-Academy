@@ -156,6 +156,25 @@ describe('progresión real: lo del paso 1 manda en el 2 y 3 (el error se propaga
   });
 });
 
+describe('compacto: menos scroll, misma info', () => {
+  it('puente teórico colapsable (no ocupa pantalla siempre)', () => {
+    expect(POL).toContain('Puente teórico (tócalo para ver)');
+  });
+  it('tira única papel+alcancía+veredicto (adiós tarjetas duplicadas)', () => {
+    expect(POL).toContain('Resumen papel vs alcancía');
+    expect(POL).toContain('Lo que dice el papel');
+    expect(POL).toContain('Lo que dice la alcancía');
+  });
+  it('un solo botón A la póliza (sin duplicado)', () => {
+    expect((POL.match(/A la póliza →/g) || []).length).toBe(1);
+  });
+  it('el hero conserva las 4 stats (no se pierde info)', () => {
+    for (const s of ['Total DEBE', 'Total HABER', 'Diferencia', 'Líneas']) {
+      expect(POL).toContain(s);
+    }
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');
