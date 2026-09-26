@@ -261,6 +261,22 @@ describe('receta guía de verdad: regla PF/PM + interna vs agrupador', () => {
   });
 });
 
+describe('estilos Contalink en página pública (reporte: todo plano)', () => {
+  it('la página monta el shell + sus estilos compartidos', () => {
+    const PAG = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PaginaPolizasPrueba.tsx'), 'utf8');
+    expect(PAG).toContain('clk-shell');
+    expect(PAG).toContain('ContalinkStyles');
+  });
+  it('ContalinkShell exporta sus estilos para reusar', () => {
+    const SHELL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkShell.tsx'), 'utf8');
+    expect(SHELL).toContain('ContalinkStyles');
+  });
+  it('el shell fuerza tema claro (inputs no negros en móvil oscuro)', () => {
+    const CSS = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkStyles.tsx'), 'utf8');
+    expect(CSS).toContain('color-scheme: light');
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');
