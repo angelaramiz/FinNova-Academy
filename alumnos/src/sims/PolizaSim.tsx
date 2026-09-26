@@ -430,12 +430,35 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         </div>
       </div>
 
-      <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '8px 12px' }}>
-        <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>🧭 Tu camino: 3 pasos</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {FASES.map(f => (
-            <button key={f.id} onClick={() => setFase(f.id)} className={`tab-btn ${fase === f.id ? 'active' : ''}`} title={f.detalle}>{f.titulo}</button>
-          ))}
+      <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '10px 12px', background: 'linear-gradient(135deg, #1e3a8a, #1e40af)' }}>
+        <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8, color: '#fff' }}>🧭 Tu camino: 3 pasos</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'stretch' }}>
+          {FASES.map((f, i) => {
+            const orden = FASES.findIndex(x => x.id === fase);
+            const estado = f.id === fase ? 'activo' : i < orden ? 'listo' : 'pendiente';
+            return (
+              <button
+                key={f.id}
+                onClick={() => setFase(f.id)}
+                aria-current={estado === 'activo' ? 'step' : undefined}
+                title={`${i + 1}. ${f.detalle}${estado === 'listo' ? ' (completado)' : ''}`}
+                style={{
+                  flex: '1 1 120px', display: 'flex', alignItems: 'center', gap: 8,
+                  border: estado === 'activo' ? '2px solid #fff' : '1px solid rgba(255,255,255,0.45)',
+                  borderRadius: 10, padding: '8px 10px', cursor: 'pointer',
+                  background: estado === 'activo' ? '#fff' : estado === 'listo' ? '#065f46' : 'rgba(255,255,255,0.12)',
+                  color: estado === 'activo' ? '#1e3a8a' : '#fff', fontWeight: 700, fontSize: 12, textAlign: 'left',
+                }}
+              >
+                <span style={{
+                  minWidth: 22, height: 22, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: estado === 'activo' ? '#1e40af' : estado === 'listo' ? '#10b981' : 'rgba(255,255,255,0.25)',
+                  color: '#fff', fontSize: 11, fontWeight: 800,
+                }}>{estado === 'listo' ? '✓' : i + 1}</span>
+                {f.titulo}
+              </button>
+            );
+          })}
         </div>
       </div>
       <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} etiquetaTrigger="🧭 Guíame" />
