@@ -64,8 +64,8 @@ describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', (
     expect(POL).toContain('/api/sim/polizas/casos');
     expect(POL).toContain('CASOS.marcelo');
   });
-  it('botón Otra semilla pide /api/sim/polizas/semilla excluyendo usadas', () => {
-    expect(POL).toContain('/api/sim/polizas/semilla');
+  it('botón Otra semilla pide /api/sim/polizas/pub/semilla excluyendo usadas', () => {
+    expect(POL).toContain('/api/sim/polizas/pub/semilla');
     expect(POL).toContain('Otra semilla');
     expect(POL).toContain('poliza_semillas_usadas');
   });
@@ -172,6 +172,17 @@ describe('compacto: menos scroll, misma info', () => {
     for (const s of ['Total DEBE', 'Total HABER', 'Diferencia', 'Líneas']) {
       expect(POL).toContain(s);
     }
+  });
+});
+
+describe('rutas públicas: el front usa /pub sin credenciales (guardar sigue con auth)', () => {
+  it('casos, semilla y generar van por /pub (catálogo vive en backend)', () => {
+    for (const s of ['/api/sim/polizas/pub/casos', '/api/sim/polizas/pub/semilla', '/api/sim/polizas/pub/generar']) {
+      expect(POL).toContain(s);
+    }
+  });
+  it('guardar sigue en ruta con auth (escribe a tu nombre)', () => {
+    expect(POL).toContain("'/api/sim/polizas/guardar'");
   });
 });
 

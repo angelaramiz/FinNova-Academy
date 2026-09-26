@@ -143,7 +143,7 @@ export default function PolizaSim() {
   // Catálogo de la base al montar; fallback silencioso a CASOS local.
   useEffect(() => {
     let vivo = true;
-    apiFetch<CasoApi[]>('/api/sim/polizas/casos')
+    apiFetch<CasoApi[]>('/api/sim/polizas/pub/casos')
       .then((rows) => {
         if (!vivo || !Array.isArray(rows) || rows.length === 0) return;
         const m: Record<string, CasoOp> = {};
@@ -166,7 +166,7 @@ export default function PolizaSim() {
   async function otraSemilla() {
     const excl = [...usadas, cfdi.uuid].filter(Boolean).join(',');
     try {
-      const r = await apiFetch<CasoApi>(`/api/sim/polizas/semilla?exclude=${encodeURIComponent(excl)}`);
+      const r = await apiFetch<CasoApi>(`/api/sim/polizas/pub/semilla?exclude=${encodeURIComponent(excl)}`);
       const m = { ...mapa, [r.id]: casoApiAOp(r) };
       setCasosOp(m);
       cargarCaso(r.id, m);
@@ -297,7 +297,7 @@ export default function PolizaSim() {
       edoCta: edo.fecha ? [{ fecha: edo.fecha, concepto: edo.concepto, totalPagado: num(edo.totalPagado) || 0, banco: edo.banco }] : [],
     };
     try {
-      const r = await apiFetch<{ poliza: { lineas: { cuentaInterna: string; agrupador: string; descripcion: string; debe: number; haber: number }[] } | null; errores: { mensaje: string; porQue: string }[] }>('/api/sim/polizas/generar', { method: 'POST', body: JSON.stringify(body) });
+      const r = await apiFetch<{ poliza: { lineas: { cuentaInterna: string; agrupador: string; descripcion: string; debe: number; haber: number }[] } | null; errores: { mensaje: string; porQue: string }[] }>('/api/sim/polizas/pub/generar', { method: 'POST', body: JSON.stringify(body) });
       if (r.poliza) {
         setLineas(r.poliza.lineas.map(l => ({ id: seqId++, cuenta: l.cuentaInterna, agrupador: l.agrupador, debe: l.debe ? String(l.debe) : '', haber: l.haber ? String(l.haber) : '' })));
         setFirmaLineas(JSON.stringify([cfdi, edo]));

@@ -58,7 +58,7 @@ describe('P1/P2/P3 cableado UI', () => {
     for (const s of ['Agregar asiento', 'Eliminar', 'Guardar', 'Cancelar', 'Descargar XML', 'Descargar PDF', 'Notas Adicionales', 'CUENTA CONTABLE', 'DEBE', 'HABER']) {
       expect(POL).toContain(s);
     }
-    expect(POL).toContain('/api/sim/polizas/generar');
+    expect(POL).toContain('/api/sim/polizas/pub/generar');
     expect(POL).toContain('/api/sim/polizas/guardar');
     expect(POL).toContain("taskType: 'poliza_practica'");
     expect(POL).toContain('reportarSim(');
