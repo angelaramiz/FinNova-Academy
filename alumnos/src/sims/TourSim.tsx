@@ -14,9 +14,11 @@ interface Props {
   onNavegar?: (paso: string) => void;
   // Tour-acción: verifica si la tarea del paso i está cumplida (en vivo).
   onVerificar?: (i: number) => boolean;
+  // Una sola voz de ayuda: etiqueta del botón que inicia el tour.
+  etiquetaTrigger?: string;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
@@ -131,7 +133,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
         className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
         style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
       >
-        ▶ Iniciar {titulo} — tour guiado ({pasos.length} pasos)
+        ▶ {etiquetaTrigger ?? `Iniciar ${titulo} — tour guiado (${pasos.length} pasos)`}
       </button>
     );
   }
