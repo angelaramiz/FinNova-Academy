@@ -122,7 +122,7 @@ function naturalezaDe(agrupador: string): 'D' | 'H' {
 
 let seqId = 1;
 
-export default function PolizaSim() {
+export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [fase, setFase] = useState<Fase>('documento');
   const [casoId, setCasoId] = useState('marcelo');
   const [cfdi, setCfdi] = useState<CfdiForm>(CASOS.marcelo.cfdi);
@@ -331,6 +331,16 @@ export default function PolizaSim() {
       totalDebe: totales.debe, totalHaber: totales.haber,
     };
     let fol = `LOCAL-${Date.now()}`;
+    if (publico) {
+      // Modo prueba libre: sin servidor, folio local y balanza en sesión.
+      fol = `PRUEBA-${Date.now()}`;
+      setFolio(fol);
+      marcarUsada(cfdi.uuid);
+      setGuardadas(g => [...g, ...lineasOk.map(l => ({ agrupador: l.agrupador, debe: l.debe, haber: l.haber }))]);
+      setMensajes([`🧪 Póliza de prueba guardada con folio ${fol}. Vive solo en esta sesión: entra con tu cuenta para registrar avance.`]);
+      setFase('balanza');
+      return;
+    }
     try {
       const r = await apiFetch<{ folio: string; error?: string }>('/api/sim/polizas/guardar', { method: 'POST', body: JSON.stringify({ poliza, fiscal }) });
       if ((r as { error?: string }).error) {
@@ -356,8 +366,10 @@ export default function PolizaSim() {
     setFolio(fol);
     marcarUsada(cfdi.uuid);
     setGuardadas(g => [...g, ...lineasOk.map(l => ({ agrupador: l.agrupador, debe: l.debe, haber: l.haber }))]);
-    const score = 100;
-    await reportarSim({ taskType: 'poliza_practica', title: `Póliza Contalink — ${cfdi.producto.slice(0, 40)}`, score, passed: true });
+    if (!publico) {
+      const score = 100;
+      await reportarSim({ taskType: 'poliza_practica', title: `Póliza Contalink — ${cfdi.producto.slice(0, 40)}`, score, passed: true });
+    }
     setMensajes([`✅ Póliza guardada con folio ${fol}. Lo verás en la Balanza (pestaña 4): tu avance quedó registrado.`]);
     setFase('balanza');
   }
@@ -405,6 +417,12 @@ export default function PolizaSim() {
 
   return (
     <div className="fade-in" style={{ color: '#1e293b' }}>
+      {publico && (
+        <div className="stat-card" style={{ borderLeft: '4px solid #10b981', marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>🧪 Modo prueba libre: practica sin cuenta</div>
+          <div style={{ fontSize: 11, color: '#475569' }}>Casos, semillas y cálculo van por rutas públicas. Tu avance vive solo en esta sesión: nada se guarda en el servidor.</div>
+        </div>
+      )}
       <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} />
 
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>

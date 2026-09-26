@@ -186,6 +186,17 @@ describe('rutas públicas: el front usa /pub sin credenciales (guardar sigue con
   });
 });
 
+describe('página pública: practicar pólizas sin cuenta', () => {
+  it('App expone /polizas-prueba sin login', () => {
+    const APP = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'App.tsx'), 'utf8');
+    expect(APP).toContain('/polizas-prueba');
+  });
+  it('modo prueba libre: banner + folio local sin servidor', () => {
+    expect(POL).toContain('Modo prueba libre');
+    expect(POL).toContain('PRUEBA-');
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');
