@@ -442,10 +442,13 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         </div>
       </div>
 
-      <div data-tour="poliza-fases" style={{ display: 'flex', gap: 8, margin: '12px 0', flexWrap: 'wrap', alignItems: 'center' }}>
-        {FASES.map(f => (
-          <button key={f.id} onClick={() => setFase(f.id)} className={`tab-btn ${fase === f.id ? 'active' : ''}`} title={f.detalle}>{f.titulo}</button>
-        ))}
+      <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '8px 12px' }}>
+        <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>🧭 Tu camino: 3 pasos</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {FASES.map(f => (
+            <button key={f.id} onClick={() => setFase(f.id)} className={`tab-btn ${fase === f.id ? 'active' : ''}`} title={f.detalle}>{f.titulo}</button>
+          ))}
+        </div>
       </div>
       <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} etiquetaTrigger="🧭 Guíame" />
 
@@ -483,18 +486,46 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               {GLOSARIO.map(([t, d]) => <li key={t}><b>{t}:</b> {d}</li>)}
             </ul>
           </details>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 8 }}>
-            <label style={{ fontSize: 11 }}>RFC<input value={cfdi.rfc} onChange={(e) => setCfdi({ ...cfdi, rfc: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Emisor<input value={cfdi.emisor} onChange={(e) => setCfdi({ ...cfdi, emisor: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Fecha<input value={cfdi.fecha} onChange={(e) => setCfdi({ ...cfdi, fecha: e.target.value })} className={campo} placeholder="DD-MM-AAAA" /></label>
-            <label style={{ fontSize: 11 }}>UUID<input value={cfdi.uuid} onChange={(e) => setCfdi({ ...cfdi, uuid: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Método<select value={cfdi.metodo} onChange={(e) => setCfdi({ ...cfdi, metodo: e.target.value as 'PUE' | 'PPD' })} className={campo}><option value="PUE">PUE</option><option value="PPD">PPD</option></select></label>
-            <label style={{ fontSize: 11 }}>Moneda<input value={cfdi.moneda} onChange={(e) => setCfdi({ ...cfdi, moneda: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11, gridColumn: '1 / -1' }}>Producto<input value={cfdi.producto} onChange={(e) => setCfdi({ ...cfdi, producto: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Subtotal<input value={cfdi.subtotal} onChange={(e) => setCfdi({ ...cfdi, subtotal: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>IVA 16%<input value={cfdi.iva16} onChange={(e) => setCfdi({ ...cfdi, iva16: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>ISR retención<input value={cfdi.isrRet} onChange={(e) => setCfdi({ ...cfdi, isrRet: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Total<input value={cfdi.total} onChange={(e) => setCfdi({ ...cfdi, total: e.target.value })} className={campo} /></label>
+          {/* Paso 1 estilo Excel: 2 tablas lado a lado, celdas editables */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 8, marginTop: 8 }}>
+            <table className="data-table">
+              <caption style={{ fontWeight: 700, fontSize: 12, textAlign: 'left', padding: '4px 0' }}>📄 Tabla · Lo que dice el papel (CFDI)</caption>
+              <tbody>
+                <tr><th style={{ textAlign: 'left' }}>Emisor</th><td><input value={cfdi.emisor} onChange={(e) => setCfdi({ ...cfdi, emisor: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>RFC</th><td><input value={cfdi.rfc} onChange={(e) => setCfdi({ ...cfdi, rfc: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Fecha</th><td><input value={cfdi.fecha} onChange={(e) => setCfdi({ ...cfdi, fecha: e.target.value })} className={campo} placeholder="DD-MM-AAAA" /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>UUID</th><td><input value={cfdi.uuid} onChange={(e) => setCfdi({ ...cfdi, uuid: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Método</th><td><select value={cfdi.metodo} onChange={(e) => setCfdi({ ...cfdi, metodo: e.target.value as 'PUE' | 'PPD' })} className={campo}><option value="PUE">PUE</option><option value="PPD">PPD</option></select></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Moneda</th><td><input value={cfdi.moneda} onChange={(e) => setCfdi({ ...cfdi, moneda: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Producto</th><td><input value={cfdi.producto} onChange={(e) => setCfdi({ ...cfdi, producto: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Subtotal</th><td><input value={cfdi.subtotal} onChange={(e) => setCfdi({ ...cfdi, subtotal: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>IVA 16%</th><td><input value={cfdi.iva16} onChange={(e) => setCfdi({ ...cfdi, iva16: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>ISR retención</th><td><input value={cfdi.isrRet} onChange={(e) => setCfdi({ ...cfdi, isrRet: e.target.value })} className={campo} /></td></tr>
+                <tr><th style={{ textAlign: 'left' }}>Total</th><td><input value={cfdi.total} onChange={(e) => setCfdi({ ...cfdi, total: e.target.value })} className={campo} /></td></tr>
+              </tbody>
+            </table>
+            <div data-tour="poliza-concilia">
+              <table className="data-table">
+                <caption style={{ fontWeight: 700, fontSize: 12, textAlign: 'left', padding: '4px 0' }}>🐖 Tabla · Lo que dice la alcancía (banco)</caption>
+                <tbody>
+                  <tr><th style={{ textAlign: 'left' }}>Fecha pago</th><td><input value={edo.fecha} onChange={(e) => setEdo({ ...edo, fecha: e.target.value })} className={campo} placeholder="DD-MM-AAAA" /></td></tr>
+                  <tr><th style={{ textAlign: 'left' }}>Concepto</th><td><input value={edo.concepto} onChange={(e) => setEdo({ ...edo, concepto: e.target.value })} className={campo} /></td></tr>
+                  <tr><th style={{ textAlign: 'left' }}>Total pagado</th><td><input value={edo.totalPagado} onChange={(e) => setEdo({ ...edo, totalPagado: e.target.value })} className={campo} /></td></tr>
+                  <tr><th style={{ textAlign: 'left' }}>Banco</th><td><input value={edo.banco} onChange={(e) => setEdo({ ...edo, banco: e.target.value })} className={campo} placeholder="RITO FINANCIERA" /></td></tr>
+                </tbody>
+              </table>
+              <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginTop: 8 }}>
+                👉 Revisa aquí el cotejo papel vs banco: si el veredicto es verde ✅ (o azul en PPD) puedes seguir a la póliza; si es rojo 🛑, no toques el banco y pasa al Detective.
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12 }}>
+                {pagoConfirmado
+                  ? <span className="status-badge status-ok">✓ Pago confirmado: CFDI ${fmt(num(cfdi.total) || 0)} = banco ${fmt(num(edo.totalPagado) || 0)} → póliza de EGRESOS</span>
+                  : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
+              </div>
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary" onClick={() => setFase('poliza')}>Ver mi póliza →</button>
+              </div>
+            </div>
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
             <button className="btn btn-primary" onClick={generarDesdeMotor}>✨ Crear mi póliza</button>
@@ -504,27 +535,6 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               {docAvisos.map((a, i) => <li key={i}>{a}</li>)}
             </ul>
           )}
-          {/* Conciliación integrada: el banco varía con la semilla (viene del caso) */}
-          <div data-tour="poliza-concilia" className="stat-card" style={{ marginTop: 10 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>2. Cotejo contra estado de cuenta</div>
-          <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
-            👉 Revisa aquí el cotejo papel vs banco: si el veredicto es verde ✅ (o azul en PPD) puedes seguir a la póliza; si es rojo 🛑, no toques el banco y pasa al Detective.
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8 }}>
-            <label style={{ fontSize: 11 }}>Fecha pago<input value={edo.fecha} onChange={(e) => setEdo({ ...edo, fecha: e.target.value })} className={campo} placeholder="DD-MM-AAAA" /></label>
-            <label style={{ fontSize: 11 }}>Concepto<input value={edo.concepto} onChange={(e) => setEdo({ ...edo, concepto: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Total pagado<input value={edo.totalPagado} onChange={(e) => setEdo({ ...edo, totalPagado: e.target.value })} className={campo} /></label>
-            <label style={{ fontSize: 11 }}>Banco<input value={edo.banco} onChange={(e) => setEdo({ ...edo, banco: e.target.value })} className={campo} placeholder="RITO FINANCIERA" /></label>
-          </div>
-          <div style={{ marginTop: 8, fontSize: 12 }}>
-            {pagoConfirmado
-              ? <span className="status-badge status-ok">✓ Pago confirmado: CFDI ${fmt(num(cfdi.total) || 0)} = banco ${fmt(num(edo.totalPagado) || 0)} → póliza de EGRESOS</span>
-              : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
-          </div>
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={() => setFase('poliza')}>Ver mi póliza →</button>
-          </div>
-        </div>
         </div>
       )}
 

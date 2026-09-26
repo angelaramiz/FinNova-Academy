@@ -212,6 +212,19 @@ describe('rediseño: una sola voz de ayuda y piloto a pedido', () => {
   });
 });
 
+describe('excel-contalink: paso 1 son 2 tablas editables + guía con marco', () => {
+  it('la guía vive en un header con marco (no se pierde)', () => {
+    expect(POL).toContain('Tu camino');
+  });
+  it('tabla papel editable (filas CFDI con input)', () => {
+    expect(POL).toContain('Tabla · Lo que dice el papel');
+  });
+  it('tabla banco editable con veredicto (filas edo cuenta)', () => {
+    expect(POL).toContain('Tabla · Lo que dice la alcancía');
+    expect(POL).toContain('puedes seguir');
+  });
+});
+
 describe('tester final: ayuda visible cuando se necesita', () => {
   it('el piloto se abre solo cuando descuadra (colapsado no ayuda)', () => {
     expect(POL).toContain('pilotoAbierto');
