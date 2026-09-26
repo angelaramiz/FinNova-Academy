@@ -285,8 +285,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }, [lineas]);
 
   const cuadra = lineas.length > 0 && erroresLinea.length === 0 && totales.dif <= 0.01;
-  // El piloto se abre SOLO cuando descuadra (colapsado no ayuda al atorado).
-  const pilotoPideAyuda = lineas.length > 0 && !cuadra;
+  // El piloto se abre SOLO cuando descuadra o el documento cambió
+  // (colapsado no ayuda al atorado).
+  const pilotoPideAyuda = (lineas.length > 0 && !cuadra) || desactualizadas;
 
   async function generarDesdeMotor() {
     setMensajes([]);
@@ -697,7 +698,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             )}
           <div className="reference-box">Saldo final = debe − haber en cuentas deudoras (1/5/6/7) y al revés en acreedoras (2/3/4). Es la sección B de la balanza electrónica.</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setFase('documento')}>+ Nueva póliza (para otra factura, primero aquí)</button>
+            <button className="btn btn-secondary" onClick={() => setFase('documento')}>+ Nueva póliza (luego 🎲 Practicar con otra factura)</button>
             <button className="btn btn-secondary" onClick={() => { setFase('poliza'); setDetectiveAbierto(true); }}>🕵️ Abrir detective</button>
           </div>
         </div>

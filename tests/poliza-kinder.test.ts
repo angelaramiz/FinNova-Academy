@@ -217,8 +217,11 @@ describe('tester final: ayuda visible cuando se necesita', () => {
     expect(POL).toContain('pilotoAbierto');
     expect(POL).toContain('onToggle');
   });
-  it('la balanza explica que para otra factura primero va Nueva póliza', () => {
-    expect(POL).toContain('para otra factura, primero');
+  it('el piloto también se abre si el documento cambió (líneas desactualizadas)', () => {
+    expect(POL).toContain('|| desactualizadas');
+  });
+  it('la balanza nombra el botón 🎲 igual que el paso 1', () => {
+    expect(POL).toContain('luego 🎲 Practicar con otra factura');
   });
 });
 
