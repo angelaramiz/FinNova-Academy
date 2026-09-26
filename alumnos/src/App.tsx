@@ -4,6 +4,7 @@ import { RefreshCw, LogOut } from 'lucide-react';
 import StudentPanel from './components/StudentPanel';
 import Login from './components/Login';
 import RegisterRequest from './components/RegisterRequest';
+import PaginaPolizasPrueba from './sims/PaginaPolizasPrueba';
 import { themeColors } from './lib/theme';
 import { VERSION, BUILD_HASH } from './version';
 import VersionUpdatePopup from './components/VersionUpdatePopup';
@@ -125,6 +126,7 @@ function AppContent() {
 
         <Routes>
           <Route path="/register" element={<RegisterRequest />} />
+          <Route path="/polizas-prueba" element={<PaginaPolizasPrueba />} />
           <Route path="/student/*" element={
             profile ? <StudentPanel theme={theme} profile={profile} /> : <Login onLoginSuccess={(token, p) => { localStorage.setItem('supabase_auth_token', token); setProfile(p); }} backendWarming={backendWarming} />
           } />
