@@ -137,6 +137,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
   const [usadas, setUsadas] = useState<string[]>(leerUsadas);
   const [pilotoBusy, setPilotoBusy] = useState(false);
+  const [pilotoAbierto, setPilotoAbierto] = useState(false);
   // Detective como tarjeta dentro del paso 2 (no es tab: aparece al pedirla).
   const [detectiveAbierto, setDetectiveAbierto] = useState(false);
   const mapa = casosOp ?? CASOS;
@@ -284,6 +285,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }, [lineas]);
 
   const cuadra = lineas.length > 0 && erroresLinea.length === 0 && totales.dif <= 0.01;
+  // El piloto se abre SOLO cuando descuadra (colapsado no ayuda al atorado).
+  const pilotoPideAyuda = lineas.length > 0 && !cuadra;
 
   async function generarDesdeMotor() {
     setMensajes([]);
@@ -694,14 +697,14 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             )}
           <div className="reference-box">Saldo final = debe − haber en cuentas deudoras (1/5/6/7) y al revés en acreedoras (2/3/4). Es la sección B de la balanza electrónica.</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setFase('documento')}>Nueva póliza +</button>
+            <button className="btn btn-secondary" onClick={() => setFase('documento')}>+ Nueva póliza (para otra factura, primero aquí)</button>
             <button className="btn btn-secondary" onClick={() => { setFase('poliza'); setDetectiveAbierto(true); }}>🕵️ Abrir detective</button>
           </div>
         </div>
       )}
 
       {/* Piloto a pedido: colapsado hasta que el alumno pide ayuda */}
-      <details className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }}>
+      <details className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }} open={pilotoAbierto || pilotoPideAyuda} onToggle={(e) => setPilotoAbierto((e.target as HTMLDetailsElement).open)}>
         <summary style={{ fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>🐖 ¿Necesitas ayuda? Piloto kinder (tu guía)</summary>
         <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Receta = CFDI · Alcancía = banco · Columpio = póliza · Apartar juguete = PPD · Llevarlo pagado = PUE.</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>

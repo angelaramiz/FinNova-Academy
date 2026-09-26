@@ -212,6 +212,16 @@ describe('rediseño: una sola voz de ayuda y piloto a pedido', () => {
   });
 });
 
+describe('tester final: ayuda visible cuando se necesita', () => {
+  it('el piloto se abre solo cuando descuadra (colapsado no ayuda)', () => {
+    expect(POL).toContain('pilotoAbierto');
+    expect(POL).toContain('onToggle');
+  });
+  it('la balanza explica que para otra factura primero va Nueva póliza', () => {
+    expect(POL).toContain('para otra factura, primero');
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');

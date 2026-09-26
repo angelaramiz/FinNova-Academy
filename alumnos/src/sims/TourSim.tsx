@@ -139,7 +139,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
   }
 
   return (
-    <div ref={rootRef} className="fixed inset-0 z-50">
+    <div ref={rootRef} className="fixed inset-0 z-50 pointer-events-none">
       {/* Spotlight real: el div enmarca el objetivo con fondo transparente y
         su box-shadow gigante oscurece TODO lo de afuera (agujero de luz).
         Sin fondo parejo: el contenido enmarcado queda iluminado. */}
@@ -149,7 +149,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
       />
       <div
         ref={tipRef}
-        className="fixed bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-2xl"
+        className="fixed bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-2xl pointer-events-auto"
         style={{ left: pos.l, top: pos.t, width: 'min(420px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto' }}
       >
         <div
