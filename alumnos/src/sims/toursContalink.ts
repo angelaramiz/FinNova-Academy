@@ -176,7 +176,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     teoria: 'PUE pagado = egreso; PPD = solo provisión. Antes de contabilizar se valida que el CFDI cuadre solo.',
     referencia: 'CFDI MARCELO F · UUID 1317D7E0',
     paso: 'documento',
-    tarea: 'Compara papel vs alcancía y presiona «Crear mi póliza». Sin líneas no hay póliza.',
+    tarea: 'Compara papel vs alcancía y ve al paso 2: ahí capturas tus líneas a mano, una por una.',
   },
   {
     selector: '[data-tour="poliza-concilia"]',

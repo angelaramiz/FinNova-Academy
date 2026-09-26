@@ -8,6 +8,8 @@ import {
   type PolizaCaso,
 } from '../backend/src/data/polizaDataset';
 import { generarPoliza } from '../backend/src/services/polizaEngine';
+import { agrupadorDeCuentaInterna } from '../alumnos/src/sims/catalogoAgrupador';
+import { getSatCuenta, resolverAgrupador } from '../backend/src/services/satCatalog';
 
 const UUID = /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/;
 const RFC = /^([A-ZÑ&]{4}\d{6}[A-Z0-9]{3}|[A-ZÑ&]{3}\d{6}[A-Z0-9]{3})$/;
@@ -81,6 +83,23 @@ describe('dataset pólizas: el motor genera cada caso sin errores', () => {
     const res = generarPoliza(diesel.cfdi, [diesel.edo!]);
     const agrs = res.poliza!.lineas.map((l) => l.agrupador).sort();
     expect(agrs).toEqual(['102.01', '118.01', '601.48']);
+  });
+});
+
+describe('dataset pólizas: cobertura de mapas internos (captura manual)', () => {
+  it('cada agrupador del dataset resuelve en front y back + tiene interna', () => {
+    const usados = new Set<string>();
+    for (const c of POLIZA_CASOS) {
+      const res = generarPoliza(c.cfdi, c.edo ? [c.edo] : []);
+      for (const l of res.poliza!.lineas) usados.add(l.agrupador);
+    }
+    expect(usados.size).toBeGreaterThan(10);
+    for (const agr of usados) {
+      expect(getSatCuenta(agr), `back sin ${agr}`).toBeDefined();
+      expect(resolverAgrupador(agr), `back no resuelve ${agr}`).toBe(agr);
+      const interna = agr.replace(/\./g, '-');
+      expect(agrupadorDeCuentaInterna(interna)?.codigo, `front sin ${interna}`).toBe(agr);
+    }
   });
 });
 
