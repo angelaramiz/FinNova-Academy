@@ -328,6 +328,12 @@ export function buscarCuentasFront(query: string, limite = 8): ResultadoBusqueda
   const codigoLimpio = query.trim().replace(/[-_\s]+/g, '.');
   const scored = new Map<string, number>();
   const push = (agr: string, s: number) => scored.set(agr, Math.max(scored.get(agr) ?? 0, s));
+  // Código interno exacto manda (reporte tester: escribió 102-01-002 y le
+  // sugirió 001): si el query ES una interna del mapa, esa va primera.
+  const internaExacta = CUENTA_INTERNA_A_AGRUPADOR[query.trim()];
+  const exactas: ResultadoBusquedaFront[] = internaExacta
+    ? [{ agrupador: internaExacta, nombre: agrupadorDe(internaExacta)?.nombre ?? internaExacta, cuentaInternaSugerida: query.trim(), score: 120, naturaleza: naturalezaDeFront(internaExacta) }]
+    : [];
   for (const c of CATALOGO_AGRUPADOR) {
     if (c.nivel !== 2) continue;
     if (c.codigo === codigoLimpio) push(c.codigo, 100);
@@ -345,7 +351,7 @@ export function buscarCuentasFront(query: string, limite = 8): ResultadoBusqueda
   for (const s of SINONIMOS_FRONT) {
     if (s.patron.test(query) || s.patron.test(q)) push(s.agrupador, Math.min(s.peso + 20, 84));
   }
-  return [...scored.entries()]
+  return [...exactas, ...[...scored.entries()]
     .map(([agr, score]): ResultadoBusquedaFront | null => {
       const c = agrupadorDe(agr);
       if (!c) return null;
@@ -357,5 +363,5 @@ export function buscarCuentasFront(query: string, limite = 8): ResultadoBusqueda
     })
     .filter((r): r is ResultadoBusquedaFront => r !== null)
     .sort((a, b) => b.score - a.score || a.agrupador.localeCompare(b.agrupador))
-    .slice(0, limite);
+    .slice(0, limite)];
 }

@@ -245,6 +245,15 @@ describe('tester final: ayuda visible cuando se necesita', () => {
   });
 });
 
+describe('receta guía de verdad: regla PF/PM + interna vs agrupador', () => {
+  it('la receta enseña a elegir entre opciones parecidas (RFC 13 = física)', () => {
+    expect(POL).toContain('13 caracteres');
+  });
+  it('el editor avisa que interna y agrupador se ven distinto (es normal)', () => {
+    expect(POL).toContain('es normal que se vean distinto');
+  });
+});
+
 describe('uuid duplicado: mensaje amable del servidor + lección kinder (reporte 422)', () => {
   it('muestra el mensaje real del servidor (ya contabilizado / duplicarías el registro)', () => {
     expect(POL).toContain('ya contabilizado');

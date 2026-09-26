@@ -215,6 +215,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       pasos.push(`Última línea: escribe ${contra} al HABER $${f(tot)}`);
     }
     pasos.push('Revisa que DEBE = HABER y guarda. El motor solo valida, no captura por ti.');
+    pasos.push('Regla para elegir entre parecidas: RFC de 13 caracteres = persona física; de 12 = moral.');
     return pasos;
   }
 
@@ -538,7 +539,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <div style={{ fontSize: 11, marginTop: 4 }}>{totales.dif <= 0.01 ? '✅ El columpio quedó parejo: puedes guardar.' : '⚖️ Se ladeó, quita o agrega aquí hasta que dé igual.'}</div>
           </div>
           <div style={{ fontSize: 11, marginBottom: 8, color: '#475569' }}>
-            💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cada línea y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT.
+            💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cuenta o agrupador y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT (es normal que se vean distinto: uno es tu clave, otro la del SAT).
             <br />🐖 Ojo kinder: al pagar, el banco va en <b>HABER aunque su casa sea DEBE</b> — así es como sale el dinero. El que manda es el columpio, no la etiqueta.
           </div>
           <table className="data-table">

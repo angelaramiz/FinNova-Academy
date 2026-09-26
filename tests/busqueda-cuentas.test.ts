@@ -73,6 +73,14 @@ describe('desambiguarArrendamiento (RFC manda)', () => {
   });
 });
 
+describe('código exacto manda (reporte tester: escribió 102-01-002 y guardó 001)', () => {
+  it('si escribes la interna exacta, esa se sugiere (no la primera del mapa)', () => {
+    const r = buscarCuentasFront('102-01-002');
+    expect(r[0].agrupador).toBe('102.01');
+    expect(r[0].cuentaInternaSugerida).toBe('102-01-002');
+  });
+});
+
 describe('paridad front (espejo)', () => {
   it('buscarCuentasFront coincide en los casos del curso', () => {
     for (const q of ['bancos', 'renta', 'papeleria', 'isr retenido', '601.45', 'no deducible']) {
