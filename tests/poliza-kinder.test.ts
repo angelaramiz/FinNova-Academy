@@ -234,6 +234,13 @@ describe('excel-contalink: paso 1 son 2 tablas editables + guía con marco', () 
   });
 });
 
+describe('guía con marco: barra header con pasos numerados y estados', () => {
+  it('header Tu camino con pills activo/completado (no texto plano)', () => {
+    expect(POL).toContain('Tu camino');
+    expect(POL).toContain('aria-current');
+  });
+});
+
 describe('tester final: ayuda visible cuando se necesita', () => {
   it('el piloto se abre solo cuando descuadra (colapsado no ayuda)', () => {
     expect(POL).toContain('pilotoAbierto');
