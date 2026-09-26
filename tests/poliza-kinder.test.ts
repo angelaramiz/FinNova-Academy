@@ -117,9 +117,11 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
 });
 
 describe('tab único 1+2: documento y conciliación son una sola pestaña', () => {
-  it('no existe fase conciliacion separada (un solo tab Papel vs alcancía)', () => {
-    expect(POL).not.toContain("'conciliacion'");
-    expect(POL).toContain('1. Papel vs alcancía');
+  it('guía 1-2-3 clicable (Detective vive dentro del paso 2, no es tab)', () => {
+    expect(POL).toContain('1. Papel');
+    expect(POL).toContain('2. Póliza');
+    expect(POL).toContain('3. Balanza');
+    expect(POL).not.toContain("'detective'");
   });
   it('la vista única conserva ambas anclas del tour (doc + concilia)', () => {
     expect(POL).toContain('data-tour="poliza-doc"');
@@ -165,8 +167,9 @@ describe('compacto: menos scroll, misma info', () => {
     expect(POL).toContain('Lo que dice el papel');
     expect(POL).toContain('Lo que dice la alcancía');
   });
-  it('un solo botón A la póliza (sin duplicado)', () => {
-    expect((POL.match(/A la póliza →/g) || []).length).toBe(1);
+  it('un solo botón creador (adiós A la póliza duplicado)', () => {
+    expect(POL).toContain('Crear mi póliza');
+    expect((POL.match(/A la póliza →/g) || []).length).toBe(0);
   });
   it('el hero conserva las 4 stats (no se pierde info)', () => {
     for (const s of ['Total DEBE', 'Total HABER', 'Diferencia', 'Líneas']) {
@@ -194,6 +197,31 @@ describe('página pública: practicar pólizas sin cuenta', () => {
   it('modo prueba libre: banner + folio local sin servidor', () => {
     expect(POL).toContain('Modo prueba libre');
     expect(POL).toContain('PRUEBA-');
+  });
+});
+
+describe('rediseño: una sola voz de ayuda y piloto a pedido', () => {
+  it('botón Guíame junto a la guía (tour+piloto unidos)', () => {
+    expect(POL).toContain('Guíame');
+  });
+  it('piloto colapsable (solo si el alumno lo pide)', () => {
+    expect(POL).toContain('¿Necesitas ayuda?');
+  });
+  it('el hero es marcador: semáforo Cuadra sin perder las 4 stats', () => {
+    expect(POL).toContain('Cuadra');
+  });
+});
+
+describe('tester final: ayuda visible cuando se necesita', () => {
+  it('el piloto se abre solo cuando descuadra (colapsado no ayuda)', () => {
+    expect(POL).toContain('pilotoAbierto');
+    expect(POL).toContain('onToggle');
+  });
+  it('el piloto también se abre si el documento cambió (líneas desactualizadas)', () => {
+    expect(POL).toContain('|| desactualizadas');
+  });
+  it('la balanza nombra el botón 🎲 igual que el paso 1', () => {
+    expect(POL).toContain('luego 🎲 Practicar con otra factura');
   });
 });
 

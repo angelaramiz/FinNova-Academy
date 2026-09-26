@@ -13,11 +13,10 @@ import { apiFetch } from '../lib/api';
 import TourSim from './TourSim';
 import { TOURS } from './toursContalink';
 
-type Fase = 'documento' | 'poliza' | 'detective' | 'balanza';
+type Fase = 'documento' | 'poliza' | 'balanza';
 const FASES: { id: Fase; titulo: string; detalle: string }[] = [
-  { id: 'documento', titulo: '1. Papel vs alcancía', detalle: 'CFDI + banco lado a lado: UUID, montos, PUE/PPD y veredicto' },
+  { id: 'documento', titulo: '1. Papel', detalle: 'CFDI + banco lado a lado: UUID, montos, PUE/PPD y veredicto' },
   { id: 'poliza', titulo: '2. Póliza', detalle: 'Captura multilínea DEBE/HABER' },
-  { id: 'detective', titulo: '🕵️ Detective', detalle: 'Solo si descuadra: investiga en 4 pasos' },
   { id: 'balanza', titulo: '3. Balanza', detalle: 'Guarda y acumula por agrupador' },
 ];
 
@@ -138,6 +137,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
   const [usadas, setUsadas] = useState<string[]>(leerUsadas);
   const [pilotoBusy, setPilotoBusy] = useState(false);
+  const [pilotoAbierto, setPilotoAbierto] = useState(false);
+  // Detective como tarjeta dentro del paso 2 (no es tab: aparece al pedirla).
+  const [detectiveAbierto, setDetectiveAbierto] = useState(false);
   const mapa = casosOp ?? CASOS;
 
   // Catálogo de la base al montar; fallback silencioso a CASOS local.
@@ -185,7 +187,6 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     try {
       if (fase === 'documento') { await generarDesdeMotor(); return; }
       if (fase === 'poliza' && cuadra) { await guardar(); return; }
-      if (fase === 'detective') { setFase('balanza'); return; }
       setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
     } finally {
       setPilotoBusy(false);
@@ -284,6 +285,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }, [lineas]);
 
   const cuadra = lineas.length > 0 && erroresLinea.length === 0 && totales.dif <= 0.01;
+  // El piloto se abre SOLO cuando descuadra o el documento cambió
+  // (colapsado no ayuda al atorado).
+  const pilotoPideAyuda = (lineas.length > 0 && !cuadra) || desactualizadas;
 
   async function generarDesdeMotor() {
     setMensajes([]);
@@ -423,24 +427,27 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           <div style={{ fontSize: 11, color: '#475569' }}>Casos, semillas y cálculo van por rutas públicas. Tu avance vive solo en esta sesión: nada se guarda en el servidor.</div>
         </div>
       )}
-      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} />
 
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
-          <div><span className="stat-value">${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
-          <div><span className="stat-value">${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
-          <div><span className="stat-value" style={{ color: totales.dif <= 0.01 ? '#059669' : '#dc2626' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
-          <div><span className="stat-value">{lineas.length}</span><div className="stat-label">Líneas</div></div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
+          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
+          {lineas.length > 0 && totales.dif <= 0.01
+            ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Cuadra</span>
+            : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Falta ${fmt(lineas.length > 0 ? totales.dif : 0)}</span>}
+          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
+          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{lineas.length}</span><div className="stat-label">Líneas</div></div>
         </div>
       </div>
 
-      <div data-tour="poliza-fases" style={{ display: 'flex', gap: 8, margin: '12px 0', flexWrap: 'wrap' }}>
+      <div data-tour="poliza-fases" style={{ display: 'flex', gap: 8, margin: '12px 0', flexWrap: 'wrap', alignItems: 'center' }}>
         {FASES.map(f => (
           <button key={f.id} onClick={() => setFase(f.id)} className={`tab-btn ${fase === f.id ? 'active' : ''}`} title={f.detalle}>{f.titulo}</button>
         ))}
       </div>
+      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} etiquetaTrigger="🧭 Guíame" />
 
       <details className="theory-box" style={{ padding: '6px 10px' }}>
         <summary className="theory-box-title" style={{ cursor: 'pointer', fontWeight: 700 }}>📚 Puente teórico (tócalo para ver)</summary>
@@ -490,7 +497,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <label style={{ fontSize: 11 }}>Total<input value={cfdi.total} onChange={(e) => setCfdi({ ...cfdi, total: e.target.value })} className={campo} /></label>
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={generarDesdeMotor}>⚙ Generar líneas con el motor</button>
+            <button className="btn btn-primary" onClick={generarDesdeMotor}>✨ Crear mi póliza</button>
           </div>
           {docAvisos.length > 0 && (
             <ul style={{ fontSize: 11, color: '#92400e', marginTop: 8 }}>
@@ -515,7 +522,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={() => setFase('poliza')}>A la póliza →</button>
+            <button className="btn btn-primary" onClick={() => setFase('poliza')}>Ver mi póliza →</button>
           </div>
         </div>
         </div>
@@ -584,7 +591,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           {lineas.length === 0 && (
             <div style={{ fontSize: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, marginTop: 8 }}>
               📭 Tu póliza está vacía porque aún no generas las líneas: llegaste directo del Documento sin generar.
-              <br />Vuelve al Documento y presiona "Generar líneas con el motor", o agrega tu primera línea a mano.
+              <br />Vuelve al Documento y presiona "Crear mi póliza", o agrega tu primera línea a mano.
               <div style={{ marginTop: 6 }}>
                 <button className="btn btn-primary" style={{ fontSize: 11 }} onClick={() => setFase('documento')}>📄 Ir al Documento a generar</button>
               </div>
@@ -613,14 +620,14 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
-            {!cuadra && <button className="btn btn-secondary" onClick={() => setFase('detective')}>🕵️ Pasar a Modo detective</button>}
+            {!cuadra && <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(v => !v)}>{detectiveAbierto ? '🕵️ Cerrar detective' : '🕵️ Abrir detective'}</button>}
           </div>
         </div>
       )}
 
-      {fase === 'detective' && (
-        <div data-tour="poliza-editor" className="stat-card">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🕵️ Modo detective (solo si descuadra: investiga en 4 pasos)</div>
+      {detectiveAbierto && fase === 'poliza' && (
+        <div className="stat-card" style={{ borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🕵️ Detective (solo si descuadra: investiga en 4 pasos)</div>
           <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>Si la póliza no da 0, no se guarda. Se investiga en este orden — cada pregunta te lleva donde se revisa.</div>
           {PREGUNTAS_DETECTIVE.map((p, i) => (
             <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, marginBottom: 6, background: '#fff' }}>
@@ -638,8 +645,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             </label>
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={() => setFase('poliza')}>← Volver a la póliza</button>
-            <button className="btn btn-primary" onClick={() => setFase('balanza')}>Ver mi balanza →</button>
+            <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(false)}>← Volver a la póliza</button>
+            <button className="btn btn-primary" onClick={() => { setDetectiveAbierto(false); setFase('balanza'); }}>Ver mi balanza →</button>
           </div>
         </div>
       )}
@@ -691,16 +698,16 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             )}
           <div className="reference-box">Saldo final = debe − haber en cuentas deudoras (1/5/6/7) y al revés en acreedoras (2/3/4). Es la sección B de la balanza electrónica.</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary" onClick={() => setFase('documento')}>Nueva póliza +</button>
-            <button className="btn btn-secondary" onClick={() => setFase('detective')}>🕵️ Pasar a Modo detective</button>
+            <button className="btn btn-secondary" onClick={() => setFase('documento')}>+ Nueva póliza (luego 🎲 Practicar con otra factura)</button>
+            <button className="btn btn-secondary" onClick={() => { setFase('poliza'); setDetectiveAbierto(true); }}>🕵️ Abrir detective</button>
           </div>
         </div>
       )}
 
-      {/* R-kinder: piloto cerdito-alcancía con 2 modos */}
-      <div className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }}>
-        <div style={{ fontWeight: 700, fontSize: 12 }}>🐖 Piloto kinder (tu guía)</div>
-        <div style={{ fontSize: 11, color: '#475569' }}>Receta = CFDI · Alcancía = banco · Columpio = póliza · Apartar juguete = PPD · Llevarlo pagado = PUE.</div>
+      {/* Piloto a pedido: colapsado hasta que el alumno pide ayuda */}
+      <details className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }} open={pilotoAbierto || pilotoPideAyuda} onToggle={(e) => setPilotoAbierto((e.target as HTMLDetailsElement).open)}>
+        <summary style={{ fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>🐖 ¿Necesitas ayuda? Piloto kinder (tu guía)</summary>
+        <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Receta = CFDI · Alcancía = banco · Columpio = póliza · Apartar juguete = PPD · Llevarlo pagado = PUE.</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
           <button className={`btn ${pilotoModo === 'auto' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('auto')}>hazlo por mí</button>
           <button className={`btn ${pilotoModo === 'yo' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('yo')}>yo lo intento</button>
@@ -708,7 +715,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 {PISTA_PILOTO[fase] ?? 'Sigue la pista de tu fase.'}</div>}
         {pilotoModo === 'auto' && <button className="btn btn-primary" style={{ fontSize: 11, marginTop: 6 }} onClick={accionPiloto} disabled={pilotoBusy}>{pilotoBusy ? '⏳ Trabajando... espérame' : '▶ Haz el siguiente paso por mí'}</button>}
         {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Pista: {PISTA_PILOTO[fase] ?? 'revisa la regla de oro antes de Guardar.'}</div>}
-      </div>
+      </details>
 
       {mensajes.length > 0 && (
         <div className="stat-card" style={{ marginTop: 12 }}>

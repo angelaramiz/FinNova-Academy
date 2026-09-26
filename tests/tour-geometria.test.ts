@@ -34,6 +34,14 @@ describe('tour geometría: spotlight relativo al contenedor', () => {
   });
 });
 
+describe('tour-acción: el overlay no tapa el Sim (la tarea se puede hacer)', () => {
+  it('el fondo deja pasar clics y solo la tarjeta los captura', () => {
+    const T = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(T).toContain('pointer-events-none');
+    expect(T).toContain('pointer-events-auto');
+  });
+});
+
 describe('tour geometría: cableado en TourSim', () => {
   it('TourSim usa geometriaSpotlight con el rect de su contenedor raíz', () => {
     const T = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');

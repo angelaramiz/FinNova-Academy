@@ -14,9 +14,11 @@ interface Props {
   onNavegar?: (paso: string) => void;
   // Tour-acción: verifica si la tarea del paso i está cumplida (en vivo).
   onVerificar?: (i: number) => boolean;
+  // Una sola voz de ayuda: etiqueta del botón que inicia el tour.
+  etiquetaTrigger?: string;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
@@ -131,13 +133,13 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
         className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
         style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
       >
-        ▶ Iniciar {titulo} — tour guiado ({pasos.length} pasos)
+        ▶ {etiquetaTrigger ?? `Iniciar ${titulo} — tour guiado (${pasos.length} pasos)`}
       </button>
     );
   }
 
   return (
-    <div ref={rootRef} className="fixed inset-0 z-50">
+    <div ref={rootRef} className="fixed inset-0 z-50 pointer-events-none">
       {/* Spotlight real: el div enmarca el objetivo con fondo transparente y
         su box-shadow gigante oscurece TODO lo de afuera (agujero de luz).
         Sin fondo parejo: el contenido enmarcado queda iluminado. */}
@@ -147,7 +149,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
       />
       <div
         ref={tipRef}
-        className="fixed bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-2xl"
+        className="fixed bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-2xl pointer-events-auto"
         style={{ left: pos.l, top: pos.t, width: 'min(420px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto' }}
       >
         <div
