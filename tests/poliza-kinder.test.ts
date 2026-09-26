@@ -52,10 +52,14 @@ describe('poliza kinder: modo detective 3.5 + 601.83', () => {
   });
 });
 
-describe('poliza kinder: piloto con hazlo por mí / yo lo intento', () => {
+describe('poliza kinder: piloto guía sin hacer por ti (100% manual)', () => {
   it('el piloto ofrece ambos modos', () => {
     expect(POL).toContain('hazlo por mí');
     expect(POL).toContain('yo lo intento');
+  });
+  it('el piloto muestra receta, no ejecuta (Te muestro, tú capturas)', () => {
+    expect(POL).toContain('Te muestro, tú capturas');
+    expect(POL).not.toContain('Haz el siguiente paso por mí');
   });
 });
 
@@ -76,14 +80,14 @@ describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', (
 
 describe('poliza vacía: aviso + guía al Documento (reporte tester)', () => {
   it('avisa dentro de la póliza vacía por qué está vacía', () => {
-    expect(POL).toContain('aún no generas las líneas');
+    expect(POL).toContain('aún no agregas líneas');
   });
-  it('lleva solo al Documento a generar (botón desde la póliza vacía)', () => {
-    expect(POL).toContain('aún no generas las líneas');
+  it('lleva solo al Documento a revisar (botón desde la póliza vacía)', () => {
+    expect(POL).toContain('aún no agregas líneas');
     expect(POL).toContain("setFase('documento')");
   });
   it('explica junto al Guardar apagado qué falta', () => {
-    expect(POL).toContain('Te falta generar');
+    expect(POL).toContain('Te falta agregar');
   });
 });
 describe('tester-estudiante: lo que pidió el reporte', () => {
@@ -102,11 +106,10 @@ describe('tester-estudiante: lo que pidió el reporte', () => {
   it('al guardar avisa que el folio vive en la Balanza', () => {
     expect(POL).toContain('verás en la Balanza');
   });
-  it('el piloto hazlo-por-mí ejecuta el siguiente paso de verdad', () => {
-    expect(POL).toContain('Haz el siguiente paso por mí');
-  });
-  it('el piloto avisa mientras trabaja (no más clics muertos)', () => {
-    expect(POL).toContain('Trabajando');
+  it('el piloto hazlo-por-mí muestra receta (ya no ejecuta nada)', () => {
+    expect(POL).toContain('Te muestro, tú capturas');
+    expect(POL).not.toContain('Haz el siguiente paso por mí');
+    expect(POL).not.toContain('Trabajando');
   });
   it('el editor explica que al pagar el banco va en HABER aunque su casa sea DEBE', () => {
     expect(POL).toContain('aunque su casa sea DEBE');
@@ -145,16 +148,20 @@ describe('tour-acción: cada paso pide hacer algo y verifica antes de Siguiente'
   });
 });
 
-describe('progresión real: lo del paso 1 manda en el 2 y 3 (el error se propaga)', () => {
-  it('las líneas llevan la firma del documento que las generó', () => {
-    expect(POL).toContain('firmaLineas');
+describe('práctica manual: el alumno captura, el motor solo valida', () => {
+  it('sin firma ni autogenerado (nada de Crear/Regenerar)', () => {
+    expect(POL).not.toContain('firmaLineas');
+    expect(POL).not.toContain('Crear mi póliza');
+    expect(POL).not.toContain('Regenerar líneas');
+    expect(POL).not.toContain('generarDesdeMotor');
   });
-  it('si cambias el documento, las líneas se marcan desactualizadas y Guardar se bloquea', () => {
-    expect(POL).toContain('desactualizadas');
-    expect(POL).toContain('Regenera');
+  it('la entrada es Agregar asiento + buscador por nombre', () => {
+    expect(POL).toContain('Agregar asiento');
+    expect(POL).toContain('buscarCuentasFront');
   });
-  it('el editor también genera (regenerar en sitio, sin volver atrás)', () => {
-    expect(POL).toContain('Regenerar líneas');
+  it('Guardar valida cuadre + catálogo (partida doble manda)', () => {
+    expect(POL).toContain('Descuadrada por');
+    expect(POL).toContain('no existe en el Anexo 24');
   });
 });
 
@@ -167,8 +174,9 @@ describe('compacto: menos scroll, misma info', () => {
     expect(POL).toContain('Lo que dice el papel');
     expect(POL).toContain('Lo que dice la alcancía');
   });
-  it('un solo botón creador (adiós A la póliza duplicado)', () => {
-    expect(POL).toContain('Crear mi póliza');
+  it('un solo botón manual (adiós Crear duplicado)', () => {
+    expect(POL).toContain('Agregar asiento');
+    expect(POL).not.toContain('Crear mi póliza');
     expect((POL.match(/A la póliza →/g) || []).length).toBe(0);
   });
   it('el hero conserva las 4 stats (no se pierde info)', () => {
@@ -179,10 +187,11 @@ describe('compacto: menos scroll, misma info', () => {
 });
 
 describe('rutas públicas: el front usa /pub sin credenciales (guardar sigue con auth)', () => {
-  it('casos, semilla y generar van por /pub (catálogo vive en backend)', () => {
-    for (const s of ['/api/sim/polizas/pub/casos', '/api/sim/polizas/pub/semilla', '/api/sim/polizas/pub/generar']) {
+  it('casos y semilla van por /pub (generar es solo backend: el front captura a mano)', () => {
+    for (const s of ['/api/sim/polizas/pub/casos', '/api/sim/polizas/pub/semilla']) {
       expect(POL).toContain(s);
     }
+    expect(POL).not.toContain('/api/sim/polizas/pub/generar');
   });
   it('guardar sigue en ruta con auth (escribe a tu nombre)', () => {
     expect(POL).toContain("'/api/sim/polizas/guardar'");
@@ -229,9 +238,7 @@ describe('tester final: ayuda visible cuando se necesita', () => {
   it('el piloto se abre solo cuando descuadra (colapsado no ayuda)', () => {
     expect(POL).toContain('pilotoAbierto');
     expect(POL).toContain('onToggle');
-  });
-  it('el piloto también se abre si el documento cambió (líneas desactualizadas)', () => {
-    expect(POL).toContain('|| desactualizadas');
+    expect(POL).toContain('pilotoPideAyuda');
   });
   it('la balanza nombra el botón 🎲 igual que el paso 1', () => {
     expect(POL).toContain('luego 🎲 Practicar con otra factura');

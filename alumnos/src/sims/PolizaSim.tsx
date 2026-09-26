@@ -100,7 +100,7 @@ const GLOSARIO: [string, string][] = [
 
 // Pista del piloto según la fase (modo "yo lo intento").
 const PISTA_PILOTO: Record<string, string> = {
-  documento: 'Compara papel vs alcancía y revisa el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco. Toca mi botón y genero las líneas por ti.',
+  documento: 'Compara papel vs alcancía y revisa el veredicto: verde ✅ u azul (PPD) y puedes seguir; rojo 🛑 y no toques el banco. Luego captura tus líneas a mano en el paso 2.',
   poliza: 'Si el columpio está parejo, presiona Guardar (o mi botón y guardo por ti).',
   detective: 'Responde las 4 preguntas en orden; cada una te lleva donde se revisa.',
   balanza: 'Ya terminamos: tu folio vive aquí. Pide otra factura para practicar.',
@@ -132,11 +132,11 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [folio, setFolio] = useState<string | null>(null);
   const [guardadas, setGuardadas] = useState<{ agrupador: string; debe: number; haber: number }[]>([]);
   const [openLinea, setOpenLinea] = useState<number | null>(null);
+  const [openAgr, setOpenAgr] = useState<number | null>(null);
   const [declara60183, setDeclara60183] = useState(false);
   const [pilotoModo, setPilotoModo] = useState<'nadie' | 'auto' | 'yo'>('nadie');
   const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
   const [usadas, setUsadas] = useState<string[]>(leerUsadas);
-  const [pilotoBusy, setPilotoBusy] = useState(false);
   const [pilotoAbierto, setPilotoAbierto] = useState(false);
   // Detective como tarjeta dentro del paso 2 (no es tab: aparece al pedirla).
   const [detectiveAbierto, setDetectiveAbierto] = useState(false);
@@ -179,19 +179,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     }
   }
 
-  // Piloto que SÍ actúa: ejecuta el siguiente paso según la fase.
-  // Con estado Trabajando: el primer clic siempre reacciona (hallazgo tester).
-  async function accionPiloto() {
-    if (pilotoBusy) return;
-    setPilotoBusy(true);
-    try {
-      if (fase === 'documento') { await generarDesdeMotor(); return; }
-      if (fase === 'poliza' && cuadra) { await guardar(); return; }
-      setMensajes((m) => [...m, '🐖 Aquí te toca a ti: presiona "yo lo intento" y sigue la pista.']);
-    } finally {
-      setPilotoBusy(false);
-    }
-  }
+  // Piloto guía (100% manual): muestra la receta, nunca captura por ti.
 
   function cargarCaso(id: string, m?: Record<string, CasoOp>) {
     const c = (m ?? casosOp ?? CASOS)[id];
@@ -200,10 +188,34 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     setCfdi({ ...c.cfdi });
     setEdo({ ...c.edo });
     setLineas([]);
-    setFirmaLineas(null);
     setNotas(`${c.cfdi.uuid}, ${c.cfdi.producto}.`);
     setMensajes([]);
     setFolio(null);
+  }
+
+  // Receta del caso (guía, no ejecuta): el alumno captura a mano.
+  function recetaCaso(): string[] {
+    const f = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString('es-MX');
+    const sub = num(cfdi.subtotal) || 0;
+    const iva = num(cfdi.iva16) || 0;
+    const isr = num(cfdi.isrRet) || 0;
+    const tot = num(cfdi.total) || 0;
+    const esIngreso = /ventas?|ingresos?|aportaci[oó]n|capital/i.test(cfdi.producto || '');
+    const pasos: string[] = [];
+    if (esIngreso) {
+      const banco = cfdi.metodo === 'PPD' ? 'clientes (105-01)' : 'bancos (102-01-002)';
+      pasos.push(`Línea 1: escribe ${banco} al DEBE $${f(tot)}`);
+      pasos.push(`Línea 2: escribe tu cuenta de ingreso al HABER $${f(sub)}`);
+      if (iva > 0) pasos.push(`Línea 3: escribe IVA trasladado (208-01) al HABER $${f(iva)}`);
+    } else {
+      pasos.push(`Línea 1: escribe tu cuenta de gasto al DEBE $${f(sub)}`);
+      if (iva > 0) pasos.push(`Línea 2: escribe IVA acreditable (118-01) al DEBE $${f(iva)}`);
+      if (isr > 0) pasos.push(`Línea de ISR retenido (216-03) al HABER $${f(isr)}`);
+      const contra = cfdi.metodo === 'PPD' ? 'proveedores (201-01)' : 'bancos (102-01-002)';
+      pasos.push(`Última línea: escribe ${contra} al HABER $${f(tot)}`);
+    }
+    pasos.push('Revisa que DEBE = HABER y guarda. El motor solo valida, no captura por ti.');
+    return pasos;
   }
 
   const pagoConfirmado = useMemo(() => {
@@ -213,12 +225,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     return Math.abs(t - c) <= 0.01;
   }, [edo, cfdi.total]);
 
-  // ── Progresión real: las líneas llevan la firma del documento ──
-  // Si cambias el paso 1 tras generar, las líneas quedan desactualizadas
-  // (el error se propaga, no se autocorrige) y Guardar se bloquea.
-  const firmaDoc = JSON.stringify([cfdi, edo]);
-  const [firmaLineas, setFirmaLineas] = useState<string | null>(null);
-  const desactualizadas = firmaLineas !== null && lineas.length > 0 && firmaLineas !== firmaDoc;
+  // Práctica 100% manual: el alumno captura, el motor solo valida al guardar.
+  // (Antes el Sim generaba las líneas solo; ahora es simulador, no vitrina.)
 
   // Tour-acción: verifica la tarea de cada paso del piloto (en vivo).
   function verificarPasoTour(i: number): boolean {
@@ -231,7 +239,12 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }
 
   function resolverLinea(l: Linea): string | null {
-    if (!l.cuenta.trim()) return 'Vacía: escribe el nombre ("bancos", "renta") o el código (601.45). Usa el buscador de la línea.';
+    if (!l.cuenta.trim() && !(l.agrupador ?? '').trim()) return 'Vacía: escribe el nombre ("bancos", "renta") o el código (601.45) en cuenta o agrupador. Usa el buscador de la línea.';
+    if ((l.agrupador ?? '').trim()) {
+      const cod = (l.agrupador ?? '').trim().replace(/[-_\s]+/g, '.');
+      if (!agrupadorDe(cod)) return `El agrupador ${l.agrupador} no existe en el Anexo 24: búscalo por clave (601.48) o por nombre (combustible).`;
+      return null;
+    }
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     if (interna) return null;
     if (agrupadorDe(l.cuenta.trim())) return null;
@@ -249,7 +262,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       const colision = codigo === '601.83'
         ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
         : null;
-      return { texto: `${codigo} · ${nombre}`, naturaleza, colision };
+      return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
     }
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
@@ -260,7 +273,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     const colision = codigo === '601.83'
       ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
       : null;
-    return { texto: `${codigo} · ${nombre}`, naturaleza, colision };
+    return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
   }
 
   const totales = useMemo(() => {
@@ -285,42 +298,16 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }, [lineas]);
 
   const cuadra = lineas.length > 0 && erroresLinea.length === 0 && totales.dif <= 0.01;
-  // El piloto se abre SOLO cuando descuadra o el documento cambió
-  // (colapsado no ayuda al atorado).
-  const pilotoPideAyuda = (lineas.length > 0 && !cuadra) || desactualizadas;
-
-  async function generarDesdeMotor() {
-    setMensajes([]);
-    const body = {
-      cfdi: {
-        rfc: cfdi.rfc, emisor: cfdi.emisor, fecha: cfdi.fecha, uuid: cfdi.uuid, metodo: cfdi.metodo,
-        producto: cfdi.producto, moneda: cfdi.moneda || 'MXN',
-        subtotal: num(cfdi.subtotal) || 0, iva16: num(cfdi.iva16) || 0, iva8: 0,
-        ivaRet: 0, isrRet: num(cfdi.isrRet) || 0, total: num(cfdi.total) || 0,
-      },
-      edoCta: edo.fecha ? [{ fecha: edo.fecha, concepto: edo.concepto, totalPagado: num(edo.totalPagado) || 0, banco: edo.banco }] : [],
-    };
-    try {
-      const r = await apiFetch<{ poliza: { lineas: { cuentaInterna: string; agrupador: string; descripcion: string; debe: number; haber: number }[] } | null; errores: { mensaje: string; porQue: string }[] }>('/api/sim/polizas/pub/generar', { method: 'POST', body: JSON.stringify(body) });
-      if (r.poliza) {
-        setLineas(r.poliza.lineas.map(l => ({ id: seqId++, cuenta: l.cuentaInterna, agrupador: l.agrupador, debe: l.debe ? String(l.debe) : '', haber: l.haber ? String(l.haber) : '' })));
-        setFirmaLineas(JSON.stringify([cfdi, edo]));
-        setMensajes([`✅ Motor: póliza generada (${r.poliza.lineas.length} líneas). Revísala antes de guardar.`]);
-        setFase('poliza');
-      } else {
-        setMensajes(['❌ El motor rechazó el documento:', ...r.errores.map(e => `${e.mensaje} ${e.porQue}`)]);
-      }
-    } catch {
-      setMensajes(['⚠ Sin conexión al motor: captura las líneas a mano con el catálogo (el cuadre local sigue validando).']);
-    }
-  }
+  // El piloto se abre SOLO cuando descuadra (colapsado no ayuda al atorado).
+  const pilotoPideAyuda = lineas.length > 0 && !cuadra;
 
   async function guardar() {
-    if (!cuadra || desactualizadas) return;
+    if (!cuadra) return;
     const lineasOk = lineas.map(l => {
+      // El agrupador que el alumno fijó manda; si no, equivalencia de su cuenta.
+      const codAgr = (l.agrupador ?? '').trim().replace(/[-_\s]+/g, '.');
       const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
-      // El agrupador del motor manda; si el alumno editó a mano, equivalencia.
-      const agr = l.agrupador ?? (interna ? interna.codigo : l.cuenta.trim());
+      const agr = (codAgr && agrupadorDe(codAgr)) ? codAgr : (interna ? interna.codigo : l.cuenta.trim());
       return { cuentaInterna: l.cuenta.trim(), agrupador: agr, descripcion: agrupadorDe(agr)?.nombre ?? (interna ?? agrupadorDe(agr))?.nombre ?? l.cuenta.trim(), debe: num(l.debe) || 0, haber: num(l.haber) || 0 };
     });
     // El tipo lo manda el documento, no el formulario: PUE conciliado =
@@ -522,13 +509,13 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                   ? <span className="status-badge status-ok">✓ Pago confirmado: CFDI ${fmt(num(cfdi.total) || 0)} = banco ${fmt(num(edo.totalPagado) || 0)} → póliza de EGRESOS</span>
                   : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
               </div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary" onClick={() => setFase('poliza')}>Ver mi póliza →</button>
-              </div>
+          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => setFase('poliza')}>✍️ Capturar mi póliza a mano →</button>
+          </div>
             </div>
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={generarDesdeMotor}>✨ Crear mi póliza</button>
+            <button className="btn btn-primary" onClick={() => setFase('poliza')}>✏️ Capturar mi póliza a mano →</button>
           </div>
           {docAvisos.length > 0 && (
             <ul style={{ fontSize: 11, color: '#92400e', marginTop: 8 }}>
@@ -560,15 +547,16 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               {lineas.map((l, i) => {
                 const et = etiquetaLinea(l);
                 const sug = openLinea === l.id && l.cuenta.trim().length >= 1 ? buscarCuentasFront(l.cuenta.trim()) : [];
+                const sugAgr = openAgr === l.id && (l.agrupador ?? '').trim().length >= 1 ? buscarCuentasFront((l.agrupador ?? '').trim()) : [];
                 return (
                   <tr key={l.id}>
                     <td style={{ position: 'relative' }}>
-                      <input value={l.cuenta} onFocus={() => setOpenLinea(l.id)} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value, agrupador: undefined } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
+                      <input value={l.cuenta} onFocus={() => { setOpenLinea(l.id); setOpenAgr(null); }} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
                       {sug.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
                           {sug.map(s => (
-                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: undefined } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
-                              <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '→ DEBE' : '→ HABER'}</span>
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
+                              <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '(deudora)' : '(acreedora)'}</span>
                               <br /><span style={{ color: '#1e40af' }}>↳ registra {s.cuentaInternaSugerida} · [Usar]</span>
                               {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
                             </button>
@@ -576,9 +564,24 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                         </div>
                       )}
                     </td>
+                    <td style={{ position: 'relative', fontSize: 11 }}>
+                      <input value={l.agrupador ?? ''} onFocus={() => { setOpenAgr(l.id); setOpenLinea(null); }} onBlur={() => setTimeout(() => setOpenAgr(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, agrupador: e.target.value } : x)); setOpenAgr(l.id); }} className={campo} placeholder="601.48, combustible…" title="Agrupador SAT: escríbelo por clave (601.48) o por nombre (combustible) y elige" />
+                      {sugAgr.length > 0 && (
+                        <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
+                          {sugAgr.map(s => (
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setOpenAgr(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Fija ${s.agrupador} y registra ${s.cuentaInternaSugerida}`}>
+                              <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '(deudora)' : '(acreedora)'}</span>
+                              <br /><span style={{ color: '#1e40af' }}>↳ fija {s.agrupador} · [Usar]</span>
+                              {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ color: '#1e40af', marginTop: 2 }}>{et.texto}</div>
+                      {et.colision && <div style={{ color: '#991b1b' }}>{et.colision}</div>}
+                    </td>
                     <td style={{ fontSize: 11, color: '#1e40af' }}>
                       {et.texto}
-                      {et.naturaleza && <span style={{ color: '#64748b' }}> {et.naturaleza === 'D' ? '→ DEBE' : '→ HABER'}</span>}
                       {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
                     </td>
                     <td><input value={l.debe} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
@@ -591,19 +594,14 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           </table>
           <div style={{ marginTop: 8 }}>
             <button className="btn btn-primary" onClick={() => setLineas([...lineas, { id: seqId++, cuenta: '', debe: '', haber: '' }])}>Agregar asiento</button>
-            <button className="btn btn-secondary" style={{ marginLeft: 8 }} onClick={generarDesdeMotor} title="Regenera desde el documento actual (si lo cambiaste)">🔄 Regenerar líneas</button>
+            <button className="btn btn-secondary" style={{ marginLeft: 8 }} onClick={() => setLineas([...lineas, { id: seqId++, cuenta: '', debe: '', haber: '' }])} title="Suma otra fila a tu póliza y captúrala a mano">＋ Agregar otra fila</button>
           </div>
-          {desactualizadas && (
-            <div style={{ fontSize: 11, background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: 6, marginTop: 8 }}>
-              ⚠ Cambiaste el documento: estas líneas están desactualizadas (son de la versión anterior) y ya no valen. Lo del paso 1 manda: <button className="btn btn-primary" style={{ fontSize: 11, marginLeft: 6 }} onClick={generarDesdeMotor}>Regenera líneas</button>
-            </div>
-          )}
           {lineas.length === 0 && (
             <div style={{ fontSize: 12, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 8, marginTop: 8 }}>
-              📭 Tu póliza está vacía porque aún no generas las líneas: llegaste directo del Documento sin generar.
-              <br />Vuelve al Documento y presiona "Crear mi póliza", o agrega tu primera línea a mano.
+              📭 Tu póliza está vacía porque aún no agregas líneas: aquí se captura a mano, línea por línea.
+              <br />Usa "Agregar asiento" y el buscador (por nombre o código), o vuelve al Documento a revisar el caso.
               <div style={{ marginTop: 6 }}>
-                <button className="btn btn-primary" style={{ fontSize: 11 }} onClick={() => setFase('documento')}>📄 Ir al Documento a generar</button>
+                <button className="btn btn-primary" style={{ fontSize: 11 }} onClick={() => setFase('documento')}>📄 Ir al Documento a revisar</button>
               </div>
             </div>
           )}
@@ -625,8 +623,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
-            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra || desactualizadas} onClick={guardar} title={desactualizadas ? 'Líneas desactualizadas: regenera desde el documento' : cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta generar líneas: vuelve al Documento y genera' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
-            {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta generar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
+            <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta agregar líneas: captúralas a mano con Agregar asiento' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
+            {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta agregar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
             <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
@@ -723,7 +721,14 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           <button className={`btn ${pilotoModo === 'yo' ? 'btn-primary' : 'btn-secondary'}`} style={{ fontSize: 11 }} onClick={() => setPilotoModo('yo')}>yo lo intento</button>
         </div>
         {pilotoModo === 'auto' && <div style={{ fontSize: 11, marginTop: 6 }}>🐖 {PISTA_PILOTO[fase] ?? 'Sigue la pista de tu fase.'}</div>}
-        {pilotoModo === 'auto' && <button className="btn btn-primary" style={{ fontSize: 11, marginTop: 6 }} onClick={accionPiloto} disabled={pilotoBusy}>{pilotoBusy ? '⏳ Trabajando... espérame' : '▶ Haz el siguiente paso por mí'}</button>}
+        {pilotoModo === 'auto' && (
+          <div style={{ fontSize: 11, marginTop: 6, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 6 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>👀 Te muestro, tú capturas (receta de este caso):</div>
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {recetaCaso().map((p, i) => <li key={i}>{p}</li>)}
+            </ul>
+          </div>
+        )}
         {pilotoModo === 'yo' && <div style={{ fontSize: 11, marginTop: 6 }}>🎉 ¡Tú puedes! Pista: {PISTA_PILOTO[fase] ?? 'revisa la regla de oro antes de Guardar.'}</div>}
       </details>
 
