@@ -62,7 +62,7 @@ export default function LockScreen({ nombre, specialty, onEnter }: Props) {
 
   return (
     <div
-      className="w-full h-[calc(100vh-120px)] rounded-2xl border-2 overflow-hidden flex flex-col items-center justify-center select-none cursor-pointer"
+      className="w-full flex-1 relative rounded-2xl border-2 overflow-hidden flex flex-col items-center justify-center select-none cursor-pointer"
       style={{
         background: FONDOS[specialty],
         transition: reducido ? 'none' : 'opacity 0.3s ease',

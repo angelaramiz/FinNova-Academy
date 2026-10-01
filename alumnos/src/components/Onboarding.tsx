@@ -222,7 +222,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
   ];
 
   return (
-    <div className="w-full h-[calc(100vh-120px)] flex items-center justify-center p-6" style={{ background: colors.bg }}>
+    <div className="w-full min-h-[calc(100vh-52px)] flex items-center justify-center p-6" style={{ background: colors.bg }}>
       <div className="w-full max-w-2xl rounded-2xl border-2 shadow-2xl overflow-hidden" style={{
         borderColor: colors.border,
         background: colors.cardBg,
