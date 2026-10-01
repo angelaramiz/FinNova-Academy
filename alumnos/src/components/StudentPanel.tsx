@@ -12,7 +12,7 @@ export default function StudentPanel({ theme, profile }: StudentPanelProps) {
   const colors = themeColors[theme];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-60px)]" style={{ background: colors.bg }}>
+    <div className="flex flex-col min-h-[calc(100vh-40px)]" style={{ background: colors.bg }}>
       <div className="flex-1">
         <Suspense fallback={<div className="p-6 text-xs font-mono animate-pulse" style={{ color: colors.textMuted }}>Cargando oficina 3D…</div>}>
           <SimuladorLaboral theme={theme} profile={profile} />

@@ -73,12 +73,12 @@ function AppContent() {
     <div className="min-h-screen flex flex-col" style={{ background: colors.bg, color: colors.text }}>
       {/* Header */}
       <header className="sticky top-0 z-40 border-b-2 backdrop-blur-md" style={{ borderColor: colors.border, background: colors.cardBg }}>
-        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: colors.primary, color: '#1B2632' }}>
+        <div className="max-w-7xl mx-auto px-4 py-1 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold" style={{ background: colors.primary, color: '#1B2632' }}>
               SL
             </div>
-            <span className="text-sm font-bold font-mono tracking-tight" style={{ color: colors.text }}>
+            <span className="text-xs font-bold font-mono tracking-tight" style={{ color: colors.text }}>
               SIMULADOR LABORAL
             </span>
             <span className="text-[7px] font-mono px-1.5 py-0.5 rounded-lg border" style={{ borderColor: colors.border, color: colors.textMuted }}>
@@ -87,12 +87,12 @@ function AppContent() {
           </div>
 
           {profile && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 <img
                   src={profile.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'}
                   alt="Avatar"
-                  className="w-7 h-7 rounded-full object-cover"
+                  className="w-6 h-6 rounded-full object-cover"
                   style={{ border: `1.5px solid ${colors.border}` }}
                 />
                 <div className="hidden lg:block text-left">
@@ -102,7 +102,7 @@ function AppContent() {
                 </div>
               </div>
               <button onClick={handleLogout}
-                className="p-2 rounded-xl transition cursor-pointer"
+                className="p-1 rounded-lg transition cursor-pointer"
                 style={{ backgroundColor: isLight ? '#C9C1B1' : 'rgba(15,23,42,0.6)', border: `2px solid ${isLight ? '#1B2632' : 'rgba(30,41,59,0.8)'}`, color: isLight ? '#1B2632' : '#94a3b8' }}
                 title="Cerrar Sesión"
               >

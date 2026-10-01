@@ -1,7 +1,7 @@
 // TASK-O3 — Ventana OS genérica (sin marcas).
 // Arrastrar por la barra de título, minimizar, maximizar/restaurar, cerrar.
 // En móvil siempre maximizada. Las apps se envuelven sin reescribirse.
-import { useRef, useState, type ReactNode, type PointerEvent as RPointerEvent } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type PointerEvent as RPointerEvent } from 'react';
 import { debeMaximizar } from '../lib/bloqueo';
 
 interface Props {
@@ -16,7 +16,31 @@ interface Props {
 export default function OsWindow({ titulo, icono = '🪟', movil, onCerrar, onMinimizar, children }: Props) {
   const [max, setMax] = useState(debeMaximizar(movil));
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const raiz = useRef<HTMLDivElement>(null);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+
+  // Pantalla completa real: se pide sobre la ventana (no sobre el documento),
+  // así se ocultan el header de la app y el chrome del navegador. Si el
+  // navegador lo niega (o se sale con Esc), se cae al maximizado interno.
+  const [pantallaCompleta, setPantallaCompleta] = useState(false);
+  useEffect(() => {
+    const h = () => setPantallaCompleta(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
+  }, []);
+
+  async function alternarPantallaCompleta() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        setMax(true);
+        await raiz.current?.requestFullscreen();
+      }
+    } catch {
+      setMax((v) => !v);
+    }
+  }
 
   function empezarArrastre(e: RPointerEvent) {
     if (max || movil) return;
@@ -39,6 +63,7 @@ export default function OsWindow({ titulo, icono = '🪟', movil, onCerrar, onMi
 
   return (
     <div
+      ref={raiz}
       className="absolute flex flex-col rounded-xl border-2 overflow-hidden shadow-2xl"
       style={
         maximizada
@@ -61,8 +86,8 @@ export default function OsWindow({ titulo, icono = '🪟', movil, onCerrar, onMi
         <span className="text-[12px] font-bold font-mono text-white truncate flex-1">{titulo}</span>
         <button onClick={onMinimizar} className="w-6 h-6 rounded text-[11px] text-slate-300 hover:bg-slate-600" aria-label="Minimizar">_</button>
         {!movil && (
-          <button onClick={() => setMax((v) => !v)} className="w-6 h-6 rounded text-[11px] text-slate-300 hover:bg-slate-600" aria-label="Maximizar">
-            {max ? '❐' : '▢'}
+          <button onClick={alternarPantallaCompleta} className="w-6 h-6 rounded text-[11px] text-slate-300 hover:bg-slate-600" aria-label={pantallaCompleta ? 'Salir de pantalla completa' : 'Maximizar'}>
+            {pantallaCompleta ? '❐' : '▢'}
           </button>
         )}
         <button onClick={onCerrar} className="w-6 h-6 rounded text-[11px] text-white hover:bg-red-600" aria-label="Cerrar">✕</button>
