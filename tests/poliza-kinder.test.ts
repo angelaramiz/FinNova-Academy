@@ -8,6 +8,25 @@ const POL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'Poliza
 const TOUR = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'toursContalink.ts'), 'utf8');
 const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
 
+describe('un solo continuar: sin botón duplicado en Documento', () => {
+  it('solo un "Capturar mi póliza a mano" en todo el Sim', () => {
+    expect(POL.split('Capturar mi póliza a mano').length - 1).toBe(1);
+  });
+});
+
+describe('atajo retráctil: CFDI + banco a la vista mientras capturas (sin regresar)', () => {
+  it('pestaña "atajo" con 2 subpestañas de referencia (solo lectura)', () => {
+    expect(POL).toContain('atajo');
+    expect(POL).toContain('atajoTab');
+    expect(POL).toContain('Ver CFDI');
+    expect(POL).toContain('Ver banco');
+  });
+  it('el atajo vive en la fase póliza y es retráctil', () => {
+    expect(POL).toContain('atajoAbierto');
+    expect(POL).toContain("fase === 'poliza'");
+  });
+});
+
 describe('hero dual: con documento y sin líneas muestra conciliación útil (no $0.00)', () => {
   it('modo documento: Total CFDI + Total banco + veredicto de conciliación', () => {
     expect(POL).toContain('Total CFDI');
