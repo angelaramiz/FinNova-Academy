@@ -206,15 +206,15 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     const esIngreso = /ventas?|ingresos?|aportaci[oó]n|capital/i.test(cfdi.producto || '');
     const pasos: string[] = [];
     if (esIngreso) {
-      const banco = cfdi.metodo === 'PPD' ? 'clientes (105-01)' : 'bancos (102-01-002)';
+      const banco = cfdi.metodo === 'PPD' ? 'clientes (105.01)' : 'bancos (102.01.002)';
       pasos.push(`Línea 1: escribe ${banco} al DEBE $${f(tot)}`);
       pasos.push(`Línea 2: escribe tu cuenta de ingreso al HABER $${f(sub)}`);
-      if (iva > 0) pasos.push(`Línea 3: escribe IVA trasladado (208-01) al HABER $${f(iva)}`);
+      if (iva > 0) pasos.push(`Línea 3: escribe IVA trasladado (208.01) al HABER $${f(iva)}`);
     } else {
       pasos.push(`Línea 1: escribe tu cuenta de gasto al DEBE $${f(sub)}`);
-      if (iva > 0) pasos.push(`Línea 2: escribe IVA acreditable (118-01) al DEBE $${f(iva)}`);
-      if (isr > 0) pasos.push(`Línea de ISR retenido (216-03) al HABER $${f(isr)}`);
-      const contra = cfdi.metodo === 'PPD' ? 'proveedores (201-01)' : 'bancos (102-01-002)';
+      if (iva > 0) pasos.push(`Línea 2: escribe IVA acreditable (118.01) al DEBE $${f(iva)}`);
+      if (isr > 0) pasos.push(`Línea de ISR retenido (216.03) al HABER $${f(isr)}`);
+      const contra = cfdi.metodo === 'PPD' ? 'proveedores (201.01)' : 'bancos (102.01.002)';
       pasos.push(`Última línea: escribe ${contra} al HABER $${f(tot)}`);
     }
     pasos.push('Revisa que DEBE = HABER y guarda. El motor solo valida, no captura por ti.');
@@ -256,15 +256,15 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }
 
   function etiquetaLinea(l: Linea): { texto: string; naturaleza: 'D' | 'H' | null; colision: string | null } {
-    // El agrupador calculado por el motor manda; la equivalencia interna
-    // (601-83→601.45) solo aplica cuando el alumno escribe a mano.
+    // El agrupador calculado por el motor manda; la renta directa
+    // (601.45) solo aplica cuando el alumno escribe a mano.
     if (l.agrupador) {
       const e = agrupadorDe(l.agrupador);
       const codigo = l.agrupador;
       const nombre = e?.nombre ?? l.agrupador;
       const naturaleza: 'D' | 'H' = '234'.includes(codigo.charAt(0)) ? 'H' : 'D';
       const colision = codigo === '601.83'
-        ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
+        ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
         : null;
       return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
     }
@@ -275,7 +275,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     if (!codigo) return { texto: '—', naturaleza: null, colision: null };
     const naturaleza: 'D' | 'H' = '234'.includes(codigo.charAt(0)) ? 'H' : 'D';
     const colision = codigo === '601.83'
-      ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.'
+      ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
       : null;
     return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
   }
@@ -481,7 +481,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
 
       <details className="theory-box" style={{ padding: '6px 10px' }}>
         <summary className="theory-box-title" style={{ cursor: 'pointer', fontWeight: 700 }}>📚 Puente teórico (tócalo para ver)</summary>
-        <div className="theory-box-text">PUE pagado = egreso directo (gasto + retenciones + bancos). PPD = solo provisión (gasto + <b>119.01 IVA pendiente</b> + proveedores 201.01): el IVA acreditable 118.01 nace hasta el pago. Arrendamiento a PF retiene <b>10% ISR</b> (Art. 116 LISR). Tu cuenta interna (601-83) viaja al SAT como agrupador (601.45).</div>
+        <div className="theory-box-text">PUE pagado = egreso directo (gasto + retenciones + bancos). PPD = solo provisión (gasto + <b>119.01 IVA pendiente</b> + proveedores 201.01): el IVA acreditable 118.01 nace hasta el pago. Arrendamiento a PF retiene <b>10% ISR</b> (Art. 116 LISR). Tu cuenta de renta es 601.45: cuenta y agrupador usan el mismo código.</div>
       </details>
 
       {fase === 'documento' && (

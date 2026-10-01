@@ -183,23 +183,60 @@ export function agrupadorDe(codigo: string): AgrupadorEntry | null {
   return POR_CODIGO.get((codigo || '').trim()) ?? null;
 }
 
-/** Mapeo cuentas internas de los Sims Contalink → agrupador SAT. */
+/** Mapeo cuentas internas de los Sims Contalink → agrupador SAT. Solo punto,
+ * sin guion: la renta deducible ES 601.45 (cuenta y agrupador coinciden). */
 export const CUENTA_INTERNA_A_AGRUPADOR: Record<string, string> = {
-  '102-01-001': '102.01',
-  '102-01': '102.01',
-  '102-01-002': '102.01',
-  '1-02': '102.01',
-  '1-03': '105.01',
-  '1-06': '118.01',
-  '2-01': '201.01',
-  '2-03': '213.01',
-  '2-04': '213.03',
-  '2-08': '216.11',
-  '4-01': '401.01',
-  '5-01': '502.01',
-  '5-03': '603.82',
-  '5-04': '603.01',
-  '5-08': '601.83',
+  '102.01.001': '102.01',
+  '102.01': '102.01',
+  '102.01.002': '102.01',
+  '1.02': '102.01',
+  '1.03': '105.01',
+  '1.06': '118.01',
+  '2.01': '201.01',
+  '2.03': '213.01',
+  '2.04': '213.03',
+  '2.08': '216.11',
+  '4.01': '401.01',
+  '5.01': '502.01',
+  '5.03': '603.82',
+  '5.04': '603.01',
+  '5.08': '601.83',
+  '601.45': '601.45',
+  '601.46': '601.46',
+  '601.48': '601.48',
+  '601.49': '601.49',
+  '601.55': '601.55',
+  '601.56': '601.56',
+  '601.72': '601.72',
+  '601.34': '601.34',
+  '401.01': '401.01',
+  '301.01': '301.01',
+  '701.10': '701.10',
+  '105.01': '105.01',
+  '216.03': '216.03',
+  '211.01': '216.01',
+  '201.01': '201.01',
+  '118.01': '118.01',
+  '119.01': '119.01',
+  '208.01': '208.01',
+  '216.10': '216.10',
+  '899.04': '899.01',
+  '899': '899.01',
+  '501.01': '601.01',
+  '113': '113.01',
+  '118': '118.01',
+  '119': '119.01',
+  '207': '207.01',
+  '208': '208.01',
+  '209': '209.01',
+  '209.01': '209.01',
+  '213': '213.01',
+  '216': '216.10',
+};
+
+/** Códigos viejos con guion → su canónica con punto. Compatibilidad: resuelven
+ * (nunca caen a la trampa) pero ya no se enseñan. */
+const LEGADAS: Record<string, string> = {
   '601-83': '601.45',
   '601-45': '601.45',
   '601-46': '601.46',
@@ -212,37 +249,49 @@ export const CUENTA_INTERNA_A_AGRUPADOR: Record<string, string> = {
   '401-01': '401.01',
   '301-01': '301.01',
   '701-10': '701.10',
+  '102-01-001': '102.01.001',
+  '102-01': '102.01',
+  '102-01-002': '102.01.002',
   '105-01': '105.01',
   '216-03': '216.03',
-  '211-01': '216.01',
+  '216-10': '216.10',
+  '211-01': '211.01',
   '201-01': '201.01',
   '118-01': '118.01',
   '119-01': '119.01',
   '208-01': '208.01',
-  '216-10': '216.10',
-  '899-04': '899.01',
-  '899': '899.01',
-  '501-01': '601.01',
-  '113': '113.01',
-  '118': '118.01',
-  '119': '119.01',
-  '207': '207.01',
-  '208': '208.01',
-  '209': '209.01',
   '209-01': '209.01',
-  '213': '213.01',
-  '216': '216.10',
+  '899-04': '899.04',
+  '501-01': '501.01',
+  '1-02': '1.02',
+  '1-03': '1.03',
+  '1-06': '1.06',
+  '2-01': '2.01',
+  '2-03': '2.03',
+  '2-04': '2.04',
+  '2-08': '2.08',
+  '4-01': '4.01',
+  '5-01': '5.01',
+  '5-03': '5.03',
+  '5-04': '5.04',
+  '5-08': '5.08',
 };
+
+/** Canónica con punto de lo escrito (directa, legada o normalizada). null si no existe. */
+function canonicaInterna(query: string): string | null {
+  const q = (query || '').trim();
+  if (CUENTA_INTERNA_A_AGRUPADOR[q] !== undefined) return q;
+  if (LEGADAS[q] !== undefined) return LEGADAS[q];
+  const norm = q.replace(/[-_\s]+/g, '.');
+  return CUENTA_INTERNA_A_AGRUPADOR[norm] !== undefined ? norm : null;
+}
 
 /** Resuelve una cuenta interna del Sim a su entrada del agrupador. null si no hay mapeo. */
 export function agrupadorDeCuentaInterna(cuenta: string): AgrupadorEntry | null {
-  const key = (cuenta || '').trim();
-  const cod = CUENTA_INTERNA_A_AGRUPADOR[key]
-    ?? CUENTA_INTERNA_A_AGRUPADOR[key.replace(/[-_\s]+/g, '.')]
-    ?? null;
-  if (cod) return agrupadorDe(cod);
+  const canon = canonicaInterna(cuenta);
+  if (canon) return agrupadorDe(CUENTA_INTERNA_A_AGRUPADOR[canon]);
   // La cuenta ya es un agrupador directo (ej. 601.45).
-  return agrupadorDe(key.replace(/[-_\s]+/g, '.'));
+  return agrupadorDe((cuenta || '').trim().replace(/[-_\s]+/g, '.'));
 }
 
 /** Etiqueta corta "código · nombre" para mostrar en el Sim. '' si no existe. */
@@ -308,13 +357,13 @@ export interface ResultadoBusquedaFront {
 }
 
 const COLISIONES_FRONT: Record<string, string> = {
-  '601.83': '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601-83 → 601.45.',
+  '601.83': '⚠ 601.83 = gasto NO deducible. Tu renta deducible es 601.45 (cuenta y agrupador con el mismo código).',
 };
 
 function internaPreferenteFront(agrupador: string): string {
   const inv = Object.entries(CUENTA_INTERNA_A_AGRUPADOR).find(([, v]) => v === agrupador);
   if (inv) return inv[0];
-  return agrupador.replace(/\./g, '-');
+  return agrupador;
 }
 
 function naturalezaDeFront(agrupador: string): 'D' | 'H' {
@@ -328,11 +377,12 @@ export function buscarCuentasFront(query: string, limite = 8): ResultadoBusqueda
   const codigoLimpio = query.trim().replace(/[-_\s]+/g, '.');
   const scored = new Map<string, number>();
   const push = (agr: string, s: number) => scored.set(agr, Math.max(scored.get(agr) ?? 0, s));
-  // Código interno exacto manda (reporte tester: escribió 102-01-002 y le
+  // Código interno exacto manda (reporte tester: escribió 102.01.002 y le
   // sugirió 001): si el query ES una interna del mapa, esa va primera.
-  const internaExacta = CUENTA_INTERNA_A_AGRUPADOR[query.trim()];
-  const exactas: ResultadoBusquedaFront[] = internaExacta
-    ? [{ agrupador: internaExacta, nombre: agrupadorDe(internaExacta)?.nombre ?? internaExacta, cuentaInternaSugerida: query.trim(), score: 120, naturaleza: naturalezaDeFront(internaExacta) }]
+  // También resuelven los códigos viejos con guion (vía LEGADAS).
+  const canon = canonicaInterna(query.trim());
+  const exactas: ResultadoBusquedaFront[] = canon
+    ? [{ agrupador: CUENTA_INTERNA_A_AGRUPADOR[canon], nombre: agrupadorDe(CUENTA_INTERNA_A_AGRUPADOR[canon])?.nombre ?? CUENTA_INTERNA_A_AGRUPADOR[canon], cuentaInternaSugerida: canon, score: 120, naturaleza: naturalezaDeFront(CUENTA_INTERNA_A_AGRUPADOR[canon]) }]
     : [];
   for (const c of CATALOGO_AGRUPADOR) {
     if (c.nivel !== 2) continue;
