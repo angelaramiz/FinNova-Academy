@@ -1154,8 +1154,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [firstVisit] = useState(() => !localStorage.getItem('sim_visited'));
   const [cameraResetTrigger, setCameraResetTrigger] = useState(0);
-  // Modo inmersivo: con ventana abierta el header de plataforma se colapsa y
-  // el contenedor crece (~44px extra) para pantalla casi completa.
+  // Modo inmersivo: con ventana abierta el contenedor crece para pantalla
+  // casi completa (el header de plataforma ya es compacto: ~36px).
   const [appAbierta, setAppAbierta] = useState(false);
   useEffect(() => {
     const h = (e: Event) => setAppAbierta((e as CustomEvent<string>).detail !== 'desktop');
@@ -1426,7 +1426,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
 
   if (needsOnboarding === null) {
     return (
-      <div className="w-full h-[calc(100vh-120px)] flex items-center justify-center rounded-2xl border-2" style={{ borderColor: colors.border, background: colors.bg }}>
+      <div className="w-full min-h-[calc(100vh-52px)] flex items-center justify-center rounded-2xl border-2" style={{ borderColor: colors.border, background: colors.bg }}>
         <div className="w-10 h-10 rounded-full border-3 animate-spin" style={{ borderColor: colors.primary, borderTopColor: 'transparent', borderWidth: 3 }} />
       </div>
     );
@@ -1450,7 +1450,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   }
 
   return (
-    <div ref={containerRef} className={`w-full ${appAbierta ? 'h-[calc(100vh-76px)]' : 'h-[calc(100vh-120px)]'} relative overflow-hidden rounded-2xl border-2`} style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.15)' }}>
+    <div ref={containerRef} className={`w-full ${appAbierta ? 'min-h-[calc(100vh-20px)]' : 'min-h-[calc(100vh-52px)]'} flex flex-col relative overflow-hidden rounded-2xl border-2`} style={{ borderColor: colors.border, background: isDark ? '#0a1628' : '#E2DCD0', boxShadow: 'inset 0 0 80px rgba(0,0,0,0.15)' }}>
       {/* TASK-O1: entrada OS — bloqueo antes de la oficina */}
       {!desbloqueado && (
         <LockScreen

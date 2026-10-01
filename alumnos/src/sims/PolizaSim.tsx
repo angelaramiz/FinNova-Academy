@@ -140,6 +140,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [pilotoAbierto, setPilotoAbierto] = useState(false);
   // Detective como tarjeta dentro del paso 2 (no es tab: aparece al pedirla).
   const [detectiveAbierto, setDetectiveAbierto] = useState(false);
+  // Atajo retráctil: CFDI + banco a la vista mientras capturas (solo lectura).
+  const [atajoAbierto, setAtajoAbierto] = useState(false);
+  const [atajoTab, setAtajoTab] = useState<'cfdi' | 'edo'>('cfdi');
   const mapa = casosOp ?? CASOS;
 
   // Catálogo de la base al montar; fallback silencioso a CASOS local.
@@ -408,7 +411,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const campo = 'w-full border border-slate-300 rounded px-2 py-1 text-[12px] bg-white text-slate-800';
 
   return (
-    <div className="fade-in" style={{ color: '#1e293b' }}>
+    <div className="fade-in" style={{ color: '#1e293b', position: 'relative' }}>
       {publico && (
         <div className="stat-card" style={{ borderLeft: '4px solid #10b981', marginBottom: 12 }}>
           <div style={{ fontWeight: 700, fontSize: 13 }}>🧪 Modo prueba libre: practica sin cuenta</div>
@@ -419,15 +422,28 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
-          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
-          {lineas.length > 0 && totales.dif <= 0.01
-            ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Cuadra</span>
-            : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Falta ${fmt(lineas.length > 0 ? totales.dif : 0)}</span>}
-          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
-          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{lineas.length}</span><div className="stat-label">Líneas</div></div>
-        </div>
+        {lineas.length === 0 ? (
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(num(cfdi.total))}</span><div className="stat-label">Total CFDI</div></div>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(num(edo.totalPagado))}</span><div className="stat-label">Total banco</div></div>
+            {cfdi.metodo === 'PPD'
+              ? <span className="status-badge" style={{ fontSize: 13, background: '#dbeafe', color: '#1e40af' }}>📘 PPD · provisión sin banco</span>
+              : pagoConfirmado
+                ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Coinciden</span>
+                : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Difieren ${fmt(Math.abs(num(cfdi.total) - num(edo.totalPagado)))}</span>}
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{cfdi.metodo || '—'}</span><div className="stat-label">Tipo</div></div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
+            {totales.dif <= 0.01
+              ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Cuadra</span>
+              : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Falta ${fmt(totales.dif)}</span>}
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{lineas.length}</span><div className="stat-label">Líneas</div></div>
+          </div>
+        )}
       </div>
 
       <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '10px 12px', background: 'linear-gradient(135deg, #1e3a8a, #1e40af)' }}>
@@ -533,9 +549,6 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                   ? <span className="status-badge status-ok">✓ Pago confirmado: CFDI ${fmt(num(cfdi.total) || 0)} = banco ${fmt(num(edo.totalPagado) || 0)} → póliza de EGRESOS</span>
                   : <span className="status-badge status-warning">○ Sin pago confirmado {cfdi.metodo === 'PPD' ? '(PPD: va como PROVISIÓN a 201.01)' : '(captura el estado de cuenta o será póliza de DIARIO)'} — 📚 el banco solo se afecta si el dinero salió</span>}
               </div>
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" onClick={() => setFase('poliza')}>✍️ Capturar mi póliza a mano →</button>
-          </div>
             </div>
           </div>
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
@@ -653,6 +666,44 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
             {!cuadra && <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(v => !v)}>{detectiveAbierto ? '🕵️ Cerrar detective' : '🕵️ Abrir detective'}</button>}
+          </div>
+          {/* Atajo retráctil: CFDI + banco a la vista mientras capturas (solo lectura, sin regresar al Documento) */}
+          <div style={{ position: 'absolute', left: 0, bottom: 0, zIndex: 30, maxWidth: atajoAbierto ? 340 : 'none' }}>
+            {atajoAbierto ? (
+              <div className="stat-card" style={{ margin: 0, padding: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                  <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', fontWeight: atajoTab === 'cfdi' ? 800 : 400 }} onClick={() => setAtajoTab('cfdi')}>📄 Ver CFDI</button>
+                  <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', fontWeight: atajoTab === 'edo' ? 800 : 400 }} onClick={() => setAtajoTab('edo')}>🐖 Ver banco</button>
+                  <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', marginLeft: 'auto' }} onClick={() => setAtajoAbierto(false)} title="Esconder atajo">«</button>
+                </div>
+                {atajoTab === 'cfdi' ? (
+                  <table className="data-table" style={{ fontSize: 11 }}>
+                    <tbody>
+                      <tr><th style={{ textAlign: 'left' }}>Emisor</th><td>{cfdi.emisor || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>RFC</th><td>{cfdi.rfc || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>UUID</th><td style={{ wordBreak: 'break-all' }}>{cfdi.uuid || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Método</th><td>{cfdi.metodo || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Subtotal</th><td>${fmt(num(cfdi.subtotal))}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>IVA 16%</th><td>${fmt(num(cfdi.iva16))}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>ISR ret.</th><td>${fmt(num(cfdi.isrRet))}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Total</th><td><b>${fmt(num(cfdi.total))}</b></td></tr>
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="data-table" style={{ fontSize: 11 }}>
+                    <tbody>
+                      <tr><th style={{ textAlign: 'left' }}>Fecha pago</th><td>{edo.fecha || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Concepto</th><td>{edo.concepto || '—'}</td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Total pagado</th><td><b>${fmt(num(edo.totalPagado))}</b></td></tr>
+                      <tr><th style={{ textAlign: 'left' }}>Banco</th><td>{edo.banco || '—'}</td></tr>
+                    </tbody>
+                  </table>
+                )}
+                <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>Solo lectura: para corregir ve al Documento.</div>
+              </div>
+            ) : (
+              <button className="btn btn-primary" style={{ fontSize: 11, padding: '6px 10px', borderRadius: '0 8px 0 0' }} onClick={() => setAtajoAbierto(true)} title="Abrir atajo: CFDI y banco a la vista">⚡ atajo »</button>
+            )}
           </div>
         </div>
       )}
