@@ -8,6 +8,19 @@ const POL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'Poliza
 const TOUR = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'toursContalink.ts'), 'utf8');
 const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
 
+describe('hero dual: con documento y sin líneas muestra conciliación útil (no $0.00)', () => {
+  it('modo documento: Total CFDI + Total banco + veredicto de conciliación', () => {
+    expect(POL).toContain('Total CFDI');
+    expect(POL).toContain('Total banco');
+    expect(POL).toContain('Coinciden');
+    expect(POL).toContain('Difieren');
+  });
+  it('el hero cambia a modo póliza al agregar la primera línea', () => {
+    expect(POL).toContain('lineas.length === 0');
+    expect(POL).toContain('Total DEBE');
+  });
+});
+
 describe('poliza kinder: fusión papel vs alcancía (1+2)', () => {
   it('rotula las 2 tablas como papel y alcancía, no "movimientos" genérico', () => {
     expect(POL).toContain('Lo que dice el papel');

@@ -419,15 +419,28 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
-          <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
-          {lineas.length > 0 && totales.dif <= 0.01
-            ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Cuadra</span>
-            : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Falta ${fmt(lineas.length > 0 ? totales.dif : 0)}</span>}
-          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
-          <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{lineas.length}</span><div className="stat-label">Líneas</div></div>
-        </div>
+        {lineas.length === 0 ? (
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(num(cfdi.total))}</span><div className="stat-label">Total CFDI</div></div>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(num(edo.totalPagado))}</span><div className="stat-label">Total banco</div></div>
+            {cfdi.metodo === 'PPD'
+              ? <span className="status-badge" style={{ fontSize: 13, background: '#dbeafe', color: '#1e40af' }}>📘 PPD · provisión sin banco</span>
+              : pagoConfirmado
+                ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Coinciden</span>
+                : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Difieren ${fmt(Math.abs(num(cfdi.total) - num(edo.totalPagado)))}</span>}
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{cfdi.metodo || '—'}</span><div className="stat-label">Tipo</div></div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.debe)}</span><div className="stat-label">Total DEBE</div></div>
+            <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(totales.haber)}</span><div className="stat-label">Total HABER</div></div>
+            {totales.dif <= 0.01
+              ? <span className="status-badge status-ok" style={{ fontSize: 13 }}>✅ Cuadra</span>
+              : <span className="status-badge status-error" style={{ fontSize: 13 }}>🔴 Falta ${fmt(totales.dif)}</span>}
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>${fmt(totales.dif)}</span><div className="stat-label">Diferencia</div></div>
+            <div><span className="stat-value" style={{ fontSize: 12, color: '#64748b' }}>{lineas.length}</span><div className="stat-label">Líneas</div></div>
+          </div>
+        )}
       </div>
 
       <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '10px 12px', background: 'linear-gradient(135deg, #1e3a8a, #1e40af)' }}>
