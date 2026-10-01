@@ -16,11 +16,11 @@ describe('satCatalog: catálogo operativo Anexo 24', () => {
     expect(auditSatCatalog()).toEqual([]);
   });
 
-  it('caso real del curso: interna → agrupador', () => {
-    expect(resolverAgrupador('601-83')).toBe('601.45');
-    expect(resolverAgrupador('102-01-002')).toBe('102.01');
-    expect(resolverAgrupador('216-03')).toBe('216.03');
+  it('caso real del curso: interna → agrupador (solo punto)', () => {
     expect(resolverAgrupador('601.45')).toBe('601.45');
+    expect(resolverAgrupador('102.01.002')).toBe('102.01');
+    expect(resolverAgrupador('216.03')).toBe('216.03');
+    expect(resolverAgrupador('601-83')).toBe('601.45');
     expect(resolverAgrupador('cuenta-fantasma')).toBeNull();
   });
 
@@ -252,6 +252,6 @@ describe('módulo mod-polizas (carpeta Contalink)', () => {
     const mal = evaluatePracticaPrueba('mod-polizas', [1, 0, 0, 0, 0]);
     expect(mal.aprobado).toBe(false);
     expect(mal.resultados[0].explicacion).toContain('63,810');
-    expect(mal.resultados[4].explicacion).toContain('601-83');
+    expect(mal.resultados[4].explicacion).toContain('601.45');
   });
 });

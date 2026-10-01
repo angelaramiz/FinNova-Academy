@@ -23,7 +23,7 @@ describe('buscarCuentas (motor)', () => {
   it('"bancos" trae 102.01 primero con su interna sugerida', () => {
     const r = buscarCuentas('bancos');
     expect(r[0].agrupador).toBe('102.01');
-    expect(r[0].cuentaInternaSugerida).toBe('102-01-002');
+    expect(r[0].cuentaInternaSugerida).toBe('102.01.002');
   });
 
   it('"renta" propone PF y PM (desambigua, no adivina)', () => {
@@ -43,11 +43,11 @@ describe('buscarCuentas (motor)', () => {
     expect(r.map(x => x.agrupador)).toContain('216.03');
   });
 
-  it('601.83 avisa colisión con 601-83', () => {
+  it('601.83 avisa colisión: la renta deducible es 601.45', () => {
     const r = buscarCuentas('no deducible');
     const hit = r.find(x => x.agrupador === '601.83')!;
     expect(hit).toBeTruthy();
-    expect(hit.avisoColision).toContain('601-83');
+    expect(hit.avisoColision).toContain('601.45');
   });
 
   it('vacío no devuelve nada', () => {
@@ -73,11 +73,16 @@ describe('desambiguarArrendamiento (RFC manda)', () => {
   });
 });
 
-describe('código exacto manda (reporte tester: escribió 102-01-002 y guardó 001)', () => {
+describe('código exacto manda (reporte tester: escribió 102.01.002 y guardó 001)', () => {
   it('si escribes la interna exacta, esa se sugiere (no la primera del mapa)', () => {
+    const r = buscarCuentasFront('102.01.002');
+    expect(r[0].agrupador).toBe('102.01');
+    expect(r[0].cuentaInternaSugerida).toBe('102.01.002');
+  });
+  it('el guion viejo sigue resolviendo a la canónica con punto', () => {
     const r = buscarCuentasFront('102-01-002');
     expect(r[0].agrupador).toBe('102.01');
-    expect(r[0].cuentaInternaSugerida).toBe('102-01-002');
+    expect(r[0].cuentaInternaSugerida).toBe('102.01.002');
   });
 });
 

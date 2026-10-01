@@ -105,7 +105,7 @@ describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', (
     expect(POL).toContain('Otra semilla');
     expect(POL).toContain('poliza_semillas_usadas');
   });
-  it('al guardar usa el agrupador calculado por el motor (no la equivalencia 601-83→601.45)', () => {
+  it('al guardar usa el agrupador calculado por el motor (no la renta directa 601.45 escrita a mano)', () => {
     expect(POL).toContain('l.agrupador ??');
   });
 });
