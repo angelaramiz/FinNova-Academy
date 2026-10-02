@@ -50,6 +50,10 @@ describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo e
   it('etiqueta nombre-primero (código después)', () => {
     expect(POL).toContain('${nombre} (${codigo}');
   });
+  it('la celda agrupador muestra insignia con SOLO el nombre (el código vive por dentro)', () => {
+    expect(POL).toContain('nombre: string | null');
+    expect(POL).toContain('{et.nombre}');
+  });
 });
 
 describe('poliza kinder: fusión papel vs alcancía (1+2)', () => {
