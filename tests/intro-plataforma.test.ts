@@ -13,6 +13,13 @@ describe('intro a la plataforma (post-protector, genérica)', () => {
     expect(INTRO).toContain('onEntrar');
     expect(INTRO).toContain('Entrar');
   });
+  it('presentación profesional con marca y pasos numerados', () => {
+    const INTRO = readFileSync(RUTA, 'utf8');
+    expect(INTRO).toContain('SIMULADOR LABORAL');
+    expect(INTRO).toContain('Entrar');
+    expect(INTRO).toContain('1');
+    expect(INTRO).toContain('Sin instalar nada');
+  });
   it('cero jerga de especialidad (ni conta ni data)', () => {
     const INTRO = readFileSync(RUTA, 'utf8');
     for (const w of ['CFDI', 'poliza', 'Póliza', 'dbt', 'mina', 'Débito', 'SAT']) {
