@@ -416,7 +416,12 @@ elative + 	askDrawerOpen, lista Pasos de este ejercicio 1./2./3. + Pendientes de
 
 **Regla Contalink vs contabilidad (13-sep-2026, orden Angel)**: la especialidad practicas es catalogo de plataformas. contabilidad usa workflows genericos (invoice/payroll/spreadsheet dual). contalink NUNCA usa la hoja generica: cada submodulo (conciliacion, auditoria, nomina, diot) lleva su propio Sim dedicado que recrea la pantalla y flujo reales de Contalink (ej. DIOT: metricas -> tabla de operaciones -> campos clave -> descarga -> presentar -> revision -> examen + certificado, segun contex_Font/diot.html y los webinars). El paso tarea real abre el Sim, no un workflow generico. Los goldens de los videos se validan dentro de cada Sim.
 
-**Deploy front manual (15-sep-2026, orden Angel)**: el front NO hace auto-deploy; cada push a `main` requiere disparar el hook manual. URL completa guardada en `.env` local (gitignored) como `RENDER_FRONT_HOOK` — NUNCA commitear la key (regla P0). Servicio front: `srv-d8qg829194ac73dom990`. Disparo: `Invoke-RestMethod -Method Post -Uri $env:RENDER_FRONT_HOOK`.
+**Deploy front manual (15-sep-2026, orden Angel)**: el front NO hace auto-deploy; cada push a `main`
+requiere disparar el hook manual. URL completa guardada en `.env` local (gitignored) como `RENDER_FRONT_HOOK` — NUNCA
+commitear la key (regla P0). Servicio front: `srv-d8qg829194ac73dom990`. Disparo: `Invoke-RestMethod -Method Post -Uri
+$env:RENDER_FRONT_HOOK`.
+
+**Regla de flujo fix-vs-feature (03-oct-2026, orden Angel)**: resolver problemas/fallos/bugs/errores → al comprobar que funciona, subir DIRECTO a `main` + hook sin preguntar. Nuevas implementaciones/cosas nuevas → preguntar antes de mergear (rama + aprobación).
 
 **Módulos con carpetas OS dinámicas (15-sep-2026)**: `PracticasModules.tsx` abre 2 carpetas OS (Prácticas Contabilidad / Contalink) con tarjetas por práctica; después dinámicas: nueva plataforma en la API aparece sola sin tocar el frontend.
 
