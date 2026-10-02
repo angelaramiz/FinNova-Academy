@@ -46,6 +46,17 @@ describe('hero dual: con documento y sin líneas muestra conciliación útil (no
   });
 });
 
+describe('agrupador buscable por nombre desde la insignia (clave y texto son lo mismo)', () => {
+  it('borrador de búsqueda separado del código guardado (tocar ✎ abre búsqueda limpia)', () => {
+    expect(POL).toContain('agrDraft');
+    expect(POL).toContain('setAgrDraft');
+  });
+  it('el buscador sugiere por nombre (placeholder lo enseña)', () => {
+    expect(POL).toContain('combustible');
+    expect(POL).toContain('buscarCuentasFront');
+  });
+});
+
 describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo el número', () => {
   it('etiqueta nombre-primero (código después)', () => {
     expect(POL).toContain('${nombre} (${codigo}');

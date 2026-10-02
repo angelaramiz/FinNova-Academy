@@ -133,6 +133,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [guardadas, setGuardadas] = useState<{ agrupador: string; debe: number; haber: number }[]>([]);
   const [openLinea, setOpenLinea] = useState<number | null>(null);
   const [openAgr, setOpenAgr] = useState<number | null>(null);
+  // Borrador de búsqueda del agrupador: separado del código guardado para
+  // buscar por nombre (clave y texto son lo mismo) sin borrar lo elegido.
+  const [agrDraft, setAgrDraft] = useState<Record<number, string>>({});
   const [declara60183, setDeclara60183] = useState(false);
   const [pilotoModo, setPilotoModo] = useState<'nadie' | 'auto' | 'yo'>('nadie');
   const [casosOp, setCasosOp] = useState<Record<string, CasoOp> | null>(null);
@@ -586,7 +589,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               {lineas.map((l, i) => {
                 const et = etiquetaLinea(l);
                 const sug = openLinea === l.id && l.cuenta.trim().length >= 1 ? buscarCuentasFront(l.cuenta.trim()) : [];
-                const sugAgr = openAgr === l.id && (l.agrupador ?? '').trim().length >= 1 ? buscarCuentasFront((l.agrupador ?? '').trim()) : [];
+                const draftAgr = agrDraft[l.id] ?? l.agrupador ?? '';
+                const sugAgr = openAgr === l.id && draftAgr.trim().length >= 1 ? buscarCuentasFront(draftAgr.trim()) : [];
                 return (
                   <tr key={l.id}>
                     <td style={{ position: 'relative' }}>
@@ -605,16 +609,16 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                     </td>
                     <td style={{ position: 'relative', fontSize: 11 }}>
                       {et.nombre && openAgr !== l.id ? (
-                        <button onClick={() => setOpenAgr(l.id)} title={`Agrupador ${l.agrupador}: toca para cambiar`} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontWeight: 700, color: '#1e40af', cursor: 'pointer' }}>
+                        <button onClick={() => { setAgrDraft((a) => ({ ...a, [l.id]: '' })); setOpenAgr(l.id); }} title={`Agrupador ${l.agrupador}: toca para buscar por nombre`} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontWeight: 700, color: '#1e40af', cursor: 'pointer' }}>
                           {et.nombre} <span style={{ fontWeight: 400, color: '#64748b' }}>✎</span>
                         </button>
                       ) : (
-                      <input value={l.agrupador ?? ''} onFocus={() => { setOpenAgr(l.id); setOpenLinea(null); }} onBlur={() => setTimeout(() => setOpenAgr(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, agrupador: e.target.value } : x)); setOpenAgr(l.id); }} className={campo} placeholder="601.48, combustible…" title="Agrupador SAT: escríbelo por clave (601.48) o por nombre (combustible) y elige" />
+                      <input value={draftAgr} onFocus={() => { setOpenAgr(l.id); setOpenLinea(null); }} onBlur={() => setTimeout(() => { setOpenAgr(o => o === l.id ? null : o); setAgrDraft((a) => { const c = { ...a }; delete c[l.id]; return c; }); }, 150)} onChange={(e) => { setAgrDraft((a) => ({ ...a, [l.id]: e.target.value })); setOpenAgr(l.id); }} className={campo} placeholder="combustible, renta, 601.48…" title="Agrupador SAT: busca por nombre (combustible) o por clave (601.48) y elige" />
                       )}
                       {sugAgr.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
                           {sugAgr.map(s => (
-                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setOpenAgr(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Fija ${s.agrupador} y registra ${s.cuentaInternaSugerida}`}>
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setAgrDraft((a) => { const c = { ...a }; delete c[l.id]; return c; }); setOpenAgr(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Fija ${s.agrupador} y registra ${s.cuentaInternaSugerida}`}>
                               <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '(deudora)' : '(acreedora)'}</span>
                               <br /><span style={{ color: '#1e40af' }}>↳ fija {s.agrupador} · [Usar]</span>
                               {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
