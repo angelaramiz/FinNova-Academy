@@ -266,7 +266,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       const colision = codigo === '601.83'
         ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
         : null;
-      return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
+      return { texto: `${nombre} (${codigo} · ${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
     }
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
@@ -277,7 +277,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     const colision = codigo === '601.83'
       ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
       : null;
-    return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
+    return { texto: `${nombre} (${codigo} · ${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
   }
 
   const totales = useMemo(() => {
@@ -419,6 +419,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         </div>
       )}
 
+      {fase === 'balanza' && (
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
@@ -445,6 +446,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           </div>
         )}
       </div>
+      )}
 
       <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '10px 12px', background: 'linear-gradient(135deg, #1e3a8a, #1e40af)' }}>
         <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8, color: '#fff' }}>🧭 Tu camino: 3 pasos</div>
