@@ -6,6 +6,7 @@ import { apiFetch } from '../lib/api';
 import { VERSION, BUILD_HASH } from '../version';
 import Onboarding from './Onboarding';
 import LockScreen from './LockScreen';
+import IntroPlataforma from './IntroPlataforma';
 import OsDesktop from './OsDesktop';
 import { osEntryEnabled } from '../lib/bloqueo';
 import Dashboard from './Dashboard';
@@ -1148,6 +1149,8 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   // TASK-O1: bloqueo tras login/onboarding (antes de la oficina 3D).
   const [desbloqueado, setDesbloqueado] = useState(false);
+  // Intro genérica a la plataforma: tras el protector, antes del escritorio.
+  const [introVista, setIntroVista] = useState(false);
   const [evalResult, setEvalResult] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -1456,11 +1459,18 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         <LockScreen
           nombre={profile?.fullName || profile?.email || 'Practicante'}
           specialty={specialty}
-          onEnter={() => setDesbloqueado(true)}
+          onEnter={() => { setDesbloqueado(true); setIntroVista(true); }}
+        />
+      )}
+      {/* Intro genérica a la plataforma (indistinta de especialidad) */}
+      {desbloqueado && introVista && (
+        <IntroPlataforma
+          nombre={profile?.fullName || profile?.email || 'Practicante'}
+          onEntrar={() => setIntroVista(false)}
         />
       )}
       {/* TASK-O2: con flag ON se salta la escena 3D y se monta el escritorio */}
-      {desbloqueado && osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
+      {desbloqueado && !introVista && osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
         <OsDesktop
           theme={theme}
           tasks={tasks.map(t => ({ id: t.id, title: t.title, type: (t as any).taskType || (t as any).task_type, difficulty: t.difficulty, time: t.estimatedMinutes, isTrap: t.isTrap, trapId: t.trapId }))}
@@ -1470,7 +1480,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
           onSpecialtyChange={(s) => { setSpecialty(s as never); fetchJobs(); }}
         />
       )}
-      {desbloqueado && !osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
+      {desbloqueado && !introVista && !osEntryEnabled((import.meta as unknown as { env?: Record<string, string> }).env?.VITE_OS_ENTRY) && (
       <>
       {/* Top bar - SOLO en modo oficina 3D */}
       {viewMode === 'office' && (
