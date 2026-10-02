@@ -63,12 +63,15 @@ describe('tours Contalink', () => {
 
   it('pasos condicionales declaran a qué paso navegar', () => {
     for (const [id, t] of Object.entries(TOURS)) {
-      // hero/stats/fases siempre visibles; el resto navega a su tab.
+      // stats/fases y heroes siempre visibles (salvo el hero de pólizas, que
+      // solo vive en balanza); el resto navega a su tab.
       for (const p of t.pasos) {
-        const siempre = /hero|stats|fases/.test(p.selector);
+        const siempre = /stats|fases/.test(p.selector) || (p.selector.includes('hero') && p.selector !== '[data-tour="poliza-hero"]');
         if (siempre) expect(p.paso, `${id} ${p.selector}`).toBeUndefined();
         else expect(typeof p.paso, `${id} ${p.selector} sin paso`).toBe('string');
       }
     }
+    const heroPoliza = TOURS.poliza.pasos.find(p => p.selector === '[data-tour="poliza-hero"]')!;
+    expect(heroPoliza.paso).toBe('balanza');
   });
 });

@@ -27,6 +27,12 @@ describe('atajo retráctil: CFDI + banco a la vista mientras capturas (sin regre
   });
 });
 
+describe('hero al final: solo se muestra al finalizar la póliza (balanza)', () => {
+  it('el hero vive en la fase balanza, no al abrir', () => {
+    expect(POL).toMatch(/{\s*fase\s*===\s*'balanza'\s*&&\s*\(\s*<div data-tour="poliza-hero"/);
+  });
+});
+
 describe('hero dual: con documento y sin líneas muestra conciliación útil (no $0.00)', () => {
   it('modo documento: Total CFDI + Total banco + veredicto de conciliación', () => {
     expect(POL).toContain('Total CFDI');
@@ -37,6 +43,16 @@ describe('hero dual: con documento y sin líneas muestra conciliación útil (no
   it('el hero cambia a modo póliza al agregar la primera línea', () => {
     expect(POL).toContain('lineas.length === 0');
     expect(POL).toContain('Total DEBE');
+  });
+});
+
+describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo el número', () => {
+  it('etiqueta nombre-primero (código después)', () => {
+    expect(POL).toContain('${nombre} (${codigo}');
+  });
+  it('la celda agrupador muestra insignia con SOLO el nombre (el código vive por dentro)', () => {
+    expect(POL).toContain('nombre: string | null');
+    expect(POL).toContain('{et.nombre}');
   });
 });
 

@@ -162,14 +162,6 @@ export const TOUR_AUDITORIA: PasoTour[] = [
 
 export const TOUR_POLIZA: PasoTour[] = [
   {
-    selector: '[data-tour="poliza-hero"]',
-    titulo: 'Póliza de la factura',
-    descripcion: 'Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER antes de guardar.',
-    teoria: 'La póliza es el documento del Anexo 24 sección C: fecha, concepto, UUID, RFC del tercero, monto total, moneda y líneas con debe/haber.',
-    referencia: 'Anexo 24 RMF 2026 · Pólizas del periodo',
-    tarea: 'Mira los totales en $0.00: tu póliza empieza vacía. Sigue al paso 2.',
-  },
-  {
     selector: '[data-tour="poliza-doc"]',
     titulo: 'Documento fuente',
     descripcion: 'El CFDI manda: UUID, subtotal, IVA y retenciones. El caso MARCELO F trae 70900 + ISR 7090 = total 63810.',
@@ -191,7 +183,7 @@ export const TOUR_POLIZA: PasoTour[] = [
     selector: '[data-tour="poliza-editor"]',
     titulo: 'Editor multilínea',
     descripcion: 'Cuenta interna o agrupador por línea, Eliminar y Agregar asiento. Guardar se bloquea hasta que cuadre.',
-    teoria: 'Tu cuenta 601-83 viaja al SAT como agrupador 601.45. El IVA PPD va a 119.01 pendiente, no a 118.01.',
+    teoria: 'Tu cuenta 601.45 es renta deducible: cuenta y agrupador con el mismo código. El IVA PPD va a 119.01 pendiente, no a 118.01.',
     referencia: 'Póliza Contalink · Agregar asiento',
     paso: 'poliza',
     tarea: 'Revisa tus líneas: el columpio DEBE = HABER debe quedar parejo.',
@@ -213,6 +205,15 @@ export const TOUR_POLIZA: PasoTour[] = [
     referencia: 'Partida doble · Folio + UUID',
     paso: 'poliza',
     tarea: 'Presiona Guardar en la pestaña 2 y vuelve: verás tu folio.',
+  },
+  {
+    selector: '[data-tour="poliza-hero"]',
+    titulo: 'Póliza de la factura',
+    descripcion: 'Tu póliza terminada: del CFDI al asiento, conciliada contra el banco y cuadrada DEBE = HABER.',
+    teoria: 'La póliza es el documento del Anexo 24 sección C: fecha, concepto, UUID, RFC del tercero, monto total, moneda y líneas con debe/haber.',
+    referencia: 'Anexo 24 RMF 2026 · Pólizas del periodo',
+    paso: 'balanza',
+    tarea: 'Mira tu resumen final: totales, veredicto y folio. Así queda una póliza terminada.',
   },
 ];
 

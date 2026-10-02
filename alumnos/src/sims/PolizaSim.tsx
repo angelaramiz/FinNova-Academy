@@ -255,7 +255,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     return `La cuenta ${l.cuenta.trim()} no existe en el Anexo 24: sin código agrupador no va a la balanza electrónica.`;
   }
 
-  function etiquetaLinea(l: Linea): { texto: string; naturaleza: 'D' | 'H' | null; colision: string | null } {
+  function etiquetaLinea(l: Linea): { texto: string; nombre: string | null; naturaleza: 'D' | 'H' | null; colision: string | null } {
     // El agrupador calculado por el motor manda; la renta directa
     // (601.45) solo aplica cuando el alumno escribe a mano.
     if (l.agrupador) {
@@ -266,18 +266,18 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       const colision = codigo === '601.83'
         ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
         : null;
-      return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
+      return { texto: `${nombre} (${codigo} · ${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, nombre, naturaleza, colision };
     }
     const interna = agrupadorDeCuentaInterna(l.cuenta.trim());
     const directa = !interna ? agrupadorDe(l.cuenta.trim()) : null;
     const codigo = interna ? interna.codigo : directa ? directa.codigo : null;
     const nombre = interna ? interna.nombre : directa ? directa.nombre : null;
-    if (!codigo) return { texto: '—', naturaleza: null, colision: null };
+    if (!codigo) return { texto: '—', nombre: null, naturaleza: null, colision: null };
     const naturaleza: 'D' | 'H' = '234'.includes(codigo.charAt(0)) ? 'H' : 'D';
     const colision = codigo === '601.83'
       ? '⚠ 601.83 = gasto NO deducible. Si buscas renta deducible es 601.45.'
       : null;
-    return { texto: `${codigo} · ${nombre} (${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, naturaleza, colision };
+    return { texto: `${nombre} (${codigo} · ${naturaleza === 'D' ? 'cuenta deudora' : 'cuenta acreedora'})`, nombre, naturaleza, colision };
   }
 
   const totales = useMemo(() => {
@@ -419,6 +419,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         </div>
       )}
 
+      {fase === 'balanza' && (
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
@@ -445,6 +446,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           </div>
         )}
       </div>
+      )}
 
       <div data-tour="poliza-fases" className="stat-card" title="Tu camino: 3 pasos" style={{ margin: '12px 0', padding: '10px 12px', background: 'linear-gradient(135deg, #1e3a8a, #1e40af)' }}>
         <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8, color: '#fff' }}>🧭 Tu camino: 3 pasos</div>
@@ -602,7 +604,13 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                       )}
                     </td>
                     <td style={{ position: 'relative', fontSize: 11 }}>
+                      {et.nombre && openAgr !== l.id ? (
+                        <button onClick={() => setOpenAgr(l.id)} title={`Agrupador ${l.agrupador}: toca para cambiar`} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '6px 8px', fontSize: 12, fontWeight: 700, color: '#1e40af', cursor: 'pointer' }}>
+                          {et.nombre} <span style={{ fontWeight: 400, color: '#64748b' }}>✎</span>
+                        </button>
+                      ) : (
                       <input value={l.agrupador ?? ''} onFocus={() => { setOpenAgr(l.id); setOpenLinea(null); }} onBlur={() => setTimeout(() => setOpenAgr(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, agrupador: e.target.value } : x)); setOpenAgr(l.id); }} className={campo} placeholder="601.48, combustible…" title="Agrupador SAT: escríbelo por clave (601.48) o por nombre (combustible) y elige" />
+                      )}
                       {sugAgr.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
                           {sugAgr.map(s => (

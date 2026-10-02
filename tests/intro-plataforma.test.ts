@@ -25,4 +25,10 @@ describe('intro a la plataforma (post-protector, genérica)', () => {
     expect(LAB).toContain('setIntroVista(false)');
     expect(LAB).toContain('setIntroVista(true)');
   });
+  it('la ruta pública la muestra antes del módulo de pólizas', () => {
+    const PUB = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PaginaPolizasPrueba.tsx'), 'utf8');
+    expect(PUB).toContain('IntroPlataforma');
+    expect(PUB).toContain('setIntroVista(false)');
+    expect(PUB).toContain('<PolizaSim publico />');
+  });
 });
