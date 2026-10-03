@@ -236,12 +236,12 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   // (Antes el Sim generaba las líneas solo; ahora es simulador, no vitrina.)
 
   // Tour-acción: verifica la tarea de cada paso del piloto (en vivo).
+  // Orden actual del tour: doc(0), concilia(1), editor(2), balanza(3), guardar(4), hero(5).
   function verificarPasoTour(i: number): boolean {
-    if (i === 1) return lineas.length > 0;
-    if (i === 2) return pagoConfirmado || cfdi.metodo === 'PPD';
-    if (i === 3) return cuadra;
-    if (i === 4) return guardadas.length > 0;
-    if (i === 5) return folio !== null;
+    if (i === 1) return pagoConfirmado || cfdi.metodo === 'PPD';
+    if (i === 2) return cuadra;
+    if (i === 3) return guardadas.length > 0;
+    if (i === 4) return folio !== null;
     return true;
   }
 
