@@ -626,11 +626,11 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                           ))}
                         </div>
                       )}
-                      <div style={{ color: '#1e40af', marginTop: 2 }}>{et.texto}</div>
+                      {openAgr === l.id && et.nombre && <div style={{ color: '#1e40af', marginTop: 2 }}>{et.nombre}</div>}
                       {et.colision && <div style={{ color: '#991b1b' }}>{et.colision}</div>}
                     </td>
                     <td style={{ fontSize: 11, color: '#1e40af' }}>
-                      {et.texto}
+                      {et.nombre}
                       {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
                     </td>
                     <td><input value={l.debe} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>

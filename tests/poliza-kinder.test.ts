@@ -65,6 +65,9 @@ describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo e
     expect(POL).toContain('nombre: string | null');
     expect(POL).toContain('{et.nombre}');
   });
+  it('ningún número en la zona de agrupador (ayuda y columna extra solo nombre)', () => {
+    expect(POL.split('et.texto').length - 1).toBe(0);
+  });
 });
 
 describe('poliza kinder: fusión papel vs alcancía (1+2)', () => {
