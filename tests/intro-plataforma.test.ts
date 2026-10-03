@@ -15,7 +15,7 @@ describe('intro a la plataforma (post-protector, genérica)', () => {
   });
   it('presentación profesional con marca y pasos numerados', () => {
     const INTRO = readFileSync(RUTA, 'utf8');
-    expect(INTRO).toContain('SIMULADOR LABORAL');
+    expect(INTRO).toContain('SIMULADOR DE PRÁCTICAS');
     expect(INTRO).toContain('Entrar');
     expect(INTRO).toContain('1');
     expect(INTRO).toContain('Sin instalar nada');

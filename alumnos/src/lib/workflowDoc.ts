@@ -59,7 +59,7 @@ export function getWorkflowDocumentHtml(taskType: string, stepData: any): string
       <table style="width:100%;border-collapse:collapse">${row('Subtotal (consumos)', `$${subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Subtotal')}${row('IVA (16%)', `$${iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo IVA del consumo')}${row('Propina', `$${propina.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Propina (no deducible)')}${row('Total pagado', `$${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, '→ campo Total pagado')}</table>
       <div style="margin-top:10px;font-size:10px;color:#666">Deducción restaurantes 65% del subtotal. La propina NO es deducible ni genera IVA.</div>
       <div class="tot" style="padding-top:6px;text-align:center">GRACIAS POR SU VISITA</div>
-      <div style="margin-top:8px;font-size:8px;text-align:center;color:#aaa">Documento educativo · Simulador Laboral</div>
+      <div style="margin-top:8px;font-size:8px;text-align:center;color:#aaa">Documento educativo · Simulador de Prácticas</div>
     </div></body></html>`;
   }
 
@@ -84,7 +84,7 @@ export function getWorkflowDocumentHtml(taskType: string, stepData: any): string
       <h2>${getDocTitle(taskType)}</h2>
       <p style="font-size:10px;color:#666">${ctx.company} · RFC: ${ctx.rfc}</p>
       <table><thead><tr><th>Concepto</th><th style="text-align:right">Valor</th><th></th></tr></thead><tbody>${rowHtml}</tbody></table>
-      <div class="footer">Documento educativo · Simulador Laboral</div></body></html>`;
+      <div class="footer">Documento educativo · Simulador de Prácticas</div></body></html>`;
   }
 
   if (fields) {
@@ -98,7 +98,7 @@ export function getWorkflowDocumentHtml(taskType: string, stepData: any): string
       <h2>${getDocTitle(taskType)}</h2>
       <p style="font-size:10px;color:#666">${ctx.company} · RFC: ${ctx.rfc}</p>
       <table><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>${fieldHtml}</tbody></table>
-      <div class="footer">Documento educativo · Simulador Laboral</div></body></html>`;
+      <div class="footer">Documento educativo · Simulador de Prácticas</div></body></html>`;
   }
 
   return `<div style="padding:20px;text-align:center;color:#888;font-family:monospace">Documento no disponible para este tipo de tarea</div>`;

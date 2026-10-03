@@ -175,7 +175,7 @@ export default function CvBuilderSim({ theme, onBack }: CvBuilderSimProps) {
     } catch (e) { console.error(e); }
   };
 
-  const brandName = 'Simulador Laboral Institucional';
+  const brandName = 'Simulador de Prácticas Institucional';
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: colors.bg }}>

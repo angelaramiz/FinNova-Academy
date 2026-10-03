@@ -11,7 +11,7 @@ export default defineConfig(async () => {
     ? [(await import('vite-plugin-pwa')).VitePWA({
         registerType: 'prompt',
         includeAssets: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        manifest: { name: 'Simulador Laboral 3D', short_name: 'Simulador', theme_color: '#1B2632', background_color: '#0a1628', display: 'standalone', icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }] },
+        manifest: { name: 'Simulador de Prácticas 3D', short_name: 'Simulador', theme_color: '#1B2632', background_color: '#0a1628', display: 'standalone', icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }] },
         workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'], cleanupOutdatedCaches: true, navigateFallback: '/index.html', navigateFallbackDenylist: [/\/api\//], runtimeCaching: [] },
       })]
     : [];

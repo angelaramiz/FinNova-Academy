@@ -1398,7 +1398,7 @@ export default function SimuladorLaboral({ theme, profile }: SimProps) {
         addNotification({
           id: `welcome-${Date.now()}`,
           from: 'Sistema',
-          subject: '🏢 ¡Bienvenido al Simulador Laboral!',
+          subject: '🏢 ¡Bienvenido al Simulador de Prácticas!',
           body: `Has sido asignado como ${jobs[0]?.title || 'Auxiliar Contable'}. Revisa tu bandeja de entrada para comenzar.`,
           time: new Date().toISOString(),
           read: false,

@@ -20,7 +20,7 @@ export default function IntroPlataforma({ nombre, onEntrar }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ffb162', color: '#1b2632', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>SL</div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: 1 }}>SIMULADOR LABORAL</div>
+              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: 1 }}>SIMULADOR DE PRÁCTICAS</div>
               <div style={{ fontSize: 12, opacity: 0.9 }}>Práctica profesional guiada</div>
             </div>
           </div>

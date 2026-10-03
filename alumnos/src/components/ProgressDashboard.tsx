@@ -251,7 +251,7 @@ export default function ProgressDashboard({ theme, onBack }: ProgressDashboardPr
 
       {/* Status bar */}
       <div className="px-4 py-1.5 border-t-2 flex items-center justify-between text-[13px] font-mono shrink-0" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
-        <span style={{ color: colors.textMuted }}>Progreso · Simulador Laboral 3D</span>
+        <span style={{ color: colors.textMuted }}>Progreso · Simulador de Prácticas 3D</span>
         <span style={{ color: colors.textMuted }}>Mejor racha: {progress.bestStreak} días</span>
       </div>
     </div>

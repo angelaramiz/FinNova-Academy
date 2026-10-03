@@ -15,9 +15,10 @@ const DIO = readFileSync(join(__dirname, '..', 'alumnos', 'public', 'sims', 'dio
 const POL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PolizaSim.tsx'), 'utf8');
 
 describe('header único (sin subheader duplicado)', () => {
-  it('StudentPanel no renderea barra SIMULADOR LABORAL/En línea duplicada del header principal', () => {
+  it('StudentPanel no renderea barra de marca duplicada del header principal', () => {
     const PANEL = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'components', 'StudentPanel.tsx'), 'utf8');
     expect(PANEL).not.toContain('En línea');
+    expect(PANEL).not.toContain('SIMULADOR DE PRÁCTICAS');
     expect(PANEL).not.toContain('SIMULADOR LABORAL');
     expect(PANEL).not.toContain('Briefcase');
   });

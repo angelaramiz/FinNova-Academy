@@ -143,7 +143,7 @@ export default function Dashboard({ theme, onBack }: DashboardProps) {
         <button onClick={onBack} className="text-[12px] px-2 py-1 rounded border cursor-pointer hover:opacity-70" style={{ borderColor: colors.border, color: colors.textMuted, background: colors.bg }}>←</button>
         <div className="flex-1">
           <span className="text-xs font-bold font-mono" style={{ color: colors.text }}>📊 Dashboard Ejecutivo</span>
-          <span className="text-[11px] font-mono ml-2" style={{ color: colors.textMuted }}>Simulador Laboral 3D</span>
+          <span className="text-[11px] font-mono ml-2" style={{ color: colors.textMuted }}>Simulador de Prácticas 3D</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#22c55e' }} />
@@ -218,7 +218,7 @@ export default function Dashboard({ theme, onBack }: DashboardProps) {
 
       {/* Status bar */}
       <div className="px-5 py-1.5 border-t-2 text-[13px] font-mono shrink-0 flex justify-between" style={{ borderColor: colors.border, background: isDark ? 'rgba(0,0,0,0.3)' : colors.bg }}>
-        <span style={{ color: colors.textMuted }}>Dashboard · Simulador Laboral 3D</span>
+        <span style={{ color: colors.textMuted }}>Dashboard · Simulador de Prácticas 3D</span>
         <span style={{ color: colors.textMuted }}>Última actualización: {new Date().toLocaleTimeString('es-MX')}</span>
       </div>
     </div>

@@ -51,7 +51,7 @@ function AppContent() {
     try {
       const userProfile = await apiFetch<any>('/api/auth/me');
       if (userProfile.role !== 'student') { handleLogout(); return; }
-      setProfile({ ...userProfile, institution: 'Simulador Laboral' });
+      setProfile({ ...userProfile, institution: 'Simulador de Prácticas' });
       setLoading(false);
     } catch (e) {
       console.error('fetchProfile error:', e);
@@ -79,7 +79,7 @@ function AppContent() {
               SL
             </div>
             <span className="text-xs font-bold font-mono tracking-tight" style={{ color: colors.text }}>
-              SIMULADOR LABORAL
+              SIMULADOR DE PRÁCTICAS
             </span>
             <span className="text-[7px] font-mono px-1.5 py-0.5 rounded-lg border" style={{ borderColor: colors.border, color: colors.textMuted }}>
               v{VERSION}

@@ -98,7 +98,7 @@ export default function Onboarding({ theme, onComplete }: OnboardingProps) {
         boxShadow: `6px 6px 0px 0px ${colors.border}`,
       }}>💼</div>
       <div>
-        <h1 className="text-3xl font-bold" style={{ color: colors.text }}>¡Bienvenido al Simulador Laboral!</h1>
+        <h1 className="text-3xl font-bold" style={{ color: colors.text }}>¡Bienvenido al Simulador de Prácticas!</h1>
         <p className="text-sm mt-3 max-w-lg leading-relaxed" style={{ color: colors.textMuted }}>
           Vas a vivir la experiencia de trabajar en un puesto contable real.
           Primero, cuéntanos un poco sobre ti para asignarte la mejor posición.
