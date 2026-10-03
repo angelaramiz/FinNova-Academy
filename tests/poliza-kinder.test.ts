@@ -46,6 +46,19 @@ describe('hero dual: con documento y sin líneas muestra conciliación útil (no
   });
 });
 
+describe('cuenta clave-texto: código con puntos arriba, nombre abajo (como ContaLink sin ~)', () => {
+  it('al elegir del buscador la cuenta guarda la clave SAT (no la interna)', () => {
+    expect(POL).toContain('cuenta: s.agrupador');
+    expect(POL).not.toContain('cuenta: s.cuentaInternaSugerida');
+  });
+  it('la celda cuenta muestra su fila de nombre', () => {
+    expect(POL).toContain('nombreCuenta');
+  });
+  it('la ayuda ya no dice que clave y texto se ven distinto (son lo mismo)', () => {
+    expect(POL).not.toContain('se vean distinto');
+  });
+});
+
 describe('agrupador buscable por nombre desde la insignia (clave y texto son lo mismo)', () => {
   it('borrador de búsqueda separado del código guardado (tocar ✎ abre búsqueda limpia)', () => {
     expect(POL).toContain('agrDraft');
@@ -318,8 +331,8 @@ describe('receta guía de verdad: regla PF/PM + interna vs agrupador', () => {
   it('la receta enseña a elegir entre opciones parecidas (RFC 13 = física)', () => {
     expect(POL).toContain('13 caracteres');
   });
-  it('el editor avisa que interna y agrupador se ven distinto (es normal)', () => {
-    expect(POL).toContain('es normal que se vean distinto');
+  it('el editor enseña que clave y texto son lo mismo (cuenta y agrupador coinciden)', () => {
+    expect(POL).toContain('son lo mismo');
   });
 });
 
