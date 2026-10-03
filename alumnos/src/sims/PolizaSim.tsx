@@ -580,7 +580,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <div style={{ fontSize: 11, marginTop: 4 }}>{totales.dif <= 0.01 ? '✅ El columpio quedó parejo: puedes guardar.' : '⚖️ Se ladeó, quita o agrega aquí hasta que dé igual.'}</div>
           </div>
           <div style={{ fontSize: 11, marginBottom: 8, color: '#475569' }}>
-            💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cuenta o agrupador y elige el resultado: se registra tu cuenta interna y viaja su agrupador al SAT (es normal que se vean distinto: uno es tu clave, otro la del SAT).
+            💡 Escribe el <b>nombre</b> ("bancos", "renta", "isr retenido") o el <b>código</b> (601.45) en cuenta o agrupador y elige el resultado: se registra su clave en Cuenta y su nombre en Agrupador (son lo mismo: la clave y el texto).
             <br />🐖 Ojo kinder: al pagar, el banco va en <b>HABER aunque su casa sea DEBE</b> — así es como sale el dinero. El que manda es el columpio, no la etiqueta.
           </div>
           <table className="data-table">
@@ -588,24 +588,26 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <tbody>
               {lineas.map((l, i) => {
                 const et = etiquetaLinea(l);
+                const nombreCuenta = agrupadorDeCuentaInterna(l.cuenta.trim())?.nombre ?? null;
                 const sug = openLinea === l.id && l.cuenta.trim().length >= 1 ? buscarCuentasFront(l.cuenta.trim()) : [];
                 const draftAgr = agrDraft[l.id] ?? l.agrupador ?? '';
                 const sugAgr = openAgr === l.id && draftAgr.trim().length >= 1 ? buscarCuentasFront(draftAgr.trim()) : [];
                 return (
                   <tr key={l.id}>
                     <td style={{ position: 'relative' }}>
-                      <input value={l.cuenta} onFocus={() => { setOpenLinea(l.id); setOpenAgr(null); }} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x)); setOpenLinea(l.id); }} className={campo} placeholder="bancos, renta, 601.45…" />
+                      <input value={l.cuenta} onFocus={() => { setOpenLinea(l.id); setOpenAgr(null); }} onBlur={() => setTimeout(() => setOpenLinea(o => o === l.id ? null : o), 150)} onChange={(e) => { setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: e.target.value } : x)); setOpenLinea(l.id); }} className={campo} placeholder="601.45, renta…" />
                       {sug.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
-                          {sug.map(s => (
-                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Registra ${s.cuentaInternaSugerida} → viaja ${s.agrupador}`}>
+                              {sug.map(s => (
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.agrupador, agrupador: s.agrupador } : x)); setOpenLinea(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Usa ${s.agrupador} · ${s.nombre}`}>
                               <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '(deudora)' : '(acreedora)'}</span>
-                              <br /><span style={{ color: '#1e40af' }}>↳ registra {s.cuentaInternaSugerida} · [Usar]</span>
+                              <br /><span style={{ color: '#1e40af' }}>↳ usa {s.agrupador} · [Usar]</span>
                               {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
                             </button>
                           ))}
                         </div>
                       )}
+                      {nombreCuenta && <div style={{ color: '#1e40af', marginTop: 2, fontSize: 11 }}>{nombreCuenta}</div>}
                     </td>
                     <td style={{ position: 'relative', fontSize: 11 }}>
                       {et.nombre && openAgr !== l.id ? (
@@ -618,7 +620,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                       {sugAgr.length > 0 && (
                         <div style={{ position: 'absolute', zIndex: 20, left: 0, right: 0, border: '1px solid #1e40af', borderRadius: 6, marginTop: 2, background: 'white', maxHeight: 220, overflowY: 'auto', boxShadow: '0 8px 20px rgba(0,0,0,0.12)' }}>
                           {sugAgr.map(s => (
-                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.cuentaInternaSugerida, agrupador: s.agrupador } : x)); setAgrDraft((a) => { const c = { ...a }; delete c[l.id]; return c; }); setOpenAgr(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Fija ${s.agrupador} y registra ${s.cuentaInternaSugerida}`}>
+                            <button key={s.agrupador} onMouseDown={(e) => { e.preventDefault(); setLineas(lineas.map(x => x.id === l.id ? { ...x, cuenta: s.agrupador, agrupador: s.agrupador } : x)); setAgrDraft((a) => { const c = { ...a }; delete c[l.id]; return c; }); setOpenAgr(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 8px', fontSize: 11, background: 'white', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} title={`Fija ${s.agrupador} · ${s.nombre}`}>
                               <b>[{s.agrupador}]</b> {s.nombre} <span style={{ color: '#64748b' }}>· {s.naturaleza === 'D' ? '(deudora)' : '(acreedora)'}</span>
                               <br /><span style={{ color: '#1e40af' }}>↳ fija {s.agrupador} · [Usar]</span>
                               {s.avisoColision && <><br /><span style={{ color: '#991b1b' }}>{s.avisoColision}</span></>}
