@@ -225,11 +225,11 @@ describe('tour-acción: cada paso pide hacer algo y verifica antes de Siguiente'
   it('PolizaSim verifica por paso (líneas generadas, folio al guardar)', () => {
     expect(POL).toContain('onVerificar={verificarPasoTour}');
   });
-  it('verificarPasoTour sigue el orden actual del tour (doc, concilia, editor, balanza, guardar, hero)', () => {
+  it('verificarPasoTour sigue el orden actual del tour (doc, concilia, editor, guardar, balanza, hero)', () => {
     expect(POL).toContain('if (i === 1) return pagoConfirmado');
     expect(POL).toContain('if (i === 2) return cuadra');
-    expect(POL).toContain('if (i === 3) return guardadas.length > 0');
-    expect(POL).toContain('if (i === 4) return folio !== null');
+    expect(POL).toContain('if (i === 3) return folio !== null');
+    expect(POL).toContain('if (i === 4) return guardadas.length > 0');
   });
 });
 

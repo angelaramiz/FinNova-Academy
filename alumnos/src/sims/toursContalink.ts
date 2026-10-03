@@ -189,15 +189,6 @@ export const TOUR_POLIZA: PasoTour[] = [
     tarea: 'Revisa tus líneas: el columpio DEBE = HABER debe quedar parejo.',
   },
   {
-    selector: '[data-tour="poliza-balanza"]',
-    titulo: 'Balanza por agrupador',
-    descripcion: 'Cada póliza guardada alimenta su agrupador: saldo final = debe − haber en deudoras y al revés en acreedoras.',
-    teoria: 'Es la sección B de la balanza electrónica: saldo inicial + movimientos = saldo final por cuenta.',
-    referencia: 'Anexo 24 · Balanza de comprobación',
-    paso: 'balanza',
-    tarea: 'Tu póliza guardada aparece aquí por agrupador, con GRAN TOTAL = 0.',
-  },
-  {
     selector: '[data-tour="poliza-guardar"]',
     titulo: 'Guardar con folio',
     descripcion: 'Guardar se bloquea hasta que DEBE = HABER. Al guardar sale el folio, se registra tu avance y la balanza se alimenta.',
@@ -205,6 +196,15 @@ export const TOUR_POLIZA: PasoTour[] = [
     referencia: 'Partida doble · Folio + UUID',
     paso: 'poliza',
     tarea: 'Presiona Guardar en la pestaña 2 y vuelve: verás tu folio.',
+  },
+  {
+    selector: '[data-tour="poliza-balanza"]',
+    titulo: 'Balanza por agrupador',
+    descripcion: 'Cada póliza guardada alimenta su agrupador: saldo final = debe − haber en deudoras y al revés en acreedoras.',
+    teoria: 'Es la sección B de la balanza electrónica: saldo inicial + movimientos = saldo final por cuenta.',
+    referencia: 'Anexo 24 · Balanza de comprobación',
+    paso: 'balanza',
+    tarea: 'Tu póliza guardada aparece aquí por agrupador, con GRAN TOTAL = 0.',
   },
   {
     selector: '[data-tour="poliza-hero"]',
