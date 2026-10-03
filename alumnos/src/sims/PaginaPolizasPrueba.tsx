@@ -16,13 +16,15 @@ export default function PaginaPolizasPrueba() {
         <span style={{ fontWeight: 800, color: '#1e40af' }}>🔗 contalink</span>
         <span style={{ color: '#64748b' }}>Pólizas · prueba libre</span>
       </header>
-      <main className="clk-content" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-        {introVista ? (
+      {introVista ? (
+        <div style={{ minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}>
           <IntroPlataforma nombre="Practicante" onEntrar={() => setIntroVista(false)} />
-        ) : (
+        </div>
+      ) : (
+        <main className="clk-content" style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
           <PolizaSim publico />
-        )}
-      </main>
+        </main>
+      )}
     </div>
   );
 }

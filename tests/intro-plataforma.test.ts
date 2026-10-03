@@ -38,4 +38,8 @@ describe('intro a la plataforma (post-protector, genérica)', () => {
     expect(PUB).toContain('setIntroVista(false)');
     expect(PUB).toContain('<PolizaSim publico />');
   });
+  it('la intro pública llena la pantalla (fondo completo como en /student)', () => {
+    const PUB = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'PaginaPolizasPrueba.tsx'), 'utf8');
+    expect(PUB).toContain('calc(100vh');
+  });
 });
