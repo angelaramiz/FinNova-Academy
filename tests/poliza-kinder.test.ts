@@ -15,6 +15,10 @@ describe('un solo continuar: sin botón duplicado en Documento', () => {
 });
 
 describe('atajo retráctil: CFDI + banco a la vista mientras capturas (sin regresar)', () => {
+  it('botón fijo al scroll (flotante) y tamaño legible', () => {
+    expect(POL).toContain("position: 'fixed'");
+    expect(POL).toContain('fontSize: 13');
+  });
   it('pestaña "atajo" con 2 subpestañas de referencia (solo lectura)', () => {
     expect(POL).toContain('atajo');
     expect(POL).toContain('atajoTab');

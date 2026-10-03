@@ -682,7 +682,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             {!cuadra && <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(v => !v)}>{detectiveAbierto ? '🕵️ Cerrar detective' : '🕵️ Abrir detective'}</button>}
           </div>
           {/* Atajo retráctil: CFDI + banco a la vista mientras capturas (solo lectura, sin regresar al Documento) */}
-          <div style={{ position: 'absolute', left: 0, bottom: 0, zIndex: 30, maxWidth: atajoAbierto ? 340 : 'none' }}>
+          <div style={{ position: 'fixed', left: 12, bottom: 12, zIndex: 60, maxWidth: atajoAbierto ? 340 : 'none' }}>
             {atajoAbierto ? (
               <div className="stat-card" style={{ margin: 0, padding: 8 }}>
                 <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
@@ -716,7 +716,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                 <div style={{ fontSize: 10, color: '#64748b', marginTop: 4 }}>Solo lectura: para corregir ve al Documento.</div>
               </div>
             ) : (
-              <button className="btn btn-primary" style={{ fontSize: 11, padding: '6px 10px', borderRadius: '0 8px 0 0' }} onClick={() => setAtajoAbierto(true)} title="Abrir atajo: CFDI y banco a la vista">⚡ atajo »</button>
+              <button className="btn btn-primary" style={{ fontSize: 13, padding: '10px 16px', borderRadius: 10, boxShadow: '0 4px 14px rgba(30,64,175,0.4)' }} onClick={() => setAtajoAbierto(true)} title="Abrir atajo: CFDI y banco a la vista">⚡ atajo »</button>
             )}
           </div>
         </div>
