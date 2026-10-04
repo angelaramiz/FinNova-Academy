@@ -30,6 +30,8 @@ export const CONTALINK_CSS = `
         .clk-content { padding: 24px; }
         .clk-search { margin: 8px 16px 0; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #64748b; background: #f8fafc; }
         .clk-shell .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+        .clk-shell .doc-marco-papel { background: white; border: 2px solid #1e40af; border-top: 6px solid #1e40af; border-radius: 10px; padding: 12px; box-shadow: 0 2px 10px rgba(30,64,175,0.12); }
+        .clk-shell .doc-marco-alcancia { background: white; border: 2px solid #16a34a; border-top: 6px solid #16a34a; border-radius: 10px; padding: 12px; box-shadow: 0 2px 10px rgba(22,163,74,0.12); }
         .clk-shell .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
         .clk-shell .stat-label { font-size: 11px; color: #64748b; margin-top: 4px; }
         .clk-shell .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }

@@ -87,6 +87,18 @@ describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo e
   });
 });
 
+describe('marcos documento: papel y alcancía se ven como 2 documentos distintos', () => {
+  it('cada tabla lleva su marco con clase propia', () => {
+    expect(POL).toContain('doc-marco-papel');
+    expect(POL).toContain('doc-marco-alcancia');
+  });
+  it('los marcos existen en los estilos compartidos', () => {
+    const CSS = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkStyles.tsx'), 'utf8');
+    expect(CSS).toContain('.doc-marco-papel');
+    expect(CSS).toContain('.doc-marco-alcancia');
+  });
+});
+
 describe('poliza kinder: fusión papel vs alcancía (1+2)', () => {
   it('rotula las 2 tablas como papel y alcancía, no "movimientos" genérico', () => {
     expect(POL).toContain('Lo que dice el papel');

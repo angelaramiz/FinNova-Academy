@@ -520,6 +520,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           </details>
           {/* Paso 1 estilo Excel: 2 tablas lado a lado, celdas editables */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 8, marginTop: 8 }}>
+            <div className="doc-marco-papel">
             <table className="data-table">
               <caption style={{ fontWeight: 700, fontSize: 12, textAlign: 'left', padding: '4px 0' }}>📄 Tabla · Lo que dice el papel (CFDI)</caption>
               <tbody>
@@ -536,7 +537,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                 <tr><th style={{ textAlign: 'left' }}>Total</th><td><input value={cfdi.total} onChange={(e) => setCfdi({ ...cfdi, total: e.target.value })} className={campo} /></td></tr>
               </tbody>
             </table>
+            </div>
             <div data-tour="poliza-concilia">
+              <div className="doc-marco-alcancia">
               <table className="data-table">
                 <caption style={{ fontWeight: 700, fontSize: 12, textAlign: 'left', padding: '4px 0' }}>🐖 Tabla · Lo que dice la alcancía (banco)</caption>
                 <tbody>
@@ -546,6 +549,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                   <tr><th style={{ textAlign: 'left' }}>Banco</th><td><input value={edo.banco} onChange={(e) => setEdo({ ...edo, banco: e.target.value })} className={campo} placeholder="RITO FINANCIERA" /></td></tr>
                 </tbody>
               </table>
+              </div>
               <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginTop: 8 }}>
                 👉 Revisa aquí el cotejo papel vs banco: si el veredicto es verde ✅ (o azul en PPD) puedes seguir a la póliza; si es rojo 🛑, no toques el banco y pasa al Detective.
               </div>
