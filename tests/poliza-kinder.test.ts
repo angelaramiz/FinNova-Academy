@@ -87,6 +87,23 @@ describe('agrupador con nombre: la etiqueta muestra el NOMBRE primero, no solo e
   });
 });
 
+describe('marcos importantes: lo clave del módulo lleva marco destacado', () => {
+  it('las 3 clases existen en los estilos compartidos', () => {
+    const CSS = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'ContalinkStyles.tsx'), 'utf8');
+    for (const c of ['.marco-importante', '.marco-exito', '.marco-alerta']) {
+      expect(CSS).toContain(c);
+    }
+  });
+  it('el Sim usa los 3 marcos (resumen, regla, cuadre, folio, detective, balanza, atajo, piloto)', () => {
+    for (const c of ['marco-importante', 'marco-exito', 'marco-alerta']) {
+      expect(POL).toContain(c);
+    }
+  });
+  it('el marco del cuadre cambia con el estado (verde cuadra, ámbar descuadra)', () => {
+    expect(POL).toMatch(/cuadra \? 'marco-exito' : 'marco-alerta'/);
+  });
+});
+
 describe('marcos documento: papel y alcancía se ven como 2 documentos distintos', () => {
   it('cada tabla lleva su marco con clase propia', () => {
     expect(POL).toContain('doc-marco-papel');

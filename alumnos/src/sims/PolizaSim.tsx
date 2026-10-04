@@ -493,7 +493,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         <div data-tour="poliza-doc" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>1. Papel vs alcancía (CFDI + banco)</div>
           {/* Tira única papel vs alcancía (sin tarjetas duplicadas del formulario) */}
-          <div title="Resumen papel vs alcancía" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 8, padding: 6, background: '#fff', fontSize: 11, marginBottom: 8 }}>
+          <div title="Resumen papel vs alcancía" className="marco-importante" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 8, padding: 6, background: '#fff', fontSize: 11, marginBottom: 8 }}>
             <span>📄 Lo que dice el papel: <b>{cfdi.emisor || '—'} ${cfdi.total || '0'}</b> ({cfdi.metodo})</span>
             <span>→</span>
             <span>🐖 Lo que dice la alcancía: <b>{edo.fecha ? `${edo.banco || '—'} $${edo.totalPagado || '0'}` : 'aún no se paga, es promesa'}</b></span>
@@ -575,7 +575,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
         <div data-tour="poliza-editor" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>PÓLIZA DE LA FACTURA ({pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISIÓN' : 'DIARIO'})</div>
           {/* R-kinder: regla de oro + columpio visual DEBE vs HABER */}
-          <div style={{ fontSize: 11, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 6, marginBottom: 8 }}>
+          <div className="marco-alerta" style={{ fontSize: 11, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 6, marginBottom: 8 }}>
             ⚖️ Regla de oro: {REGLA_ORO}
             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <div style={{ flex: 1, background: '#dcfce7', borderRadius: 6, padding: 4, textAlign: 'center' }}>🟢 DEBE ${fmt(totales.debe)}</div>
@@ -660,7 +660,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
               </div>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 24, marginTop: 10, fontSize: 13, fontWeight: 700 }}>
+          <div className={cuadra ? 'marco-exito' : 'marco-alerta'} style={{ display: 'flex', gap: 24, marginTop: 10, fontSize: 13, fontWeight: 700, borderRadius: 8, padding: 6 }}>
             <span>Total: ${fmt(totales.debe)}</span>
             <span>Total: ${fmt(totales.haber)}</span>
             {cuadra
@@ -688,7 +688,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           {/* Atajo retráctil: CFDI + banco a la vista mientras capturas (solo lectura, sin regresar al Documento) */}
           <div style={{ position: 'fixed', left: 12, bottom: 12, zIndex: 60, maxWidth: atajoAbierto ? 340 : 'none' }}>
             {atajoAbierto ? (
-              <div className="stat-card" style={{ margin: 0, padding: 8 }}>
+              <div className="stat-card marco-importante" style={{ margin: 0, padding: 8 }}>
                 <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
                   <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', fontWeight: atajoTab === 'cfdi' ? 800 : 400 }} onClick={() => setAtajoTab('cfdi')}>📄 Ver CFDI</button>
                   <button className="btn btn-secondary" style={{ fontSize: 11, padding: '4px 8px', fontWeight: atajoTab === 'edo' ? 800 : 400 }} onClick={() => setAtajoTab('edo')}>🐖 Ver banco</button>
@@ -727,7 +727,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       )}
 
       {detectiveAbierto && fase === 'poliza' && (
-        <div className="stat-card" style={{ borderLeft: '4px solid #7c3aed' }}>
+        <div className="stat-card marco-importante" style={{ borderLeft: '4px solid #7c3aed' }}>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>🕵️ Detective (solo si descuadra: investiga en 4 pasos)</div>
           <div style={{ fontSize: 11, color: '#475569', marginBottom: 8 }}>Si la póliza no da 0, no se guarda. Se investiga en este orden — cada pregunta te lleva donde se revisa.</div>
           {PREGUNTAS_DETECTIVE.map((p, i) => (
@@ -792,7 +792,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ textAlign: 'center', fontWeight: 800, fontSize: 14, marginTop: 8, color: '#059669' }}>
+                <div className="marco-exito" style={{ textAlign: 'center', fontWeight: 800, fontSize: 14, marginTop: 8, color: '#059669', borderRadius: 8, padding: 6 }}>
                   GRAN TOTAL ${fmt(balanza.reduce((s, b) => s + b.debe, 0) - balanza.reduce((s, b) => s + b.haber, 0))} — {Math.abs(balanza.reduce((s, b) => s + b.debe, 0) - balanza.reduce((s, b) => s + b.haber, 0)) <= 0.01 ? '✅ cero perfecto, todos en casa' : '🕵️ descuadra: pasa al Modo detective'}
                 </div>
               </>
@@ -806,7 +806,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       )}
 
       {/* Piloto a pedido: colapsado hasta que el alumno pide ayuda */}
-      <details className="stat-card" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }} open={pilotoAbierto || pilotoPideAyuda} onToggle={(e) => setPilotoAbierto((e.target as HTMLDetailsElement).open)}>
+      <details className="stat-card marco-alerta" style={{ marginTop: 12, borderLeft: '4px solid #f59e0b' }} open={pilotoAbierto || pilotoPideAyuda} onToggle={(e) => setPilotoAbierto((e.target as HTMLDetailsElement).open)}>
         <summary style={{ fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>🐖 ¿Necesitas ayuda? Piloto kinder (tu guía)</summary>
         <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Receta = CFDI · Alcancía = banco · Columpio = póliza · Apartar juguete = PPD · Llevarlo pagado = PUE.</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
@@ -826,7 +826,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       </details>
 
       {mensajes.length > 0 && (
-        <div className="stat-card" style={{ marginTop: 12 }}>
+        <div className="stat-card marco-exito" style={{ marginTop: 12 }}>
           {mensajes.map((m, i) => <div key={i} style={{ fontSize: 12, whiteSpace: 'pre-wrap', marginBottom: 4 }}>{m}</div>)}
         </div>
       )}

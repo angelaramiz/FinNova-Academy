@@ -32,6 +32,9 @@ export const CONTALINK_CSS = `
         .clk-shell .stat-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
         .clk-shell .doc-marco-papel { background: white; border: 2px solid #1e40af; border-top: 6px solid #1e40af; border-radius: 10px; padding: 12px; box-shadow: 0 2px 10px rgba(30,64,175,0.12); }
         .clk-shell .doc-marco-alcancia { background: white; border: 2px solid #16a34a; border-top: 6px solid #16a34a; border-radius: 10px; padding: 12px; box-shadow: 0 2px 10px rgba(22,163,74,0.12); }
+        .clk-shell .marco-importante { border: 2px solid #1e40af !important; box-shadow: 0 2px 10px rgba(30,64,175,0.12); }
+        .clk-shell .marco-exito { border: 2px solid #16a34a !important; box-shadow: 0 2px 10px rgba(22,163,74,0.12); }
+        .clk-shell .marco-alerta { border: 2px solid #f59e0b !important; box-shadow: 0 2px 10px rgba(245,158,11,0.14); }
         .clk-shell .stat-value { font-size: 22px; font-weight: 700; color: #1e293b; }
         .clk-shell .stat-label { font-size: 11px; color: #64748b; margin-top: 4px; }
         .clk-shell .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
