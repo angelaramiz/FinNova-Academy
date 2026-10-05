@@ -6,7 +6,7 @@
 // en local (catálogo DOF completo) y persiste vía /api/sim/polizas.
 // Goldens: MARCELO F 70900/7090/63810, PPD 1000/160/1160, ventas, capital.
 // Diseño ContaLink claro (clk-*). Cero LLM.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { agrupadorDe, agrupadorDeCuentaInterna, etiquetaAgrupador, buscarCuentasFront } from './catalogoAgrupador';
 import { reportarSim } from './reportarSim';
 import { apiFetch } from '../lib/api';
@@ -146,6 +146,10 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   // Atajo retráctil: CFDI + banco a la vista mientras capturas (solo lectura).
   const [atajoAbierto, setAtajoAbierto] = useState(false);
   const [atajoTab, setAtajoTab] = useState<'cfdi' | 'edo'>('cfdi');
+  // Inicio guiado: se empieza por el resultado con el bruto del CFDI (montos
+  // fijos bloqueados); el otro lado lo calculas tú. Ids de líneas prefijadas.
+  const [lineasFijas, setLineasFijas] = useState<number[]>([]);
+  const inicioHecho = useRef(false);
   const mapa = casosOp ?? CASOS;
 
   // Catálogo de la base al montar; fallback silencioso a CASOS local.
@@ -194,10 +198,50 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     setCfdi({ ...c.cfdi });
     setEdo({ ...c.edo });
     setLineas([]);
+    setLineasFijas([]);
+    inicioHecho.current = false;
     setNotas(`${c.cfdi.uuid}, ${c.cfdi.producto}.`);
     setMensajes([]);
     setFolio(null);
   }
+
+  // Inicio guiado: al entrar a póliza con las manos vacías se prefija el lado
+  // del resultado con el bruto del CFDI (cuenta la escribes tú) y se abre el
+  // atajo en el CFDI, de donde sale ese bruto.
+  function iniciarPoliza() {
+    const sub = num(cfdi.subtotal) || 0;
+    const iva = num(cfdi.iva16) || 0;
+    const tot = num(cfdi.total) || 0;
+    const prod = cfdi.producto || '';
+    const esCapital = /capital|aportaci[oó]n/i.test(prod);
+    const esIngreso = !esCapital && /ventas?|ingresos?/i.test(prod);
+    const nuevas: Linea[] = [];
+    const fijas: number[] = [];
+    const agrega = (l: Omit<Linea, 'id'>) => {
+      const id = seqId++;
+      nuevas.push({ ...l, id });
+      fijas.push(id);
+    };
+    if (esCapital) {
+      agrega({ cuenta: '', debe: '', haber: String(tot) });
+    } else if (esIngreso) {
+      agrega({ cuenta: '', debe: '', haber: String(sub) });
+      if (iva > 0) agrega({ cuenta: '', debe: '', haber: String(iva) });
+    } else {
+      agrega({ cuenta: '', debe: String(sub), haber: '' });
+      if (iva > 0) agrega({ cuenta: '', debe: String(iva), haber: '' });
+    }
+    setLineas(nuevas);
+    setLineasFijas(fijas);
+    inicioHecho.current = true;
+    setAtajoTab('cfdi');
+    setAtajoAbierto(true);
+  }
+
+  useEffect(() => {
+    if (fase === 'poliza' && lineas.length === 0 && !inicioHecho.current) iniciarPoliza();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fase, lineas]);
 
   // Receta del caso (guía, no ejecuta): el alumno captura a mano.
   function recetaCaso(): string[] {
@@ -209,7 +253,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     const esIngreso = /ventas?|ingresos?|aportaci[oó]n|capital/i.test(cfdi.producto || '');
     const pasos: string[] = [];
     if (esIngreso) {
-      const banco = cfdi.metodo === 'PPD' ? 'clientes (105.01)' : 'bancos (102.01.002)';
+      const banco = cfdi.metodo === 'PPD' ? 'clientes (105.01)' : 'bancos (102.01)';
       pasos.push(`Línea 1: escribe ${banco} al DEBE $${f(tot)}`);
       pasos.push(`Línea 2: escribe tu cuenta de ingreso al HABER $${f(sub)}`);
       if (iva > 0) pasos.push(`Línea 3: escribe IVA trasladado (208.01) al HABER $${f(iva)}`);
@@ -574,6 +618,11 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       {fase === 'poliza' && (
         <div data-tour="poliza-editor" className="stat-card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>PÓLIZA DE LA FACTURA ({pagoConfirmado ? 'EGRESOS' : cfdi.metodo === 'PPD' ? 'PROVISIÓN' : 'DIARIO'})</div>
+          {lineasFijas.length > 0 && (
+            <div style={{ fontSize: 11, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 6, marginBottom: 8 }}>
+              🏁 Empiezo por el resultado con el bruto del CFDI (montos 🔒 bloqueados): escribe sus cuentas; el otro lado lo calculas tú solo en HABER.
+            </div>
+          )}
           {/* R-kinder: regla de oro + columpio visual DEBE vs HABER */}
           <div className="marco-alerta" style={{ fontSize: 11, background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 6, marginBottom: 8 }}>
             ⚖️ Regla de oro: {REGLA_ORO}
@@ -639,8 +688,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                       {et.nombre}
                       {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
                     </td>
-                    <td><input value={l.debe} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
-                    <td><input value={l.haber} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
+                    <td><input value={l.debe} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
+                    <td><input value={l.haber} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
                     <td><button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>Eliminar</button></td>
                   </tr>
                 );
@@ -680,7 +729,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
             <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta agregar líneas: captúralas a mano con Agregar asiento' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
             {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta agregar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
-            <button className="btn btn-secondary" onClick={() => { setLineas([]); setFolio(null); }}>Cancelar</button>
+            <button className="btn btn-secondary" onClick={() => { setLineas([]); setLineasFijas([]); inicioHecho.current = false; setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
             {!cuadra && <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(v => !v)}>{detectiveAbierto ? '🕵️ Cerrar detective' : '🕵️ Abrir detective'}</button>}

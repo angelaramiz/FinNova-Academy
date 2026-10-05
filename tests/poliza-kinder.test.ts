@@ -50,6 +50,20 @@ describe('hero dual: con documento y sin líneas muestra conciliación útil (no
   });
 });
 
+describe('inicio guiado: se empieza por el resultado (bruto del CFDI), el HABER lo calculas tú', () => {
+  it('prefija las líneas del resultado con monto fijo al entrar a póliza', () => {
+    expect(POL).toContain('lineasFijas');
+    expect(POL).toContain('iniciarPoliza');
+    expect(POL).toContain('Empiezo por el resultado');
+  });
+  it('montos prefijados bloqueados, HABER libre (solo inputs de HABER habilitados)', () => {
+    expect(POL).toContain('disabled={lineasFijas.includes(l.id)}');
+  });
+  it('al entrar se abre solo el atajo en el CFDI (de ahí sale el bruto)', () => {
+    expect(POL).toContain("setAtajoTab('cfdi')");
+  });
+});
+
 describe('cuenta clave-texto: código con puntos arriba, nombre abajo (como ContaLink sin ~)', () => {
   it('al elegir del buscador la cuenta guarda la clave SAT (no la interna)', () => {
     expect(POL).toContain('cuenta: s.agrupador');
