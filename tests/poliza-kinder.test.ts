@@ -56,8 +56,12 @@ describe('inicio guiado: se empieza por el resultado (bruto del CFDI), el HABER 
     expect(POL).toContain('iniciarPoliza');
     expect(POL).toContain('Empiezo por el resultado');
   });
-  it('montos prefijados bloqueados, HABER libre (solo inputs de HABER habilitados)', () => {
-    expect(POL).toContain('disabled={lineasFijas.includes(l.id)}');
+  it('montos prefijados bloqueados, HABER libre (bruto con HABER bloqueado y marca BRUTO)', () => {
+    expect(POL).toContain('lineasFijas.includes(l.id)');
+    expect(POL).toContain('BRUTO');
+  });
+  it('DEBEs vacíos bloqueados (el bruto es el único DEBE que trae monto)', () => {
+    expect(POL).toContain("l.debe.trim() === ''");
   });
   it('al entrar se abre solo el atajo en el CFDI (de ahí sale el bruto)', () => {
     expect(POL).toContain("setAtajoTab('cfdi')");

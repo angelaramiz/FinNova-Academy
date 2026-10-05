@@ -660,7 +660,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                           ))}
                         </div>
                       )}
-                      {nombreCuenta && <div style={{ color: '#1e40af', marginTop: 2, fontSize: 11 }}>{nombreCuenta}</div>}
+                      {nombreCuenta && <div style={{ color: '#1e40af', marginTop: 2, fontSize: 11 }}>{nombreCuenta}{lineasFijas[0] === l.id && <span style={{ marginLeft: 6, background: '#1e40af', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 800 }}>🔒 BRUTO</span>}</div>}
                     </td>
                     <td style={{ position: 'relative', fontSize: 11 }}>
                       {et.nombre && openAgr !== l.id ? (
@@ -688,7 +688,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                       {et.nombre}
                       {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
                     </td>
-                    <td><input value={l.debe} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
+                    <td><input value={l.debe} disabled={lineasFijas.includes(l.id) || l.debe.trim() === ''} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
                     <td><input value={l.haber} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
                     <td><button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>Eliminar</button></td>
                   </tr>
