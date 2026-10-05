@@ -110,7 +110,8 @@ function num(s: string): number {
   const n = Number(String(s).replace(/[$,\s]/g, ''));
   return Number.isFinite(n) ? n : NaN;
 }
-function fmt(n: number): string {
+export function fmt(n: number): string {
+  if (!Number.isFinite(n)) return '0.00';
   return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -149,6 +150,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   // Inicio guiado: se empieza por el resultado con el bruto del CFDI (montos
   // fijos bloqueados); el otro lado lo calculas tú. Ids de líneas prefijadas.
   const [lineasFijas, setLineasFijas] = useState<number[]>([]);
+  const [brutoId, setBrutoId] = useState<number | null>(null);
   const inicioHecho = useRef(false);
   const mapa = casosOp ?? CASOS;
 
@@ -199,6 +201,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     setEdo({ ...c.edo });
     setLineas([]);
     setLineasFijas([]);
+    setBrutoId(null);
     inicioHecho.current = false;
     setNotas(`${c.cfdi.uuid}, ${c.cfdi.producto}.`);
     setMensajes([]);
@@ -233,6 +236,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     }
     setLineas(nuevas);
     setLineasFijas(fijas);
+    setBrutoId(fijas[0] ?? null);
     inicioHecho.current = true;
     setAtajoTab('cfdi');
     setAtajoAbierto(true);
@@ -261,7 +265,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       pasos.push(`Línea 1: escribe tu cuenta de gasto al DEBE $${f(sub)}`);
       if (iva > 0) pasos.push(`Línea 2: escribe IVA acreditable (118.01) al DEBE $${f(iva)}`);
       if (isr > 0) pasos.push(`Línea de ISR retenido (216.03) al HABER $${f(isr)}`);
-      const contra = cfdi.metodo === 'PPD' ? 'proveedores (201.01)' : 'bancos (102.01.002)';
+      const contra = cfdi.metodo === 'PPD' ? 'proveedores (201.01)' : 'bancos (102.01)';
       pasos.push(`Última línea: escribe ${contra} al HABER $${f(tot)}`);
     }
     pasos.push('Revisa que DEBE = HABER y guarda. El motor solo valida, no captura por ti.');
@@ -354,6 +358,11 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
 
   async function guardar() {
     if (!cuadra) return;
+    if (folio) {
+      setMensajes([`⚠ Esta póliza ya se guardó con folio ${folio}: no se duplica. La verás en la Balanza.`]);
+      setFase('balanza');
+      return;
+    }
     const lineasOk = lineas.map(l => {
       // El agrupador que el alumno fijó manda; si no, equivalencia de su cuenta.
       const codAgr = (l.agrupador ?? '').trim().replace(/[-_\s]+/g, '.');
@@ -660,7 +669,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                           ))}
                         </div>
                       )}
-                      {nombreCuenta && <div style={{ color: '#1e40af', marginTop: 2, fontSize: 11 }}>{nombreCuenta}{lineasFijas[0] === l.id && <span style={{ marginLeft: 6, background: '#1e40af', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 800 }}>🔒 BRUTO</span>}</div>}
+                      {nombreCuenta && <div style={{ color: '#1e40af', marginTop: 2, fontSize: 11 }}>{nombreCuenta}{brutoId === l.id && <span style={{ marginLeft: 6, background: '#1e40af', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 800 }}>🔒 BRUTO</span>}</div>}
                     </td>
                     <td style={{ position: 'relative', fontSize: 11 }}>
                       {et.nombre && openAgr !== l.id ? (
@@ -688,9 +697,9 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
                       {et.nombre}
                       {et.colision && <><br /><span style={{ color: '#991b1b' }}>{et.colision}</span></>}
                     </td>
-                    <td><input value={l.debe} disabled={lineasFijas.includes(l.id) || l.debe.trim() === ''} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
-                    <td><input value={l.haber} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right' }} placeholder="0.00" /></td>
-                    <td><button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => setLineas(lineas.filter((_, j) => j !== i))}>Eliminar</button></td>
+                    <td><input value={l.debe} disabled={lineasFijas.includes(l.id) || l.debe.trim() === ''} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, debe: e.target.value } : x))} className={campo} style={{ textAlign: 'right', opacity: lineasFijas.includes(l.id) || l.debe.trim() === '' ? 0.55 : 1 }} placeholder="0.00" /></td>
+                    <td><input value={l.haber} disabled={lineasFijas.includes(l.id)} onChange={(e) => setLineas(lineas.map(x => x.id === l.id ? { ...x, haber: e.target.value } : x))} className={campo} style={{ textAlign: 'right', opacity: lineasFijas.includes(l.id) ? 0.55 : 1 }} placeholder="0.00" /></td>
+                    <td><button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => { setLineas(lineas.filter((_, j) => j !== i)); setLineasFijas((f) => f.filter((fid) => fid !== l.id)); setBrutoId((b) => (b === l.id ? null : b)); }}>Eliminar</button></td>
                   </tr>
                 );
               })}
@@ -729,7 +738,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
             <button className="btn btn-secondary" onClick={() => setFase('documento')}>← Atrás</button>
             <button data-tour="poliza-guardar" className="btn btn-success" disabled={!cuadra} onClick={guardar} title={cuadra ? 'Guardar póliza' : lineas.length === 0 ? 'Te falta agregar líneas: captúralas a mano con Agregar asiento' : 'Cuadra DEBE = HABER para guardar'}>Guardar</button>
             {!cuadra && <span style={{ fontSize: 11, color: '#64748b', alignSelf: 'center' }}>{lineas.length === 0 ? 'Te falta agregar líneas (0 líneas, $0.00): sin líneas no hay nada que guardar.' : 'Te falta cuadrar DEBE = HABER para guardar.'}</span>}
-            <button className="btn btn-secondary" onClick={() => { setLineas([]); setLineasFijas([]); inicioHecho.current = false; setFolio(null); }}>Cancelar</button>
+            <button className="btn btn-secondary" onClick={() => { setLineas([]); setLineasFijas([]); setBrutoId(null); inicioHecho.current = false; setFolio(null); }}>Cancelar</button>
             <button className="btn btn-secondary" onClick={() => descargar('xml')}>Descargar XML</button>
             <button className="btn btn-secondary" onClick={() => descargar('pdf')}>Descargar PDF</button>
             {!cuadra && <button className="btn btn-secondary" onClick={() => setDetectiveAbierto(v => !v)}>{detectiveAbierto ? '🕵️ Cerrar detective' : '🕵️ Abrir detective'}</button>}

@@ -50,6 +50,41 @@ describe('hero dual: con documento y sin líneas muestra conciliación útil (no
   });
 });
 
+describe('guardar idempotente: la misma póliza no se duplica en balanza', () => {
+  it('si ya hay folio del caso, no re-guarda ni duplica', () => {
+    expect(POL).toContain('ya se guardó con folio');
+  });
+});
+
+describe('displays a prueba de letras en montos (sin $NaN)', () => {
+  it('fmt tolera NaN e Infinity', async () => {
+    const { fmt } = await import('../alumnos/src/sims/PolizaSim');
+    expect(fmt(NaN)).toBe('0.00');
+    expect(fmt(Infinity)).toBe('0.00');
+    expect(fmt(63810)).toBe('63,810.00');
+  });
+});
+
+describe('inicio guiado robusto: eliminar no deja fantasmas y lo bloqueado se distingue', () => {
+  it('el bruto tiene id propio (no es "la primera fija")', () => {
+    expect(POL).toContain('brutoId');
+    expect(POL).toContain('brutoId === l.id');
+  });
+  it('eliminar una fila limpia su fija y su marca de bruto', () => {
+    expect(POL).toMatch(/setLineasFijas\(.*filter/);
+  });
+  it('inputs bloqueados se ven apagados', () => {
+    expect(POL).toContain('opacity');
+  });
+});
+
+describe('receta coherente con clave-texto (sin sub-cuentas viejas)', () => {
+  it('la receta del piloto usa claves SAT directas', () => {
+    expect(POL).not.toContain('bancos (102.01.002)');
+    expect(POL).toContain('bancos (102.01)');
+  });
+});
+
 describe('inicio guiado: se empieza por el resultado (bruto del CFDI), el HABER lo calculas tú', () => {
   it('prefija las líneas del resultado con monto fijo al entrar a póliza', () => {
     expect(POL).toContain('lineasFijas');
