@@ -214,9 +214,20 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
     setFolio(null);
   }
 
-  // Inicio guiado: al entrar a póliza con las manos vacías se prefija el lado
-  // del resultado con el bruto del CFDI (cuenta la escribes tú) y se abre el
-  // atajo en el CFDI, de donde sale ese bruto.
+  // Demo que resuelve: rellena el asiento MARCELO con valores correctos.
+  // Solo demostración (el piloto): la práctica real se captura a mano.
+  // No prefija fijas: tras la demo las líneas quedan editables.
+  function rellenarDemoMarcelo() {
+    const a = seqId++; const b = seqId++; const c = seqId++;
+    setLineas([
+      { id: a, cuenta: '601.45', debe: '70900', haber: '' },
+      { id: b, cuenta: '216.03', debe: '', haber: '7090' },
+      { id: c, cuenta: '102.01', debe: '', haber: '63810' },
+    ]);
+    setLineasFijas([]);
+    setBrutoId(null);
+    inicioHecho.current = true;
+  }
   function iniciarPoliza() {
     const sub = num(cfdi.subtotal) || 0;
     const iva = num(cfdi.iva16) || 0;
@@ -541,7 +552,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           })}
         </div>
       </div>
-      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} onIniciar={() => { const id = Object.keys(mapa).find((k) => mapa[k].cfdi.uuid === MARCELO_UUID) ?? 'marcelo'; cargarCaso(id); }} etiquetaTrigger="🧭 Guíame" />
+      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} onIniciar={() => { const id = Object.keys(mapa).find((k) => mapa[k].cfdi.uuid === MARCELO_UUID) ?? 'marcelo'; cargarCaso(id); }} onDemoFill={rellenarDemoMarcelo} soloDemo />
 
       <details className="theory-box" style={{ padding: '6px 10px' }}>
         <summary className="theory-box-title" style={{ cursor: 'pointer', fontWeight: 700 }}>📚 Puente teórico (tócalo para ver)</summary>

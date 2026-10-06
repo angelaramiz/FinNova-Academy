@@ -78,6 +78,17 @@ describe('inicio guiado robusto: eliminar no deja fantasmas y lo bloqueado se di
   });
 });
 
+describe('demo que resuelve: rellena MARCELO con valores correctos al iniciar', () => {
+  it('pasa rellenador a la demo y resuelve el asiento 70900/7090/63810', () => {
+    expect(POL).toContain('onDemoFill');
+    expect(POL).toContain('rellenarDemoMarcelo');
+  });
+  it('sin botón Guíame en Pólizas (solo demo automática)', () => {
+    expect(POL).toContain('soloDemo');
+    expect(POL).not.toContain('🧭 Guíame');
+  });
+});
+
 describe('marcelo solo piloto: la práctica arranca en otro caso y el piloto fuerza marcelo', () => {
   it('caso inicial de práctica no es marcelo', () => {
     expect(POL).toContain("const CASO_PRACTICA = 'ppd'");
@@ -391,8 +402,8 @@ describe('página pública: practicar pólizas sin cuenta', () => {
 });
 
 describe('rediseño: una sola voz de ayuda y piloto a pedido', () => {
-  it('botón Guíame junto a la guía (tour+piloto unidos)', () => {
-    expect(POL).toContain('Guíame');
+  it('botón Demo junto a la guía (solo demo automática, sin Guíame)', () => {
+    expect(POL).toContain('soloDemo');
   });
   it('piloto colapsable (solo si el alumno lo pide)', () => {
     expect(POL).toContain('¿Necesitas ayuda?');

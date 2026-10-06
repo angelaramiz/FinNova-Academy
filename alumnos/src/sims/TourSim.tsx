@@ -18,9 +18,13 @@ interface Props {
   etiquetaTrigger?: string;
   // Aviso al iniciar (guíame, demo o ver-de-nuevo): el Sim prepara su caso.
   onIniciar?: () => void;
+  // La demo resuelve sola: rellena la solución al arrancar (solo demostración).
+  onDemoFill?: () => void;
+  // Solo demo automática: oculta el botón de guiado paso a paso.
+  soloDemo?: boolean;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger, onIniciar }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger, onIniciar, onDemoFill, soloDemo }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
@@ -39,6 +43,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
 
   function iniciarDemo() {
     onIniciar?.();
+    onDemoFill?.();
     setIdx(0);
     setActivo(true);
     setDemo(true);
@@ -185,6 +190,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
   if (!activo) {
     return (
       <div style={{ display: 'grid', gap: 6 }}>
+        {!soloDemo && (
         <button
           onClick={iniciarGuiado}
           className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
@@ -192,6 +198,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
         >
           ▶ {etiquetaTrigger ?? `Iniciar ${titulo} — tour guiado (${pasos.length} pasos)`}
         </button>
+        )}
         <button
           onClick={iniciarDemo}
           className="w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
