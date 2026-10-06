@@ -16,15 +16,41 @@ interface Props {
   onVerificar?: (i: number) => boolean;
   // Una sola voz de ayuda: etiqueta del botón que inicia el tour.
   etiquetaTrigger?: string;
+  // Aviso al iniciar (guíame, demo o ver-de-nuevo): el Sim prepara su caso.
+  onIniciar?: () => void;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger, onIniciar }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
   const [activo, setActivo] = useState(false);
   const [idx, setIdx] = useState(0);
   const [intento, setIntento] = useState(false);
+  // Demo automática: el piloto se resuelve solo en secuencia (sin pedir
+  // tareas); avanza solo cada 4.5s; cualquier toque manual la detiene.
+  const [demo, setDemo] = useState(false);
+  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function detenerDemo() {
+    setDemo(false);
+    if (demoTimer.current) { clearTimeout(demoTimer.current); demoTimer.current = null; }
+  }
+
+  function iniciarDemo() {
+    onIniciar?.();
+    setIdx(0);
+    setActivo(true);
+    setDemo(true);
+    requestAnimationFrame(() => medir(0));
+  }
+
+  function iniciarGuiado() {
+    onIniciar?.();
+    setIdx(0);
+    setActivo(true);
+    requestAnimationFrame(() => medir(0));
+  }
   const [geom, setGeom] = useState({ l: 0, t: 0, w: 0, h: 0 });
   const [pos, setPos] = useState({ l: 12, t: 12 });
   const tipRef = useRef<HTMLDivElement | null>(null);
@@ -97,10 +123,20 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
 
   useEffect(() => {
     if (!activo) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActivo(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { detenerDemo(); setActivo(false); } };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activo]);
+
+  // Avance solo de la demo (4.5s por paso; al final cierra y marca visto).
+  useEffect(() => {
+    if (!demo || !activo) return;
+    if (idx >= pasos.length - 1) { detenerDemo(); return; }
+    demoTimer.current = setTimeout(() => irA(idx + 1), 4500);
+    return () => { if (demoTimer.current) clearTimeout(demoTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo, activo, idx]);
 
   function onDown(e: React.PointerEvent) {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -127,6 +163,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
   function reiniciar() {
     try { localStorage.removeItem(storageKey); } catch { /* noop */ }
     setTerminado(false);
+    onIniciar?.();
     setIdx(0);
     setActivo(true);
     requestAnimationFrame(() => medir(0));
@@ -147,13 +184,23 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
 
   if (!activo) {
     return (
-      <button
-        onClick={() => { setIdx(0); setActivo(true); requestAnimationFrame(() => medir(0)); }}
-        className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
-        style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
-      >
-        ▶ {etiquetaTrigger ?? `Iniciar ${titulo} — tour guiado (${pasos.length} pasos)`}
-      </button>
+      <div style={{ display: 'grid', gap: 6 }}>
+        <button
+          onClick={iniciarGuiado}
+          className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
+          style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
+        >
+          ▶ {etiquetaTrigger ?? `Iniciar ${titulo} — tour guiado (${pasos.length} pasos)`}
+        </button>
+        <button
+          onClick={iniciarDemo}
+          className="w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
+          style={{ background: 'transparent', border: '1px dashed #3b82f6', color: '#1e40af' }}
+          title="El piloto se resuelve solo en secuencia, sin pedirte tareas"
+        >
+          ▶ Demo automática (se resuelve sola)
+        </button>
+      </div>
     );
   }
 
@@ -189,9 +236,9 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
               ))}
             </div>
           </div>
-          <button onClick={() => setActivo(false)} className="text-slate-400 hover:text-slate-600 p-1" aria-label="Cerrar tour">✕</button>
+          <button onClick={() => { detenerDemo(); setActivo(false); }} className="text-slate-400 hover:text-slate-600 p-1" aria-label="Cerrar tour">✕</button>
         </div>
-        <div className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">Piloto automático</div>
+        <div className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mb-1">{demo ? '▶ Demo automática (se resuelve sola)' : 'Piloto automático'}</div>
         <h3 className="font-bold text-slate-800 dark:text-white mb-2 text-sm sm:text-base">{paso.titulo}</h3>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">{paso.descripcion}</p>
         <div className="rounded-lg p-3 mb-2" style={{ background: '#fef3c7', borderLeft: '4px solid #f59e0b' }}>
@@ -204,7 +251,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
           <div className="rounded-lg p-2 mb-3 text-[11px] font-medium" style={{ background: cumple ? '#ecfdf5' : '#fefce8', borderLeft: `4px solid ${cumple ? '#10b981' : '#f59e0b'}`, color: cumple ? '#065f46' : '#92400e' }}>
             ✋ Hazlo ahora: {paso.tarea}
             <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <button onClick={() => { if (cumple) irA(idx + 1); else setIntento(true); }} className="px-3 py-1.5 text-xs text-white rounded-lg font-bold" style={{ background: cumple ? '#10b981' : '#f59e0b' }}>✓ Ya lo hice</button>
+              <button onClick={() => { detenerDemo(); if (cumple) irA(idx + 1); else setIntento(true); }} className="px-3 py-1.5 text-xs text-white rounded-lg font-bold" style={{ background: cumple ? '#10b981' : '#f59e0b' }}>✓ Ya lo hice</button>
               {intento && !cumple && <span>⏳ Aún no: completa la tarea para seguir.</span>}
               {cumple && <span>✅ Listo, puedes seguir.</span>}
             </div>
@@ -213,9 +260,10 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
           <div className="text-[10px] text-slate-500">{Math.round((idx / pasos.length) * 100)}% completado</div>
           <div className="flex gap-2">
-            <button onClick={() => setActivo(false)} className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Saltar</button>
-            {idx > 0 && <button onClick={() => irA(idx - 1)} className="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg">← Atrás</button>}
-            <button onClick={() => irA(idx + 1)} disabled={!!paso.tarea && !cumple} title={paso.tarea && !cumple ? `Te falta: ${paso.tarea}` : 'Siguiente paso'} className="px-4 py-1.5 text-xs bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-40">
+            <button onClick={() => { detenerDemo(); setActivo(false); }} className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Saltar</button>
+            {demo && <button onClick={detenerDemo} className="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg">⏸ Detener demo</button>}
+            {idx > 0 && <button onClick={() => { detenerDemo(); irA(idx - 1); }} className="px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-600 rounded-lg">← Atrás</button>}
+            <button onClick={() => { detenerDemo(); irA(idx + 1); }} disabled={!!paso.tarea && !cumple} title={paso.tarea && !cumple ? `Te falta: ${paso.tarea}` : 'Siguiente paso'} className="px-4 py-1.5 text-xs bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-medium disabled:opacity-40">
               {idx === pasos.length - 1 ? 'Finalizar ✓' : 'Siguiente →'}
             </button>
           </div>

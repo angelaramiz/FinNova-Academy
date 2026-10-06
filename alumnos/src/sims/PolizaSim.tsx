@@ -65,6 +65,11 @@ const CASOS: Record<string, { nombre: string; cfdi: CfdiForm; edo: EdoForm }> = 
 const VACIO_CFDI: CfdiForm = { rfc: '', emisor: '', fecha: '', uuid: '', metodo: 'PUE', producto: '', moneda: 'MXN', subtotal: '', iva16: '', isrRet: '', total: '' };
 const VACIO_EDO: EdoForm = { fecha: '', concepto: '', totalPagado: '', banco: '' };
 
+// MARCELO es el caso del piloto (tour + demo): la práctica arranca en otro.
+// Se busca por UUID para que valga igual con el mapa local o el del servidor.
+const MARCELO_UUID = '1317D7E0-38AC-489F-9082-E75019D8975E';
+const CASO_PRACTICA = 'ppd';
+
 // ─── Semillas de la base (21 filas CFDI↔banco) ──────────────────────
 // GET /api/sim/polizas/casos trae el catálogo; si falla, CASOS local.
 // El UUID es el id: nunca se repite (usadas en localStorage).
@@ -124,11 +129,11 @@ let seqId = 1;
 
 export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   const [fase, setFase] = useState<Fase>('documento');
-  const [casoId, setCasoId] = useState('marcelo');
-  const [cfdi, setCfdi] = useState<CfdiForm>(CASOS.marcelo.cfdi);
-  const [edo, setEdo] = useState<EdoForm>(CASOS.marcelo.edo);
+  const [casoId, setCasoId] = useState(CASO_PRACTICA);
+  const [cfdi, setCfdi] = useState<CfdiForm>(CASOS[CASO_PRACTICA].cfdi);
+  const [edo, setEdo] = useState<EdoForm>(CASOS[CASO_PRACTICA].edo);
   const [lineas, setLineas] = useState<Linea[]>([]);
-  const [notas, setNotas] = useState(`${CASOS.marcelo.cfdi.uuid}, ${CASOS.marcelo.cfdi.producto}.`);
+  const [notas, setNotas] = useState(`${CASOS[CASO_PRACTICA].cfdi.uuid}, ${CASOS[CASO_PRACTICA].cfdi.producto}.`);
   const [mensajes, setMensajes] = useState<string[]>([]);
   const [folio, setFolio] = useState<string | null>(null);
   const [guardadas, setGuardadas] = useState<{ agrupador: string; debe: number; haber: number }[]>([]);
@@ -178,7 +183,8 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
   }
 
   async function otraSemilla() {
-    const excl = [...usadas, cfdi.uuid].filter(Boolean).join(',');
+    // MARCELO es solo del piloto: nunca sale en 🎲.
+    const excl = [...usadas, cfdi.uuid, MARCELO_UUID].filter(Boolean).join(',');
     try {
       const r = await apiFetch<CasoApi>(`/api/sim/polizas/pub/semilla?exclude=${encodeURIComponent(excl)}`);
       const m = { ...mapa, [r.id]: casoApiAOp(r) };
@@ -535,7 +541,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
           })}
         </div>
       </div>
-      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} etiquetaTrigger="🧭 Guíame" />
+      <TourSim titulo={TOURS.poliza.titulo} pasos={TOURS.poliza.pasos} storageKey={TOURS.poliza.storageKey} onNavegar={(p) => setFase(p as Fase)} onVerificar={verificarPasoTour} onIniciar={() => { const id = Object.keys(mapa).find((k) => mapa[k].cfdi.uuid === MARCELO_UUID) ?? 'marcelo'; cargarCaso(id); }} etiquetaTrigger="🧭 Guíame" />
 
       <details className="theory-box" style={{ padding: '6px 10px' }}>
         <summary className="theory-box-title" style={{ cursor: 'pointer', fontWeight: 700 }}>📚 Puente teórico (tócalo para ver)</summary>
