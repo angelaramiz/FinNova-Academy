@@ -78,6 +78,20 @@ describe('inicio guiado robusto: eliminar no deja fantasmas y lo bloqueado se di
   });
 });
 
+describe('marcelo solo piloto: la práctica arranca en otro caso y el piloto fuerza marcelo', () => {
+  it('caso inicial de práctica no es marcelo', () => {
+    expect(POL).toContain("const CASO_PRACTICA = 'ppd'");
+    expect(POL).not.toContain("useState('marcelo')");
+  });
+  it('el piloto (guíame y demo) arranca cargando marcelo por UUID', () => {
+    expect(POL).toContain('MARCELO_UUID');
+    expect(POL).toContain('onIniciar=');
+  });
+  it('la semilla de práctica salta marcelo (no sale en 🎲)', () => {
+    expect(POL).toMatch(/MARCELO_UUID.*exclude|exclude.*MARCELO_UUID/s);
+  });
+});
+
 describe('receta coherente con clave-texto (sin sub-cuentas viejas)', () => {
   it('la receta del piloto usa claves SAT directas', () => {
     expect(POL).not.toContain('bancos (102.01.002)');
@@ -227,7 +241,7 @@ describe('poliza kinder: piloto guía sin hacer por ti (100% manual)', () => {
 describe('poliza dataset: el Sim opera con semillas de la base (sin repetir)', () => {
   it('carga casos de /api/sim/polizas/casos con fallback local', () => {
     expect(POL).toContain('/api/sim/polizas/casos');
-    expect(POL).toContain('CASOS.marcelo');
+    expect(POL).toContain('CASOS[CASO_PRACTICA]');
   });
   it('botón Otra semilla pide /api/sim/polizas/pub/semilla excluyendo usadas', () => {
     expect(POL).toContain('/api/sim/polizas/pub/semilla');

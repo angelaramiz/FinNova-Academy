@@ -16,9 +16,11 @@ interface Props {
   onVerificar?: (i: number) => boolean;
   // Una sola voz de ayuda: etiqueta del botón que inicia el tour.
   etiquetaTrigger?: string;
+  // Aviso al iniciar (guíame, demo o ver-de-nuevo): el Sim prepara su caso.
+  onIniciar?: () => void;
 }
 
-export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger }: Props) {
+export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerificar, etiquetaTrigger, onIniciar }: Props) {
   const [terminado, setTerminado] = useState(() => {
     try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
   });
@@ -36,9 +38,17 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
   }
 
   function iniciarDemo() {
+    onIniciar?.();
     setIdx(0);
     setActivo(true);
     setDemo(true);
+    requestAnimationFrame(() => medir(0));
+  }
+
+  function iniciarGuiado() {
+    onIniciar?.();
+    setIdx(0);
+    setActivo(true);
     requestAnimationFrame(() => medir(0));
   }
   const [geom, setGeom] = useState({ l: 0, t: 0, w: 0, h: 0 });
@@ -153,6 +163,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
   function reiniciar() {
     try { localStorage.removeItem(storageKey); } catch { /* noop */ }
     setTerminado(false);
+    onIniciar?.();
     setIdx(0);
     setActivo(true);
     requestAnimationFrame(() => medir(0));
@@ -175,7 +186,7 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
     return (
       <div style={{ display: 'grid', gap: 6 }}>
         <button
-          onClick={() => { setIdx(0); setActivo(true); requestAnimationFrame(() => medir(0)); }}
+          onClick={iniciarGuiado}
           className="w-full px-3 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition animate-pulse"
           style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
         >

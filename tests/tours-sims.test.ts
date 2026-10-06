@@ -14,6 +14,10 @@ const SIM_DE: Record<string, string> = {
 };
 
 describe('tours Contalink', () => {
+  it('TourSim avisa al iniciar (para forzar el caso del piloto)', () => {
+    const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(TSIM).toContain('onIniciar');
+  });
   it('demo automática: se resuelve sola en secuencia sin pedir tareas', () => {
     const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
     expect(TSIM).toContain('Demo automática');
