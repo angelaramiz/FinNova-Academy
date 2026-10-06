@@ -496,6 +496,7 @@ export default function PolizaSim({ publico = false }: { publico?: boolean }) {
       <div data-tour="poliza-hero" className="stat-card" style={{ borderLeft: '4px solid #1e40af' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>📝 Póliza de la factura (provisión / egresos)</div>
         <div style={{ fontSize: 12, color: '#64748b' }}>Del CFDI al asiento: concilia contra el banco, clasifica al agrupador SAT y cuadra DEBE = HABER.</div>
+        {folio && <div style={{ marginTop: 8 }}><span className="status-badge status-ok" style={{ fontSize: 13 }}>🎫 Folio: {folio}</span></div>}
         {lineas.length === 0 ? (
           <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <div><span className="stat-value" style={{ fontSize: 20 }}>${fmt(num(cfdi.total))}</span><div className="stat-label">Total CFDI</div></div>

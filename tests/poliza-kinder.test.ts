@@ -35,6 +35,9 @@ describe('hero al final: solo se muestra al finalizar la póliza (balanza)', () 
   it('el hero vive en la fase balanza, no al abrir', () => {
     expect(POL).toMatch(/{\s*fase\s*===\s*'balanza'\s*&&\s*\(\s*<div data-tour="poliza-hero"/);
   });
+  it('el hero final muestra el folio de la póliza guardada', () => {
+    expect(POL).toContain('Folio: {folio}');
+  });
 });
 
 describe('hero dual: con documento y sin líneas muestra conciliación útil (no $0.00)', () => {
