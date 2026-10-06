@@ -14,6 +14,11 @@ const SIM_DE: Record<string, string> = {
 };
 
 describe('tours Contalink', () => {
+  it('el piloto se puede repetir (no desaparece tras terminarlo una vez)', () => {
+    const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(TSIM).not.toMatch(/if \(terminado\) return null;/);
+    expect(TSIM).toContain('Ver piloto de nuevo');
+  });
   it('4 pilotos con 6 pasos cada uno y storageKeys únicos', () => {
     const ids = Object.keys(TOURS).sort();
     expect(ids).toEqual(['auditoria', 'conciliacion', 'nomina', 'poliza']);

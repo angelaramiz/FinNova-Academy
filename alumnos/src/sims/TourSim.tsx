@@ -124,7 +124,26 @@ export default function TourSim({ titulo, pasos, storageKey, onNavegar, onVerifi
     });
   }
 
-  if (terminado) return null;
+  function reiniciar() {
+    try { localStorage.removeItem(storageKey); } catch { /* noop */ }
+    setTerminado(false);
+    setIdx(0);
+    setActivo(true);
+    requestAnimationFrame(() => medir(0));
+  }
+
+  if (terminado) {
+    return (
+      <button
+        onClick={reiniciar}
+        className="w-full px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
+        style={{ background: 'transparent', border: '1px dashed #94a3b8', color: '#64748b' }}
+        title="Volver a ver el piloto automático paso a paso"
+      >
+        ↻ Ver piloto de nuevo
+      </button>
+    );
+  }
 
   if (!activo) {
     return (
