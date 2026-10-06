@@ -14,6 +14,11 @@ const SIM_DE: Record<string, string> = {
 };
 
 describe('tours Contalink', () => {
+  it('TourSim soporta modo solo-demo (oculta el guiado paso a paso)', () => {
+    const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(TSIM).toContain('soloDemo');
+    expect(TSIM).toContain('onDemoFill');
+  });
   it('TourSim avisa al iniciar (para forzar el caso del piloto)', () => {
     const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
     expect(TSIM).toContain('onIniciar');
