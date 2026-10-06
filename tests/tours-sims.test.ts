@@ -14,6 +14,12 @@ const SIM_DE: Record<string, string> = {
 };
 
 describe('tours Contalink', () => {
+  it('demo automática: se resuelve sola en secuencia sin pedir tareas', () => {
+    const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
+    expect(TSIM).toContain('Demo automática');
+    expect(TSIM).toContain('detenerDemo');
+    expect(TSIM).toContain('setTimeout');
+  });
   it('el piloto se puede repetir (no desaparece tras terminarlo una vez)', () => {
     const TSIM = readFileSync(join(__dirname, '..', 'alumnos', 'src', 'sims', 'TourSim.tsx'), 'utf8');
     expect(TSIM).not.toMatch(/if \(terminado\) return null;/);
